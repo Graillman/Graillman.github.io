@@ -1,0 +1,14 @@
+{
+  "name": "Suivi Tenues · Pénélope",
+  "short_name": "Suivi Tenues",
+  "description": "Suivi quotidien des tenues et de l'accueil — équipe Pénélope",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f6",
+  "theme_color": "#0f5d4e",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
