@@ -5,13 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://ygmywdqdbsaxweykosev.supabase.co; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f5d4e">
-<meta name="apple-mobile-web-app-title" content="Suivi Tenues">
+<meta name="apple-mobile-web-app-title" content="Pénélope">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230f5d4e'/%3E%3Ctext x='32' y='43' font-size='32' font-weight='600' text-anchor='middle' fill='white' font-family='Helvetica,Arial'%3EP%3C/text%3E%3C/svg%3E">
-<title>Suivi Tenues · Pénélope</title>
+<title>Suivi Prestation · Pénélope</title>
 <style>
   :root{
     color-scheme: light;
@@ -251,7 +251,7 @@
   <div id="loginBox" class="card">
     <div class="logo" style="margin:14px auto 0;width:54px;height:54px;font-size:24px;border-radius:14px">P</div>
     <div class="wordmark">Pénélope</div>
-    <p class="sub">Suivi Tenues &amp; Accueil</p>
+    <p class="sub">Suivi Prestation — équipe accueil</p>
     <p class="mutd" style="margin-top:14px">Entre le code d'accès de l'équipe</p>
     <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
@@ -419,7 +419,7 @@
       <h2>Zone dangereuse</h2>
       <button class="btn danger" onclick="wipeAll()">Tout effacer (pour toute l'équipe)</button>
     </div>
-    <p class="mutd" style="text-align:center;margin:18px 0">Suivi Tenues — conçu pour l'équipe Pénélope</p>
+    <p class="mutd" style="text-align:center;margin:18px 0">Suivi Prestation — conçu pour l'équipe Pénélope</p>
   </section>
 
   <!-- ================= SÉCURITÉ ================= -->
@@ -1150,7 +1150,7 @@ function renderStats(){
 
   box.innerHTML = title+
     '<div class="tiles">'+
-      '<div class="tile"><span>Aujourd\'hui</span><b>'+(today.total? today.ok+'/'+today.total:'—')+'</b><span class="mutd">tenues OK</span></div>'+
+      '<div class="tile"><span>Aujourd\'hui</span><b>'+(today.total? today.ok+'/'+today.total:'—')+'</b><span class="mutd">conformes</span></div>'+
       '<div class="tile"><span>7 derniers jours</span><b>'+pctTxt(t7.pct)+'</b></div>'+
       '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(t30.pct)+'</b></div>'+
       '<div class="tile"><span>Depuis le début</span><b>'+pctTxt(tAll.pct)+'</b><span class="mutd">'+tAll.total+' pointages</span></div>'+
@@ -1210,7 +1210,7 @@ function buildReport(preview){
   document.getElementById('printzone').innerHTML =
     '<div class="card"><div class="row">'+
     '<div class="logo" style="width:42px;height:42px;font-size:19px">P</div>'+
-    '<div class="grow"><h2 style="margin:0">Pénélope · Suivi Tenues</h2>'+
+    '<div class="grow"><h2 style="margin:0">Pénélope · Suivi Prestation</h2>'+
     '<span class="sub">Rapport de conformité — '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
     '<div class="spacer"></div>'+
     '<p><b>'+team.total+'</b> pointages · <b class="stat-ok">'+team.ok+' OK</b> · '+
@@ -1245,7 +1245,7 @@ function exportCSV(){
     }
   }
   if(lines.length===1){ toast('Aucun pointage sur cette période'); return; }
-  download(String.fromCharCode(65279)+lines.join('\r\n'), 'suivi-tenues-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  download(String.fromCharCode(65279)+lines.join('\r\n'), 'suivi-prestation-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
   toast('Fichier Excel téléchargé');
 }
 
@@ -1263,12 +1263,12 @@ function exportApp(){
     .replace(/<\//g,'<\\/');
   const out = APP_SOURCE.replace(SEED_RE,
     ()=>'<script id="seed-data" type="application/json">'+data+'<\/script');
-  download(out, 'suivi-tenues-penelope-'+todayISO()+'.html', 'text/html;charset=utf-8');
+  download(out, 'suivi-prestation-penelope-'+todayISO()+'.html', 'text/html;charset=utf-8');
   toast('Appli + données téléchargées');
 }
 function exportJSON(){
   download(JSON.stringify(Object.assign({}, state, {exportedAt:new Date().toISOString()}), null, 1),
-    'sauvegarde-suivi-tenues-'+todayISO()+'.json', 'application/json');
+    'sauvegarde-suivi-prestation-'+todayISO()+'.json', 'application/json');
   toast('Sauvegarde téléchargée');
 }
 function importJSON(input){

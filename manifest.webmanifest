@@ -1,7 +1,7 @@
 {
-  "name": "Suivi Tenues · Pénélope",
-  "short_name": "Suivi Tenues",
-  "description": "Suivi quotidien des tenues et de l'accueil — équipe Pénélope",
+  "name": "Suivi Prestation · Pénélope",
+  "short_name": "Pénélope",
+  "description": "Suivi quotidien de la prestation d'accueil — équipe Pénélope",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -9,6 +9,11 @@
   "theme_color": "#0f5d4e",
   "lang": "fr",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }
