@@ -143,9 +143,13 @@
   .avatar{ width:40px; height:40px; border-radius:50%; flex:none; display:grid; place-items:center;
     font-weight:600; color:#fff; font-size:14px }
   .pctbadge{ font-weight:700; font-variant-numeric:tabular-nums; font-size:15px }
-  .grouphead{ display:flex; align-items:baseline; gap:8px; margin:16px 2px 8px }
+  .grouphead{ display:flex; align-items:center; gap:8px; margin:16px 2px 8px }
   .grouphead b{ font-size:13px; font-weight:650; color:var(--ink2); text-transform:uppercase;
     letter-spacing:.5px }
+  .grouphead .dot{ width:10px; height:10px; border-radius:50%; flex:none }
+  #pointageList .grouphead{ margin:18px 0 2px }
+  #pointageList .grouphead:first-child{ margin-top:2px }
+  #pointageList .grouphead + .hostline{ border-top:none }
   .tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:12px }
   .tile{ background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow); padding:14px }
   .tile b{ display:block; font-size:26px; font-weight:700; margin-top:3px; letter-spacing:-.3px }
@@ -299,9 +303,9 @@
     </div>
   </div>
 
-  <!-- ================= POINTAGE ================= -->
+  <!-- ================= PASSAGE ================= -->
   <section class="view" id="view-pointage">
-    <div class="view-title">Pointage</div>
+    <div class="view-title">Passage</div>
     <div class="card">
       <div class="datebar">
         <b style="flex:none;font-size:14px">Jour</b>
@@ -310,6 +314,10 @@
       <div class="sub" id="dayProgressText" style="margin-top:12px"></div>
       <div class="progress"><i id="dayProgressBar" style="width:0%"></i></div>
       <div id="allOkWrap"></div>
+    </div>
+    <div class="row no-print" style="margin-bottom:12px">
+      <button class="btn small grow" onclick="openHostModal(null)">Ajouter un hôte / hôtesse</button>
+      <button class="btn small grow" onclick="addSitePrompt()">Ajouter un accueil</button>
     </div>
     <div class="card" id="pointageList"></div>
   </section>
@@ -326,6 +334,26 @@
     </div>
     <div id="hostList"></div>
     <div id="archivedBlock"></div>
+    <div class="card no-print" style="margin-top:14px">
+      <h2>Accueils</h2>
+      <p class="sub" style="margin-bottom:8px">Les points d'accueil du site (bâtiments, étages,
+      standards…). Chaque hôte y est rattaché et l'équipe est classée par accueil.</p>
+      <div id="sitesList"></div>
+      <div class="addrow">
+        <input id="newSite" placeholder="Nouvel accueil (ex. : Evergreen — Bât. Pacific)">
+        <button class="btn" onclick="addSite()">Ajouter</button>
+      </div>
+    </div>
+    <div class="card no-print">
+      <h2>Critères d'évaluation</h2>
+      <p class="sub" style="margin-bottom:8px">Les motifs proposés quand une prestation n'est pas
+      conforme (tenue, comportement…). Ajoute ou retire les tiens — pour toute l'équipe.</p>
+      <div id="criteriaList"></div>
+      <div class="addrow">
+        <input id="newCriterion" placeholder="Nouveau critère (ex. : Posture à l'accueil)">
+        <button class="btn" onclick="addCriterion()">Ajouter</button>
+      </div>
+    </div>
   </section>
 
   <!-- ================= FICHE ================= -->
@@ -365,36 +393,6 @@
   <section class="view" id="view-reglages">
     <div class="view-title">Réglages</div>
     <div class="card">
-      <h2>Partager avec les responsables</h2>
-      <p class="sub" style="margin-bottom:8px">Envoie-leur le lien de l'appli et le code d'accès.
-      Tout le monde travaille sur les mêmes données, synchronisées en temps réel.</p>
-      <p class="mutd" id="appLink" style="word-break:break-all;background:var(--page);border-radius:10px;padding:9px 11px;margin-bottom:10px"></p>
-      <div class="row">
-        <button class="btn primary grow" onclick="copyLink()">Copier le lien</button>
-        <button class="btn grow" onclick="changeCode()">Changer le code</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Critères de pointage</h2>
-      <p class="sub" style="margin-bottom:8px">Les motifs proposés quand une tenue ou un comportement
-      n'est pas conforme. Ajoute ou retire les tiens — pour toute l'équipe.</p>
-      <div id="criteriaList"></div>
-      <div class="addrow">
-        <input id="newCriterion" placeholder="Nouveau critère (ex. : Posture à l'accueil)">
-        <button class="btn" onclick="addCriterion()">Ajouter</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Accueils</h2>
-      <p class="sub" style="margin-bottom:8px">Les points d'accueil de ton site (bâtiments, étages,
-      standards…). Chaque hôte peut y être rattaché.</p>
-      <div id="sitesList"></div>
-      <div class="addrow">
-        <input id="newSite" placeholder="Nouvel accueil (ex. : Evergreen — Bât. Pacific)">
-        <button class="btn" onclick="addSite()">Ajouter</button>
-      </div>
-    </div>
-    <div class="card">
       <h2>Sécurité &amp; confidentialité</h2>
       <p class="sub" style="margin-bottom:10px">Code d'accès chiffré, base verrouillée, protection
       anti-intrusion, hébergement en France.</p>
@@ -413,7 +411,10 @@
     </div>
     <div class="card">
       <h2>Compte</h2>
-      <button class="btn neutral" onclick="logout()">Se déconnecter de cet appareil</button>
+      <div class="row">
+        <button class="btn grow" onclick="changeCode()">Changer le code d'accès</button>
+        <button class="btn neutral grow" onclick="logout()">Se déconnecter</button>
+      </div>
     </div>
     <div class="card">
       <h2>Zone dangereuse</h2>
@@ -466,7 +467,7 @@
       <div class="secitem">
         <svg class="ic-s" viewBox="0 0 24 24"><path d="M9 11V8a3 3 0 0 1 6 0v3"/><rect x="6" y="11" width="12" height="9" rx="2"/></svg>
         <div><b>Données minimales</b>
-        <span class="sub">Seuls le prénom, le nom, l'accueil et les pointages sont enregistrés —
+        <span class="sub">Seuls le prénom, le nom, l'accueil et les passages sont enregistrés —
         rien d'autre. Usage strictement interne ; export et suppression possibles à tout moment.</span></div>
       </div>
     </div>
@@ -480,7 +481,7 @@
 
 <nav class="tabs">
   <button data-v="pointage" class="on">
-    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.6 12.3 2.3 2.3 4.5-5"/></svg>Pointage</button>
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.6 12.3 2.3 2.3 4.5-5"/></svg>Passage</button>
   <button data-v="equipe">
     <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.6 19c.7-3 2.8-4.6 5.4-4.6s4.7 1.6 5.4 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.7 14.7c2.2.3 4 1.7 4.7 4.3"/></svg>Équipe</button>
   <button data-v="stats">
@@ -627,9 +628,8 @@ function rerenderSoft(){
   if(a && (a.tagName==='TEXTAREA' || (a.tagName==='INPUT' && (a.type==='text'||a.type==='search')))) return;
   if(document.getElementById('hostModal').classList.contains('on')) return;
   if(currentView==='pointage') renderPointage();
-  else if(currentView==='equipe') renderEquipe();
+  else if(currentView==='equipe'){ renderEquipe(); renderManagers(); }
   else if(currentView==='stats') renderStats();
-  else if(currentView==='reglages') renderManagers();
   else if(currentView==='fiche'){ if(hostById(ficheId)) openFiche(ficheId); else show('equipe'); }
 }
 function showLogin(bad){
@@ -669,11 +669,6 @@ async function changeCode(){
     localStorage.setItem(CODE_KEY, accessCode);
     toast('Nouveau code : ' + accessCode);
   }catch(e){ toast('Impossible de changer le code'); }
-}
-function copyLink(){
-  (navigator.clipboard ? navigator.clipboard.writeText(SYNC_URL) : Promise.reject())
-    .then(()=>toast('Lien copié — envoie-le avec le code d\'accès'))
-    .catch(()=>toast('Copie impossible — recopie le lien affiché'));
 }
 
 /* ---------- dates ---------- */
@@ -776,9 +771,8 @@ function show(v){
   el.classList.add('on');
   window.scrollTo(0,0);
   if(v==='pointage') renderPointage();
-  if(v==='equipe') renderEquipe();
+  if(v==='equipe'){ renderEquipe(); renderManagers(); }
   if(v==='stats') renderStats();
-  if(v==='reglages') renderManagers();
 }
 function showSecurity(){
   currentView = 'securite';
@@ -803,7 +797,7 @@ function renderPointage(){
     box.innerHTML = '<p class="sub" style="margin-bottom:12px">Aucun hôte pour l\'instant.</p>'+
       '<button class="btn primary no-print" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>';
   } else {
-    box.innerHTML = hosts.map(h=>{
+    const lineHTML = h => {
       const c = hostChecks(h.id)[date];
       const st = c ? c.status : null;
       let koZone = '';
@@ -818,23 +812,25 @@ function renderPointage(){
             'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)">'+esc(c.note||'')+'</textarea>'+
           '</div>';
       }
-      const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer le pointage du jour</button>' : '';
+      const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer la note du jour</button>' : '';
       return '<div class="hostline">'+
         '<div class="row">'+
-          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+
-          (h.site?'<div class="hsite">'+esc(h.site)+'</div>':'')+'</div>'+
+          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div></div>'+
           '<div class="seg">'+
             '<button class="ok'+(st==='ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'ok\')">OK</button>'+
             '<button class="ko'+(st==='not_ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'not_ok\')">Pas OK</button>'+
           '</div>'+
         '</div>'+ koZone + clearLink +
       '</div>';
-    }).join('');
+    };
+    box.innerHTML = buildGroups(hosts).map(([site, list])=>
+      groupHeadHTML(site, list.length) + list.map(lineHTML).join('')
+    ).join('');
   }
   const td = teamDay(date);
   const n = hosts.length;
   document.getElementById('dayProgressText').innerHTML =
-    n ? '<b>'+td.total+'/'+n+'</b> pointé'+(td.total>1?'s':'')+' — '+
+    n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+' — '+
         '<span class="stat-ok">'+td.ok+' OK</span> · <span class="stat-ko">'+td.ko+' Pas OK</span>' : '';
   document.getElementById('dayProgressBar').style.width = n ? (td.total/n*100)+'%' : '0%';
   const rest = hosts.filter(h=>!hostChecks(h.id)[date]).length;
@@ -848,7 +844,7 @@ function allOk(){
   if(!rest.length) return;
   if(!confirm('Marquer '+rest.length+' hôte'+(rest.length>1?'s':'')+' comme OK pour ce jour ?')) return;
   rest.forEach(h=>setCheck(h.id, date, { status:'ok', reasons:[], note:'' }));
-  renderPointage(); toast(rest.length+' pointage'+(rest.length>1?'s':'')+' OK');
+  renderPointage(); toast(rest.length+' hôte'+(rest.length>1?'s':'')+' noté'+(rest.length>1?'s':'')+' OK');
 }
 function mark(id, date, status){
   const c = hostChecks(id)[date];
@@ -882,6 +878,26 @@ function avatarColor(h){
   let n=0; for(const ch of h.id) n=(n+ch.charCodeAt(0))%hues.length;
   return 'hsl('+hues[n]+',34%,40%)';
 }
+function siteColor(name){
+  const hues=[168,213,258,340,28,196,96,300];
+  let n=0; for(const ch of String(name)) n=(n+ch.charCodeAt(0))%hues.length;
+  return 'hsl('+hues[n]+',42%,42%)';
+}
+/* regroupement par accueil : ceux de la config d'abord, puis les autres, puis sans accueil */
+function buildGroups(hosts){
+  const groups = [];
+  const seen = new Set();
+  cfg().sites.forEach(s=>{ groups.push([s, hosts.filter(h=>h.site===s)]); seen.add(s); });
+  const extra = [...new Set(hosts.map(h=>h.site).filter(s=>s && !seen.has(s)))].sort();
+  extra.forEach(s=>groups.push([s, hosts.filter(h=>h.site===s)]));
+  const none = hosts.filter(h=>!h.site);
+  if(none.length) groups.push(['Sans accueil', none]);
+  return groups.filter(g=>g[1].length);
+}
+function groupHeadHTML(site, n){
+  return '<div class="grouphead"><span class="dot" style="background:'+siteColor(site)+'"></span>'+
+    '<b>'+esc(site)+'</b><span class="mutd">'+n+'</span></div>';
+}
 function initials(h){ return (h.firstName[0]+(h.lastName?h.lastName[0]:'')).toUpperCase(); }
 function hostCardHTML(h){
   const s = hostStats(h);
@@ -889,7 +905,7 @@ function hostCardHTML(h){
     '<span class="avatar" style="background:'+avatarColor(h)+'">'+esc(initials(h))+'</span>'+
     '<span class="grow"><span class="hname">'+esc(hostName(h))+'</span><br>'+
     '<span class="mutd">'+
-      (s.total? s.total+' pointage'+(s.total>1?'s':''):'nouveau profil')+
+      (s.total? s.total+' passage'+(s.total>1?'s':''):'nouveau profil')+
       (s.streak>=3 ? ' · '+s.streak+' j. parfaits' : '')+'</span></span>'+
     '<span class="pctbadge" style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':(s.pct>=60?'var(--ink2)':'var(--bad)')))+'">'+pctTxt(s.pct)+'</span>'+
   '</button>';
@@ -906,17 +922,8 @@ function renderEquipe(){
       ? 'Aucun résultat pour « '+esc(q)+' ».'
       : 'Ajoute ta première personne avec le bouton ci-dessus.')+'</p></div>';
   } else {
-    // regroupement par accueil : ceux de la config d'abord, puis les autres, puis sans accueil
-    const groups = [];
-    const seen = new Set();
-    cfg().sites.forEach(s=>{ groups.push([s, hosts.filter(h=>h.site===s)]); seen.add(s); });
-    const extra = [...new Set(hosts.map(h=>h.site).filter(s=>s && !seen.has(s)))].sort();
-    extra.forEach(s=>groups.push([s, hosts.filter(h=>h.site===s)]));
-    const none = hosts.filter(h=>!h.site);
-    if(none.length) groups.push(['Sans accueil', none]);
-    box.innerHTML = groups.filter(g=>g[1].length).map(([site, list])=>
-      '<div class="grouphead"><b>'+esc(site)+'</b><span class="mutd">'+list.length+'</span></div>'+
-      list.map(hostCardHTML).join('')
+    box.innerHTML = buildGroups(hosts).map(([site, list])=>
+      groupHeadHTML(site, list.length) + list.map(hostCardHTML).join('')
     ).join('');
   }
 
@@ -1008,7 +1015,9 @@ function addSitePrompt(){
   const c = cfg();
   if(c.sites.includes(name.trim())){ toast('Cet accueil existe déjà'); return; }
   saveConfig({ sites:[...c.sites, name.trim()], criteria:c.criteria });
-  renderEquipe(); toast('Accueil ajouté');
+  if(currentView==='pointage') renderPointage();
+  else { renderEquipe(); renderManagers(); }
+  toast('Accueil ajouté');
 }
 function addSite(){
   const inp = document.getElementById('newSite');
@@ -1053,10 +1062,10 @@ function renderManagers(){
 /* ---------- FICHE ---------- */
 function barChart(data){
   const has = data.some(d=>d.pct!=null);
-  if(!has) return '<p class="mutd">Pas encore de pointages sur cette période.</p>';
+  if(!has) return '<p class="mutd">Pas encore de passages sur cette période.</p>';
   return '<div class="bars">'+data.map(d=>{
     const h = d.pct==null ? 0 : Math.max(4, d.pct*0.92);
-    return '<div class="bar" title="'+(d.pct==null?'aucun pointage':Math.round(d.pct)+' % ('+d.n+' pointages)')+'">'+
+    return '<div class="bar" title="'+(d.pct==null?'aucun passage':Math.round(d.pct)+' % ('+d.n+' passages)')+'">'+
       '<span class="v">'+(d.pct==null?'':Math.round(d.pct)+'%')+'</span>'+
       '<i class="'+(d.pct==null?'empty':'')+'" style="height:'+h+'%"></i>'+
       '<span class="l">'+esc(d.label)+'</span></div>';
@@ -1101,7 +1110,7 @@ function openFiche(id){
       '<div class="tile"><span>Parfait depuis la création</span><b style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':'var(--ink)'))+'">'+pctTxt(s.pct)+'</b>'+trend+'</div>'+
       '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(s.pct30)+'</b></div>'+
       '<div class="tile"><span>Série en cours</span><b>'+s.streak+' j.</b><span class="mutd">record : '+s.best+'</span></div>'+
-      '<div class="tile"><span>Pointages</span><b>'+s.total+'</b><span class="mutd">'+s.notOk+' incident'+(s.notOk>1?'s':'')+'</span></div>'+
+      '<div class="tile"><span>Passages</span><b>'+s.total+'</b><span class="mutd">'+s.notOk+' incident'+(s.notOk>1?'s':'')+'</span></div>'+
     '</div>'+
     '<div class="card"><h3>Commentaire sur le profil</h3>'+
       '<textarea id="ficheComment" placeholder="Note libre sur '+esc(h.firstName)+' (relationnel, points forts, points de vigilance…)" '+
@@ -1109,7 +1118,7 @@ function openFiche(id){
       '<p class="mutd" style="margin-top:6px">Visible par toute l\'équipe encadrante, enregistré automatiquement.</p></div>'+
     '<div class="card"><h3>Évolution — 6 derniers mois</h3>'+barChart(monthly(h,6))+'</div>'+
     '<div class="card"><h3>Motifs de non-conformité</h3>'+reasonBars(s.reasons)+'</div>'+
-    '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun pointage pour l\'instant.</p>')+'</div>'+
+    '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun passage pour l\'instant.</p>')+'</div>'+
     '<div class="card no-print"><div class="row">'+
       (h.archivedAt
         ? '<button class="btn grow" onclick="unarchiveHost(\''+h.id+'\');openFiche(\''+h.id+'\')">Réintégrer</button>'
@@ -1127,10 +1136,7 @@ function renderStats(){
   const hosts = activeHosts();
   const box = document.getElementById('view-stats');
   const title = '<div class="view-title">Statistiques</div>';
-  if(!hosts.length && !archivedHosts().length){
-    box.innerHTML = title+'<div class="card"><p class="sub">Ajoute des hôtes et fais tes premiers pointages pour voir les statistiques.</p></div>';
-    return;
-  }
+  const pct0 = p => p==null ? '0 %' : pctTxt(p);
   const today = teamDay(todayISO());
   const t7 = teamRange(addDays(todayISO(),-6), todayISO());
   const t30 = teamRange(addDays(todayISO(),-29), todayISO());
@@ -1150,10 +1156,10 @@ function renderStats(){
 
   box.innerHTML = title+
     '<div class="tiles">'+
-      '<div class="tile"><span>Aujourd\'hui</span><b>'+(today.total? today.ok+'/'+today.total:'—')+'</b><span class="mutd">conformes</span></div>'+
-      '<div class="tile"><span>7 derniers jours</span><b>'+pctTxt(t7.pct)+'</b></div>'+
-      '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(t30.pct)+'</b></div>'+
-      '<div class="tile"><span>Depuis le début</span><b>'+pctTxt(tAll.pct)+'</b><span class="mutd">'+tAll.total+' pointages</span></div>'+
+      '<div class="tile"><span>Aujourd\'hui</span><b>'+(today.total? today.ok+'/'+today.total : '0/'+hosts.length)+'</b><span class="mutd">conformes</span></div>'+
+      '<div class="tile"><span>7 derniers jours</span><b>'+pct0(t7.pct)+'</b></div>'+
+      '<div class="tile"><span>30 derniers jours</span><b>'+pct0(t30.pct)+'</b></div>'+
+      '<div class="tile"><span>Depuis le début</span><b>'+pct0(tAll.pct)+'</b><span class="mutd">'+tAll.total+' passages</span></div>'+
     '</div>'+
     '<div class="card"><h3>Conformité de l\'équipe — 14 derniers jours</h3>'+barChart(days)+'</div>'+
     '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
@@ -1161,11 +1167,11 @@ function renderStats(){
       watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
       '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
     '<div class="card"><h3>Classement — % parfait depuis la création</h3>'+
-      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>%</th><th>Pointages</th><th>Série</th></tr>'+
+      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>%</th><th>Passages</th><th>Série</th></tr>'+
       rank.map((x,i)=>'<tr><td style="color:var(--muted)">'+(i+1)+'</td>'+
         '<td>'+esc(hostName(x.h))+'</td><td><b>'+pctTxt(x.s.pct)+'</b></td>'+
         '<td>'+x.s.total+'</td><td>'+x.s.streak+' j.</td></tr>').join('')+'</table></div>'
-      : '<p class="mutd">Aucun pointage pour l\'instant.</p>')+
+      : '<p class="mutd">Aucun passage pour l\'instant.</p>')+
     '</div>';
 }
 
@@ -1213,16 +1219,16 @@ function buildReport(preview){
     '<div class="grow"><h2 style="margin:0">Pénélope · Suivi Prestation</h2>'+
     '<span class="sub">Rapport de conformité — '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
     '<div class="spacer"></div>'+
-    '<p><b>'+team.total+'</b> pointages · <b class="stat-ok">'+team.ok+' OK</b> · '+
+    '<p><b>'+team.total+'</b> passages · <b class="stat-ok">'+team.ok+' OK</b> · '+
     '<b class="stat-ko">'+team.ko+' Pas OK</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
-    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Pointages</th><th>OK</th><th>Pas OK</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
+    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>OK</th><th>Pas OK</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
       '<td>'+esc(r2.h.site||'—')+'</td>'+
       '<td>'+r2.n+'</td><td>'+r2.ok+'</td><td>'+r2.ko+'</td><td><b>'+pctTxt(r2.pct)+'</b></td>'+
       '<td>'+pctTxt(hostStats(r2.h).pct)+'</td>'+
       '<td>'+esc(r2.top||'—')+'</td></tr>').join('')+'</table></div>'
-      : '<p class="mutd">Aucun pointage sur cette période.</p>')+'</div>'+
+      : '<p class="mutd">Aucun passage sur cette période.</p>')+'</div>'+
     (incidents.length ? '<div class="card"><h3>Détail des non-conformités</h3>'+
       incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> — '+frDate(c.date)+
       ((c.reasons||[]).length?'<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
@@ -1244,7 +1250,7 @@ function exportCSV(){
         c.status==='ok'?'OK':'Pas OK', q((c.reasons||[]).join(', ')), q(c.note||'')].join(sep));
     }
   }
-  if(lines.length===1){ toast('Aucun pointage sur cette période'); return; }
+  if(lines.length===1){ toast('Aucun passage sur cette période'); return; }
   download(String.fromCharCode(65279)+lines.join('\r\n'), 'suivi-prestation-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
   toast('Fichier Excel téléchargé');
 }
@@ -1289,7 +1295,7 @@ function importJSON(input){
   rd.readAsText(f); input.value='';
 }
 function wipeAll(){
-  if(!confirm('Tout effacer POUR TOUTE L\'ÉQUIPE ? Tous les profils et pointages seront perdus, sur tous les appareils.')) return;
+  if(!confirm('Tout effacer POUR TOUTE L\'ÉQUIPE ? Tous les profils et passages seront perdus, sur tous les appareils.')) return;
   if(!confirm('Vraiment sûr(e) ? Cette action est irréversible.\n(Astuce : exporte une sauvegarde avant.)')) return;
   const keptConfig = state.config;
   state = blankState(); state.config = keptConfig;
@@ -1345,7 +1351,6 @@ function ensureToday(){
   const now = new Date();
   document.getElementById('todayLabel').textContent =
     frDateLong(now).replace(/^./, c=>c.toUpperCase());
-  document.getElementById('appLink').textContent = SYNC_URL;
   document.getElementById('loginCode').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   show('pointage');
   syncUI();
