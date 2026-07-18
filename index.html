@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://ygmywdqdbsaxweykosev.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5d4e">
+<meta name="apple-mobile-web-app-title" content="Suivi Tenues">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230f5d4e'/%3E%3Ctext x='32' y='43' font-size='32' font-weight='600' text-anchor='middle' fill='white' font-family='Helvetica,Arial'%3EP%3C/text%3E%3C/svg%3E">
+<title>Suivi Tenues · Pénélope</title>
+<style>
+  :root{
+    color-scheme: light;
+    --page:#f5f5f6; --surface:#ffffff; --ink:#1d1d1f; --ink2:#515154; --muted:#86868b;
+    --hairline:rgba(0,0,0,.09); --grid:#e8e8ea; --baseline:#d6d6da;
+    --brand:#0f5d4e; --brand-strong:#0b4a3e; --tint:rgba(15,93,78,.09);
+    --series:#128a6e; --series-soft:#d7ece6;
+    --ok-text:#0b4a3e; --ok-bg:rgba(15,93,78,.10);
+    --bad:#c93434; --bad-soft:rgba(201,52,52,.09);
+    --card-shadow:0 0 0 1px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.05);
+    --frost:rgba(245,245,246,.85);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme: dark;
+      --page:#0a0a0b; --surface:#1c1c1e; --ink:#f5f5f7; --ink2:#c7c7cc; --muted:#98989d;
+      --hairline:rgba(255,255,255,.13); --grid:#2c2c2e; --baseline:#3a3a3c;
+      --brand:#4fbfa1; --brand-strong:#14735f; --tint:rgba(79,191,161,.16);
+      --series:#3fae8f; --series-soft:#14473b;
+      --ok-text:#5ecbaf; --ok-bg:rgba(79,191,161,.15);
+      --bad:#e0524f; --bad-soft:rgba(224,82,79,.15);
+      --card-shadow:0 0 0 1px rgba(255,255,255,.06);
+      --frost:rgba(12,12,13,.85);
+    }
+  }
+  *{ box-sizing:border-box; margin:0; padding:0 }
+  html{ -webkit-text-size-adjust:100% }
+  body{
+    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    background:var(--page); color:var(--ink);
+    min-height:100dvh; padding-bottom:88px;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{ font:inherit; cursor:pointer; color:inherit }
+  input,select,textarea{ font:inherit; color:var(--ink); background:var(--surface);
+    border:1px solid var(--baseline); border-radius:12px; padding:11px 13px; width:100% }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--brand);
+    box-shadow:0 0 0 3.5px var(--tint) }
+  textarea{ resize:vertical; min-height:64px }
+  label.f{ display:block; font-size:12.5px; font-weight:600; color:var(--ink2);
+    margin:12px 0 5px }
+  h1{ font-size:16px; font-weight:600; letter-spacing:.1px }
+  .view-title{ font-size:24px; font-weight:700; letter-spacing:.2px; margin:6px 2px 14px }
+  h2{ font-size:16.5px; font-weight:650; margin-bottom:10px }
+  h3{ font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.6px; margin-bottom:10px }
+  svg.ic{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round; display:block; margin:0 auto 3px }
+  svg.ic-s{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8;
+    stroke-linecap:round; stroke-linejoin:round; flex:none }
+
+  /* ---------- chrome ---------- */
+  header.app{
+    position:sticky; top:0; z-index:20;
+    background:var(--frost); -webkit-backdrop-filter:saturate(1.8) blur(20px);
+    backdrop-filter:saturate(1.8) blur(20px);
+    padding:13px 16px 11px; display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .logo{ width:32px; height:32px; border-radius:9px; background:var(--brand);
+    color:#fff; display:grid; place-items:center; font-weight:600; font-size:16px; flex:none }
+  @media (prefers-color-scheme: dark){ .logo{ background:var(--brand-strong) } }
+  .head-t{ flex:1; min-width:0 }
+  .head-t small{ display:block; color:var(--muted); font-size:12px; margin-top:1px }
+  #savedTag{ font-size:12.5px; font-weight:600; color:var(--brand); opacity:0;
+    transition:opacity .4s; white-space:nowrap }
+  #savedTag.on{ opacity:1 }
+
+  nav.tabs{
+    position:fixed; bottom:0; left:0; right:0; z-index:30;
+    background:var(--frost); -webkit-backdrop-filter:saturate(1.8) blur(20px);
+    backdrop-filter:saturate(1.8) blur(20px);
+    border-top:1px solid var(--hairline);
+    display:flex; padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+  }
+  nav.tabs button{
+    flex:1; background:none; border:none; color:var(--muted);
+    font-size:10px; font-weight:500; padding:3px 2px; line-height:1.3;
+  }
+  nav.tabs button.on{ color:var(--brand); font-weight:600 }
+
+  main{ padding:16px; max-width:760px; margin:0 auto }
+  .view{ display:none } .view.on{ display:block }
+  .card{ background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
+    padding:16px; margin-bottom:12px }
+  .row{ display:flex; gap:10px; align-items:center }
+  .grow{ flex:1; min-width:0 }
+  .btn{ border:none; background:var(--tint); color:var(--brand);
+    border-radius:12px; padding:12px 16px; font-weight:600; font-size:14.5px }
+  .btn.primary{ background:var(--brand); color:#fff }
+  @media (prefers-color-scheme: dark){ .btn.primary{ background:var(--brand-strong) } }
+  .btn.neutral{ background:var(--page); color:var(--ink2) }
+  .btn.danger{ background:var(--bad-soft); color:var(--bad) }
+  .btn.small{ padding:8px 12px; font-size:13px; border-radius:10px }
+  .btn:active,.chip:active,.seg button:active{ transform:scale(.97) }
+  .link{ background:none; border:none; color:var(--brand); font-weight:600; padding:4px; font-size:14px }
+  .mutd{ color:var(--muted); font-size:13px }
+  .sub{ color:var(--ink2); font-size:13.5px; line-height:1.45 }
+  .spacer{ height:8px }
+  .sep{ height:1px; background:var(--hairline); margin:12px -16px }
+
+  /* ---------- pointage ---------- */
+  .datebar{ display:flex; gap:10px; align-items:center }
+  .datebar input{ width:auto; flex:1 }
+  .progress{ height:6px; background:var(--grid); border-radius:99px; overflow:hidden; margin-top:12px }
+  .progress i{ display:block; height:100%; background:var(--brand); border-radius:99px;
+    transition:width .3s }
+  .hostline{ padding:13px 0; border-top:1px solid var(--hairline) }
+  .hostline:first-of-type{ border-top:none; padding-top:2px }
+  .hname{ font-weight:600; font-size:15px }
+  .hsite{ color:var(--muted); font-size:12px; margin-top:1px }
+  .seg{ display:flex; flex:none; border:1px solid var(--baseline); border-radius:11px; overflow:hidden }
+  .seg button{ border:none; background:var(--surface); color:var(--ink2);
+    padding:9px 14px; font-weight:600; font-size:13px; min-width:62px }
+  .seg button + button{ border-left:1px solid var(--baseline) }
+  .seg button.ok.sel{ background:var(--ok-bg); color:var(--ok-text) }
+  .seg button.ko.sel{ background:var(--bad-soft); color:var(--bad) }
+  .kozone{ margin-top:12px; padding:12px; background:var(--page); border-radius:12px }
+  .chips{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px }
+  .chip{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
+    border-radius:99px; padding:7px 12px; font-size:12.5px }
+  .chip.sel{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); font-weight:600 }
+  .clearday{ margin-top:6px; font-size:13px }
+
+  /* ---------- équipe / fiche ---------- */
+  .hostcard{ display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:var(--surface); border:none; border-radius:14px; box-shadow:var(--card-shadow);
+    padding:13px 15px; margin-bottom:8px; color:var(--ink) }
+  .avatar{ width:40px; height:40px; border-radius:50%; flex:none; display:grid; place-items:center;
+    font-weight:600; color:#fff; font-size:14px }
+  .pctbadge{ font-weight:700; font-variant-numeric:tabular-nums; font-size:15px }
+  .grouphead{ display:flex; align-items:baseline; gap:8px; margin:16px 2px 8px }
+  .grouphead b{ font-size:13px; font-weight:650; color:var(--ink2); text-transform:uppercase;
+    letter-spacing:.5px }
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:12px }
+  .tile{ background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow); padding:14px }
+  .tile b{ display:block; font-size:26px; font-weight:700; margin-top:3px; letter-spacing:-.3px }
+  .tile span{ font-size:12px; color:var(--ink2) }
+  .tile .trend{ font-size:12px; margin-top:3px; display:block }
+  .trend.up{ color:var(--ok-text) } .trend.down{ color:var(--bad) }
+
+  /* ---------- graphiques ---------- */
+  .bars{ display:flex; align-items:flex-end; gap:8px; height:120px; padding-top:18px;
+    border-bottom:1px solid var(--baseline) }
+  .bar{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0 }
+  .bar i{ width:70%; max-width:26px; background:var(--series); border-radius:4px 4px 0 0; display:block }
+  .bar i.empty{ background:var(--grid); height:3px !important; border-radius:2px }
+  .bar .v{ font-size:10.5px; color:var(--ink2); margin-bottom:3px; font-variant-numeric:tabular-nums; white-space:nowrap }
+  .bar .l{ font-size:10.5px; color:var(--muted); margin-top:5px; white-space:nowrap; overflow:hidden; max-width:100% }
+  .hbars .hb{ display:flex; align-items:center; gap:8px; margin-bottom:8px }
+  .hbars .hb .lab{ width:46%; font-size:12.5px; color:var(--ink2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .hbars .hb .trk{ flex:1; height:10px; background:var(--grid); border-radius:4px; overflow:hidden }
+  .hbars .hb .trk i{ display:block; height:100%; background:var(--series); border-radius:4px 0 0 4px }
+  .hbars .hb .n{ width:26px; text-align:right; font-size:12px; color:var(--ink2); font-variant-numeric:tabular-nums }
+
+  .tablewrap{ overflow-x:auto }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px }
+  th{ text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase;
+    letter-spacing:.5px; padding:6px 8px; border-bottom:1px solid var(--baseline); font-weight:600 }
+  td{ padding:9px 8px; border-bottom:1px solid var(--grid); font-variant-numeric:tabular-nums }
+  td b{ white-space:nowrap }
+  tr:last-child td{ border-bottom:none }
+
+  .histline{ padding:10px 0; border-top:1px solid var(--hairline); font-size:13.5px }
+  .histline:first-child{ border-top:none }
+  .stat-ok{ color:var(--ok-text); font-weight:650 }
+  .stat-ko{ color:var(--bad); font-weight:650 }
+  .notebox{ background:var(--page); border-left:3px solid var(--bad); border-radius:8px;
+    padding:8px 10px; margin-top:6px; font-size:13px; color:var(--ink2) }
+
+  .banner{ background:var(--tint); border-radius:14px; padding:13px 15px; margin-bottom:12px;
+    font-size:13.5px }
+  .banner .row{ margin-top:10px }
+  #syncStrip{ background:var(--bad-soft); border-radius:12px; padding:10px 14px;
+    margin-bottom:12px; font-size:13px; color:var(--ink2) }
+
+  /* ---------- listes gérables (critères / accueils) ---------- */
+  .mrow{ display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--hairline) }
+  .mrow:first-of-type{ border-top:none }
+  .mrow span{ flex:1; font-size:14px }
+  .mrow button{ background:none; border:none; color:var(--bad); font-size:13px; font-weight:600;
+    padding:4px 6px }
+  .addrow{ display:flex; gap:8px; margin-top:12px }
+
+  /* ---------- sécurité ---------- */
+  .secitem{ display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--hairline) }
+  .secitem:first-of-type{ border-top:none }
+  .secitem .ic-s{ margin-top:2px; color:var(--brand) }
+  .secitem b{ display:block; font-size:14px; margin-bottom:2px }
+
+  #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:96px; z-index:50;
+    background:var(--ink); color:var(--page); border-radius:99px; padding:9px 18px;
+    font-size:13px; font-weight:600; opacity:0; transition:opacity .25s; pointer-events:none;
+    max-width:86vw; text-align:center }
+  #toast.on{ opacity:.94 }
+
+  /* ---------- connexion ---------- */
+  #loginOverlay{ position:fixed; inset:0; z-index:100; background:var(--page);
+    display:none; place-items:center; padding:24px }
+  #loginOverlay.on{ display:grid }
+  #loginBox{ width:100%; max-width:330px; text-align:center }
+  #loginBox input{ text-align:center; letter-spacing:1px;
+    font-weight:600; margin:14px 0 10px }
+  .wordmark{ font-size:26px; font-weight:700; letter-spacing:.4px; margin-top:14px }
+  .wordmark + .sub{ margin-top:3px }
+
+  /* ---------- modal hôte ---------- */
+  #hostModal{ position:fixed; inset:0; z-index:90; display:none;
+    background:rgba(0,0,0,.35); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    align-items:flex-end; justify-content:center }
+  #hostModal.on{ display:flex }
+  #hostSheet{ background:var(--surface); width:100%; max-width:560px;
+    border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:88dvh; overflow-y:auto }
+  @media (min-width:600px){
+    #hostModal{ align-items:center; padding:24px }
+    #hostSheet{ border-radius:20px }
+  }
+  .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px }
+  .sheet-head h2{ margin:0 }
+
+  /* ---------- impression ---------- */
+  @media print{
+    body{ padding:0; background:#fff; color:#000 }
+    header.app, nav.tabs, .no-print, #toast, #hostModal{ display:none !important }
+    .view{ display:none !important }
+    #printzone{ display:block !important }
+    .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid }
+  }
+  #printzone{ display:none }
+  @media screen{ #printzone.preview{ display:block } }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div id="loginBox" class="card">
+    <div class="logo" style="margin:14px auto 0;width:54px;height:54px;font-size:24px;border-radius:14px">P</div>
+    <div class="wordmark">Pénélope</div>
+    <p class="sub">Suivi Tenues &amp; Accueil</p>
+    <p class="mutd" style="margin-top:14px">Entre le code d'accès de l'équipe</p>
+    <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
+    <p class="mutd" id="loginErr" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<div id="hostModal">
+  <div id="hostSheet">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Nouvel hôte / hôtesse</h2>
+      <button class="link" onclick="closeHostModal()">Fermer</button>
+    </div>
+    <label class="f">Prénom *</label>
+    <input id="fFirst" placeholder="Prénom">
+    <label class="f">Nom</label>
+    <input id="fLast" placeholder="Nom">
+    <label class="f">Accueil</label>
+    <select id="fSite"></select>
+    <label class="f">Date d'arrivée</label>
+    <input id="fDate" type="date">
+    <label class="f">Commentaire sur le profil</label>
+    <textarea id="fComment" placeholder="Ex. : excellent relationnel, à l'aise au standard, attention à la ponctualité…"></textarea>
+    <div class="spacer"></div><div class="spacer"></div>
+    <button class="btn primary" style="width:100%" onclick="saveHostModal()">Enregistrer</button>
+  </div>
+</div>
+
+<header class="app">
+  <div class="logo">P</div>
+  <div class="head-t">
+    <h1>Pénélope</h1>
+    <small id="todayLabel"></small>
+  </div>
+  <span id="savedTag">Enregistré</span>
+</header>
+
+<main>
+  <div id="syncStrip" class="no-print" style="display:none"></div>
+  <div id="seedBanner" class="banner" style="display:none">
+    Ce fichier contient des données incluses (<span id="seedInfo"></span>).
+    <div class="row">
+      <button class="btn small primary" onclick="loadSeed()">Charger ces données</button>
+      <button class="btn small neutral" onclick="dismissSeed()">Ignorer</button>
+    </div>
+  </div>
+
+  <!-- ================= POINTAGE ================= -->
+  <section class="view" id="view-pointage">
+    <div class="view-title">Pointage</div>
+    <div class="card">
+      <div class="datebar">
+        <b style="flex:none;font-size:14px">Jour</b>
+        <input type="date" id="checkDate">
+      </div>
+      <div class="sub" id="dayProgressText" style="margin-top:12px"></div>
+      <div class="progress"><i id="dayProgressBar" style="width:0%"></i></div>
+      <div id="allOkWrap"></div>
+    </div>
+    <div class="card" id="pointageList"></div>
+  </section>
+
+  <!-- ================= ÉQUIPE ================= -->
+  <section class="view" id="view-equipe">
+    <div class="view-title">Équipe</div>
+    <div class="row no-print" style="margin-bottom:12px">
+      <button class="btn primary grow" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>
+      <button class="btn" onclick="addSitePrompt()">Ajouter un accueil</button>
+    </div>
+    <div class="card no-print" id="searchWrap" style="display:none;padding:6px 12px;border-radius:12px">
+      <input id="hostSearch" placeholder="Rechercher un hôte, un accueil…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderEquipe()">
+    </div>
+    <div id="hostList"></div>
+    <div id="archivedBlock"></div>
+  </section>
+
+  <!-- ================= FICHE ================= -->
+  <section class="view" id="view-fiche"></section>
+
+  <!-- ================= STATS ================= -->
+  <section class="view" id="view-stats"></section>
+
+  <!-- ================= RAPPORT ================= -->
+  <section class="view" id="view-rapport">
+    <div class="view-title">Rapport</div>
+    <div class="card no-print">
+      <p class="sub" style="margin-bottom:10px">Génère un rapport de conformité à transmettre :
+      aperçu à l'écran, impression / PDF, ou export Excel.</p>
+      <select id="repPeriod" onchange="onRepPeriod()" style="margin-bottom:8px">
+        <option value="week">Cette semaine</option>
+        <option value="month" selected>Ce mois-ci</option>
+        <option value="30">30 derniers jours</option>
+        <option value="all">Depuis le début</option>
+        <option value="custom">Période personnalisée…</option>
+      </select>
+      <div class="row" id="customDates" style="display:none; margin-bottom:8px">
+        <input type="date" id="repFrom"> <input type="date" id="repTo">
+      </div>
+      <div class="row">
+        <button class="btn primary grow" onclick="buildReport(true)">Aperçu</button>
+        <button class="btn grow" onclick="printReport()">Imprimer / PDF</button>
+        <button class="btn grow" onclick="exportCSV()">Excel</button>
+      </div>
+      <p class="mutd" style="margin-top:10px">« Imprimer / PDF » ouvre la fenêtre d'impression :
+      choisis « Enregistrer en PDF » pour obtenir un fichier à envoyer.</p>
+    </div>
+    <div id="printzone"></div>
+  </section>
+
+  <!-- ================= RÉGLAGES ================= -->
+  <section class="view" id="view-reglages">
+    <div class="view-title">Réglages</div>
+    <div class="card">
+      <h2>Partager avec les responsables</h2>
+      <p class="sub" style="margin-bottom:8px">Envoie-leur le lien de l'appli et le code d'accès.
+      Tout le monde travaille sur les mêmes données, synchronisées en temps réel.</p>
+      <p class="mutd" id="appLink" style="word-break:break-all;background:var(--page);border-radius:10px;padding:9px 11px;margin-bottom:10px"></p>
+      <div class="row">
+        <button class="btn primary grow" onclick="copyLink()">Copier le lien</button>
+        <button class="btn grow" onclick="changeCode()">Changer le code</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Critères de pointage</h2>
+      <p class="sub" style="margin-bottom:8px">Les motifs proposés quand une tenue ou un comportement
+      n'est pas conforme. Ajoute ou retire les tiens — pour toute l'équipe.</p>
+      <div id="criteriaList"></div>
+      <div class="addrow">
+        <input id="newCriterion" placeholder="Nouveau critère (ex. : Posture à l'accueil)">
+        <button class="btn" onclick="addCriterion()">Ajouter</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Accueils</h2>
+      <p class="sub" style="margin-bottom:8px">Les points d'accueil de ton site (bâtiments, étages,
+      standards…). Chaque hôte peut y être rattaché.</p>
+      <div id="sitesList"></div>
+      <div class="addrow">
+        <input id="newSite" placeholder="Nouvel accueil (ex. : Evergreen — Bât. Pacific)">
+        <button class="btn" onclick="addSite()">Ajouter</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sécurité &amp; confidentialité</h2>
+      <p class="sub" style="margin-bottom:10px">Code d'accès chiffré, base verrouillée, protection
+      anti-intrusion, hébergement en France.</p>
+      <button class="btn" onclick="showSecurity()">Voir le détail des protections</button>
+    </div>
+    <div class="card">
+      <h2>Sauvegarde</h2>
+      <p class="sub" style="margin-bottom:10px">Tout est enregistré et synchronisé automatiquement.
+      Tu peux en plus télécharger une copie de secours.</p>
+      <button class="btn" style="margin-bottom:8px" onclick="exportApp()">Copie de l'appli + données</button>
+      <div class="row">
+        <button class="btn neutral grow" onclick="exportJSON()">Exporter les données</button>
+        <button class="btn neutral grow" onclick="document.getElementById('importFile').click()">Importer</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+    </div>
+    <div class="card">
+      <h2>Compte</h2>
+      <button class="btn neutral" onclick="logout()">Se déconnecter de cet appareil</button>
+    </div>
+    <div class="card">
+      <h2>Zone dangereuse</h2>
+      <button class="btn danger" onclick="wipeAll()">Tout effacer (pour toute l'équipe)</button>
+    </div>
+    <p class="mutd" style="text-align:center;margin:18px 0">Suivi Tenues — conçu pour l'équipe Pénélope</p>
+  </section>
+
+  <!-- ================= SÉCURITÉ ================= -->
+  <section class="view" id="view-securite">
+    <button class="link no-print" onclick="show('reglages')">‹ Réglages</button>
+    <div class="view-title">Sécurité</div>
+    <div class="card">
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 7.9-7 9.2C8 18.9 5 15.6 5 11V6z"/><path d="m9.2 11.8 2 2 3.6-4.2"/></svg>
+        <div><b>Accès réservé à l'équipe</b>
+        <span class="sub">L'application est protégée par un code d'accès connu des seuls responsables.
+        Sans lui, impossible de voir ou modifier quoi que ce soit.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <div><b>Code jamais stocké en clair</b>
+        <span class="sub">Le code est transformé en empreinte cryptographique (SHA-256 avec sel
+        aléatoire). Même en cas de fuite de la base, il resterait illisible.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div><b>Protection anti-intrusion</b>
+        <span class="sub">Après 8 codes erronés, l'adresse qui essaie est bloquée 15 minutes.
+        Deviner le code par force brute est impraticable.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6"/><path d="M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"/></svg>
+        <div><b>Base de données verrouillée</b>
+        <span class="sub">Aucun accès public, sous aucune forme : seul le serveur de l'application
+        peut lire ou écrire (verrouillage RLS). Audit de sécurité Supabase : aucune alerte.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><path d="M4 15a4 4 0 0 1 .8-7.9 5.5 5.5 0 0 1 10.8-1A4.5 4.5 0 0 1 19 15"/><path d="M8 19h8"/></svg>
+        <div><b>Chiffrement de bout en bout</b>
+        <span class="sub">Toutes les communications passent en HTTPS (TLS). Rien ne circule
+        en clair sur le réseau.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.2 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.2-3.8-8.5s1.3-6.2 3.8-8.5z"/></svg>
+        <div><b>Hébergé en France</b>
+        <span class="sub">Les données sont stockées à Paris (Union européenne), sur une
+        infrastructure certifiée.</span></div>
+      </div>
+      <div class="secitem">
+        <svg class="ic-s" viewBox="0 0 24 24"><path d="M9 11V8a3 3 0 0 1 6 0v3"/><rect x="6" y="11" width="12" height="9" rx="2"/></svg>
+        <div><b>Données minimales</b>
+        <span class="sub">Seuls le prénom, le nom, l'accueil et les pointages sont enregistrés —
+        rien d'autre. Usage strictement interne ; export et suppression possibles à tout moment.</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Bonnes pratiques</h3>
+      <p class="sub">Partage le code uniquement aux responsables concernés, et change-le
+      régulièrement (Réglages → « Changer le code »), par exemple à chaque départ dans l'équipe.</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-v="pointage" class="on">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.6 12.3 2.3 2.3 4.5-5"/></svg>Pointage</button>
+  <button data-v="equipe">
+    <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.6 19c.7-3 2.8-4.6 5.4-4.6s4.7 1.6 5.4 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.7 14.7c2.2.3 4 1.7 4.7 4.3"/></svg>Équipe</button>
+  <button data-v="stats">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M5 20v-6M11 20V5M17 20v-9"/><path d="M3 20h18"/></svg>Stats</button>
+  <button data-v="rapport">
+    <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Rapport</button>
+  <button data-v="reglages">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M4 7.5h16M4 12h16M4 16.5h16"/><circle cx="9.5" cy="7.5" r="1.9" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="7.5" cy="16.5" r="1.9" fill="currentColor" stroke="none"/></svg>Réglages</button>
+</nav>
+
+<div id="toast"></div>
+
+<script id="seed-data" type="application/json">null</script>
+<script>
+'use strict';
+/* Photo de la source du fichier, prise avant tout rendu : sert à régénérer
+   une copie de l'appli avec les données incluses. */
+const APP_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+const LS_KEY = 'penelope_suivi_tenues_v1';
+const DEFAULT_CRITERIA = ['Tenue non conforme','Tenue froissée / tachée','Chaussures non conformes',
+  'Coiffure / présentation','Badge manquant','Pas de bonjour / accueil froid','Manque de sourire',
+  'Téléphone personnel à l\'accueil','Retard','Comportement inapproprié','Autre'];
+const MONTHS_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+/* ---------- état ---------- */
+let state = null;
+function blankState(){ return { hosts:[], checks:{}, config:null, createdAt:new Date().toISOString() }; }
+function load(){
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
+function save(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    const t = document.getElementById('savedTag');
+    t.classList.add('on'); clearTimeout(save._t);
+    save._t = setTimeout(()=>t.classList.remove('on'), 1600);
+  }catch(e){ toast('Impossible d\'enregistrer (stockage plein ?)'); }
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function cfg(){
+  const c = state && state.config;
+  return {
+    sites: (c && Array.isArray(c.sites)) ? c.sites : [],
+    criteria: (c && Array.isArray(c.criteria) && c.criteria.length) ? c.criteria : DEFAULT_CRITERIA
+  };
+}
+function saveConfig(next){
+  state.config = { sites: next.sites, criteria: next.criteria };
+  save();
+  push('setConfig', state.config);
+}
+
+/* ---------- synchronisation ---------- */
+const SYNC_URL = 'https://ygmywdqdbsaxweykosev.supabase.co/functions/v1/app';
+const CODE_KEY = LS_KEY + '_code';
+const Q_KEY = LS_KEY + '_queue';
+let accessCode = localStorage.getItem(CODE_KEY) || null;
+let queue = []; try{ queue = JSON.parse(localStorage.getItem(Q_KEY)||'[]'); }catch(e){}
+let flushing = false, online = true;
+function saveQueue(){ try{ localStorage.setItem(Q_KEY, JSON.stringify(queue)); }catch(e){} }
+async function api(action, payload){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 15000);
+  let res;
+  try{
+    res = await fetch(SYNC_URL, { method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ code: accessCode, action, payload }),
+      signal: ctrl.signal });
+  } finally { clearTimeout(timer); }
+  const j = await res.json().catch(()=>({ ok:false, error:'bad_response' }));
+  if(!j.ok && j.error==='locked'){
+    showLogin(false);
+    document.getElementById('loginErr').textContent =
+      'Trop de tentatives — accès bloqué environ 15 minutes.';
+    throw new Error('bad_code');
+  }
+  if(!j.ok && j.error==='bad_code'){ showLogin(true); throw new Error('bad_code'); }
+  if(!j.ok) throw new Error(j.error || 'server');
+  return j.data;
+}
+function push(action, payload){
+  queue.push({ action, payload }); saveQueue(); syncUI(); flush();
+}
+/* Erreurs définitives : le serveur a refusé la modification, inutile de la
+   représenter — on l'abandonne pour ne pas bloquer la file. */
+const PERMANENT_ERRORS = ['bad_request','limit','unknown_action','code_too_short','bad_response'];
+async function flush(){
+  if(flushing || !accessCode) return; flushing = true;
+  while(queue.length){
+    const op = queue[0];
+    try{
+      await api(op.action, op.payload);
+      queue.shift(); saveQueue(); online = true;
+    }catch(e){
+      if(e.message==='bad_code') break;
+      if(PERMANENT_ERRORS.includes(e.message)){
+        queue.shift(); saveQueue();
+        toast('Une modification a été refusée par le serveur'+(e.message==='limit'?' (limite de profils atteinte)':''));
+        continue;
+      }
+      if(e.message==='server'){
+        op.tries = (op.tries||0)+1; saveQueue();
+        if(op.tries>=5){ queue.shift(); saveQueue();
+          toast('Une modification n\'a pas pu être synchronisée'); continue; }
+      }
+      online = false; break;
+    }
+  }
+  flushing = false; syncUI();
+}
+function syncUI(){
+  const el = document.getElementById('syncStrip');
+  if(!el) return;
+  if(accessCode && queue.length){
+    el.style.display = 'block';
+    el.textContent = (online ? '' : 'Hors ligne — ') + queue.length +
+      ' modification' + (queue.length>1?'s':'') + ' en attente de synchronisation';
+  } else el.style.display = 'none';
+}
+async function pullAll(){
+  if(!accessCode) return;
+  if(queue.length){ flush(); return; } // ne pas écraser des modifs locales en attente
+  try{
+    const d = await api('getAll');
+    state.hosts = (d.hosts||[]).map(h=>({ id:h.id, firstName:h.first_name,
+      lastName:h.last_name||'', site:h.site||'', comment:h.comment||'',
+      startedOn:h.started_on, createdAt:h.created_at, archivedAt:h.archived_at }));
+    const map = {};
+    (d.checks||[]).forEach(c=>{ (map[c.host_id] = map[c.host_id]||{})[c.check_date] =
+      { status:c.status, reasons:c.reasons||[], note:c.note||'', updatedAt:c.updated_at }; });
+    state.checks = map;
+    if(d.config) state.config = d.config;
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+    online = true;
+    rerenderSoft();
+  }catch(e){ if(e.message!=='bad_code') online = false; }
+  syncUI();
+}
+function rerenderSoft(){
+  const a = document.activeElement;
+  if(a && (a.tagName==='TEXTAREA' || (a.tagName==='INPUT' && (a.type==='text'||a.type==='search')))) return;
+  if(document.getElementById('hostModal').classList.contains('on')) return;
+  if(currentView==='pointage') renderPointage();
+  else if(currentView==='equipe') renderEquipe();
+  else if(currentView==='stats') renderStats();
+  else if(currentView==='reglages') renderManagers();
+  else if(currentView==='fiche'){ if(hostById(ficheId)) openFiche(ficheId); else show('equipe'); }
+}
+function showLogin(bad){
+  const ov = document.getElementById('loginOverlay');
+  ov.classList.add('on');
+  document.getElementById('loginErr').textContent = bad ? 'Code incorrect, réessaie.' : '';
+}
+async function doLogin(){
+  const c = document.getElementById('loginCode').value.trim();
+  if(!c) return;
+  accessCode = c;
+  const err = document.getElementById('loginErr');
+  err.textContent = 'Connexion…';
+  try{
+    await api('login');
+    localStorage.setItem(CODE_KEY, c);
+    document.getElementById('loginOverlay').classList.remove('on');
+    err.textContent = '';
+    flush(); await pullAll(); show(currentView); toast('Connecté');
+  }catch(e){
+    if(e.message!=='bad_code'){ accessCode = null;
+      err.textContent = 'Connexion impossible — vérifie ta connexion internet.'; }
+    else accessCode = null;
+  }
+}
+function logout(){
+  if(!confirm('Se déconnecter de cet appareil ? (les données restent sur le serveur)')) return;
+  localStorage.removeItem(CODE_KEY); accessCode = null; showLogin(false);
+}
+async function changeCode(){
+  const c = prompt("Nouveau code d'accès (8 caractères minimum, majuscules/minuscules comptent, à repartager à toute l'équipe) :");
+  if(!c || !c.trim()) return;
+  if(c.trim().length < 8){ toast('8 caractères minimum'); return; }
+  try{
+    await api('changeCode', { code: c.trim() });
+    accessCode = c.trim();
+    localStorage.setItem(CODE_KEY, accessCode);
+    toast('Nouveau code : ' + accessCode);
+  }catch(e){ toast('Impossible de changer le code'); }
+}
+function copyLink(){
+  (navigator.clipboard ? navigator.clipboard.writeText(SYNC_URL) : Promise.reject())
+    .then(()=>toast('Lien copié — envoie-le avec le code d\'accès'))
+    .catch(()=>toast('Copie impossible — recopie le lien affiché'));
+}
+
+/* ---------- dates ---------- */
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayISO(){ return iso(new Date()); }
+function frDate(isoStr){ if(!isoStr) return '—';
+  const [y,m,d] = isoStr.split('-'); return d+'/'+m+'/'+y; }
+function frDateLong(d){
+  return d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'}); }
+function addDays(isoStr,n){ const d = new Date(isoStr+'T12:00:00'); d.setDate(d.getDate()+n); return iso(d); }
+function pctTxt(p){ return p==null ? '—' : Math.round(p)+' %'; }
+
+/* ---------- accès données ---------- */
+function activeHosts(){ return state.hosts.filter(h=>!h.archivedAt)
+  .sort((a,b)=>(a.firstName+a.lastName).localeCompare(b.firstName+b.lastName,'fr')); }
+function archivedHosts(){ return state.hosts.filter(h=>h.archivedAt); }
+function hostById(id){ return state.hosts.find(h=>h.id===id); }
+function hostChecks(id){ return state.checks[id] || {}; }
+function hostName(h){ return (h.firstName+' '+(h.lastName||'')).trim(); }
+function setCheck(hostId, date, patch){
+  if(!state.checks[hostId]) state.checks[hostId] = {};
+  const cur = state.checks[hostId][date] || { status:null, reasons:[], note:'' };
+  const c = Object.assign({}, cur, patch, {updatedAt:new Date().toISOString()});
+  state.checks[hostId][date] = c;
+  save();
+  push('setCheck', { hostId, date, status:c.status, reasons:c.reasons||[], note:c.note||'' });
+}
+function clearCheck(hostId, date){
+  if(state.checks[hostId]){ delete state.checks[hostId][date]; save();
+    push('clearCheck', { hostId, date }); }
+}
+
+/* ---------- statistiques ---------- */
+function checksInRange(id, from, to){
+  const all = hostChecks(id);
+  return Object.keys(all).filter(d=>(!from||d>=from)&&(!to||d<=to)).sort()
+    .map(d=>({date:d, ...all[d]}));
+}
+function hostStats(h){
+  const list = checksInRange(h.id, null, null);
+  const total = list.length;
+  const ok = list.filter(c=>c.status==='ok').length;
+  const pct = total ? ok/total*100 : null;
+  let streak = 0;
+  for(let i=list.length-1;i>=0;i--){ if(list[i].status==='ok') streak++; else break; }
+  let best=0, run=0;
+  for(const c of list){ run = c.status==='ok' ? run+1 : 0; if(run>best) best=run; }
+  const d30 = addDays(todayISO(),-29);
+  const l30 = list.filter(c=>c.date>=d30);
+  const pct30 = l30.length ? l30.filter(c=>c.status==='ok').length/l30.length*100 : null;
+  const now = new Date();
+  const mCur = iso(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0,7);
+  const mPrev = iso(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
+  const pm = m => { const l=list.filter(c=>c.date.slice(0,7)===m);
+    return l.length ? l.filter(c=>c.status==='ok').length/l.length*100 : null; };
+  const reasons = {};
+  list.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1));
+  return { total, ok, notOk:total-ok, pct, pct30, streak, best,
+    pctCurMonth:pm(mCur), pctPrevMonth:pm(mPrev), reasons, list };
+}
+function monthly(h, n){
+  const out = []; const now = new Date();
+  for(let i=n-1;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = iso(d).slice(0,7);
+    const l = checksInRange(h.id,null,null).filter(c=>c.date.slice(0,7)===key);
+    const ok = l.filter(c=>c.status==='ok').length;
+    out.push({ label:MONTHS_FR[d.getMonth()], pct: l.length? ok/l.length*100 : null, n:l.length });
+  }
+  return out;
+}
+function teamDay(date){
+  let ok=0, ko=0;
+  for(const h of state.hosts){ const c = hostChecks(h.id)[date];
+    if(c){ if(c.status==='ok') ok++; else ko++; } }
+  return {ok, ko, total:ok+ko, pct: (ok+ko)? ok/(ok+ko)*100 : null};
+}
+function teamRange(from, to){
+  let ok=0, ko=0; const reasons={};
+  for(const h of state.hosts){
+    for(const c of checksInRange(h.id, from, to)){
+      if(c.status==='ok') ok++; else { ko++;
+        (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1); }
+    }
+  }
+  return {ok, ko, total:ok+ko, pct:(ok+ko)? ok/(ok+ko)*100 : null, reasons};
+}
+
+/* ---------- navigation ---------- */
+let currentView = 'pointage';
+let ficheId = null;
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.onclick = ()=>show(b.dataset.v);
+});
+function show(v){
+  currentView = v;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  const el = document.getElementById('view-'+v) || document.getElementById('view-fiche');
+  el.classList.add('on');
+  window.scrollTo(0,0);
+  if(v==='pointage') renderPointage();
+  if(v==='equipe') renderEquipe();
+  if(v==='stats') renderStats();
+  if(v==='reglages') renderManagers();
+}
+function showSecurity(){
+  currentView = 'securite';
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  document.getElementById('view-securite').classList.add('on');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v==='reglages'));
+  window.scrollTo(0,0);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- POINTAGE ---------- */
+const dateInput = document.getElementById('checkDate');
+dateInput.max = todayISO(); dateInput.value = todayISO();
+dateInput.onchange = renderPointage;
+
+function renderPointage(){
+  const date = dateInput.value || todayISO();
+  const hosts = activeHosts();
+  const box = document.getElementById('pointageList');
+  if(!hosts.length){
+    box.innerHTML = '<p class="sub" style="margin-bottom:12px">Aucun hôte pour l\'instant.</p>'+
+      '<button class="btn primary no-print" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>';
+  } else {
+    box.innerHTML = hosts.map(h=>{
+      const c = hostChecks(h.id)[date];
+      const st = c ? c.status : null;
+      let koZone = '';
+      if(st==='not_ok'){
+        const sel = c.reasons||[];
+        const list = cfg().criteria.slice();
+        sel.forEach(r=>{ if(!list.includes(r)) list.push(r); });
+        koZone = '<div class="kozone">'+
+          '<div class="chips">'+list.map(r=>
+            '<button class="chip'+(sel.includes(r)?' sel':'')+'" data-h="'+h.id+'" data-d="'+date+'" data-r="'+esc(r)+'">'+esc(r)+'</button>').join('')+'</div>'+
+          '<textarea placeholder="Notes du jour (détails, consigne donnée…)" '+
+            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)">'+esc(c.note||'')+'</textarea>'+
+          '</div>';
+      }
+      const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer le pointage du jour</button>' : '';
+      return '<div class="hostline">'+
+        '<div class="row">'+
+          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+
+          (h.site?'<div class="hsite">'+esc(h.site)+'</div>':'')+'</div>'+
+          '<div class="seg">'+
+            '<button class="ok'+(st==='ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'ok\')">OK</button>'+
+            '<button class="ko'+(st==='not_ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'not_ok\')">Pas OK</button>'+
+          '</div>'+
+        '</div>'+ koZone + clearLink +
+      '</div>';
+    }).join('');
+  }
+  const td = teamDay(date);
+  const n = hosts.length;
+  document.getElementById('dayProgressText').innerHTML =
+    n ? '<b>'+td.total+'/'+n+'</b> pointé'+(td.total>1?'s':'')+' — '+
+        '<span class="stat-ok">'+td.ok+' OK</span> · <span class="stat-ko">'+td.ko+' Pas OK</span>' : '';
+  document.getElementById('dayProgressBar').style.width = n ? (td.total/n*100)+'%' : '0%';
+  const rest = hosts.filter(h=>!hostChecks(h.id)[date]).length;
+  document.getElementById('allOkWrap').innerHTML = rest>0
+    ? '<button class="btn small" style="margin-top:12px" onclick="allOk()">Marquer '+
+      (rest===n ? 'tout le monde' : 'les '+rest+' restants')+' OK</button>' : '';
+}
+function allOk(){
+  const date = dateInput.value || todayISO();
+  const rest = activeHosts().filter(h=>!hostChecks(h.id)[date]);
+  if(!rest.length) return;
+  if(!confirm('Marquer '+rest.length+' hôte'+(rest.length>1?'s':'')+' comme OK pour ce jour ?')) return;
+  rest.forEach(h=>setCheck(h.id, date, { status:'ok', reasons:[], note:'' }));
+  renderPointage(); toast(rest.length+' pointage'+(rest.length>1?'s':'')+' OK');
+}
+function mark(id, date, status){
+  const c = hostChecks(id)[date];
+  if(c && c.status===status) return;
+  setCheck(id, date, { status, reasons: status==='ok'?[]:( (c&&c.reasons)||[] ),
+    note: status==='ok' ? '' : ((c&&c.note)||'') });
+  renderPointage();
+}
+function toggleReason(id, date, reason){
+  const c = hostChecks(id)[date]; if(!c) return;
+  const rs = new Set(c.reasons||[]);
+  rs.has(reason) ? rs.delete(reason) : rs.add(reason);
+  setCheck(id, date, { reasons:[...rs] });
+  renderPointage();
+}
+let noteTimer = null;
+function noteInput(id, date, ta){
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(()=>setCheck(id, date, { note: ta.value }), 450);
+}
+document.getElementById('pointageList').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip');
+  if(chip){ toggleReason(chip.dataset.h, chip.dataset.d, chip.dataset.r); return; }
+  const cl = e.target.closest('[data-clear]');
+  if(cl){ clearCheck(cl.dataset.clear, cl.dataset.d); renderPointage(); }
+});
+
+/* ---------- ÉQUIPE ---------- */
+function avatarColor(h){
+  const hues=[168,196,213,230,258,340,28,150];
+  let n=0; for(const ch of h.id) n=(n+ch.charCodeAt(0))%hues.length;
+  return 'hsl('+hues[n]+',34%,40%)';
+}
+function initials(h){ return (h.firstName[0]+(h.lastName?h.lastName[0]:'')).toUpperCase(); }
+function hostCardHTML(h){
+  const s = hostStats(h);
+  return '<button class="hostcard" onclick="openFiche(\''+h.id+'\')">'+
+    '<span class="avatar" style="background:'+avatarColor(h)+'">'+esc(initials(h))+'</span>'+
+    '<span class="grow"><span class="hname">'+esc(hostName(h))+'</span><br>'+
+    '<span class="mutd">'+
+      (s.total? s.total+' pointage'+(s.total>1?'s':''):'nouveau profil')+
+      (s.streak>=3 ? ' · '+s.streak+' j. parfaits' : '')+'</span></span>'+
+    '<span class="pctbadge" style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':(s.pct>=60?'var(--ink2)':'var(--bad)')))+'">'+pctTxt(s.pct)+'</span>'+
+  '</button>';
+}
+function renderEquipe(){
+  const box = document.getElementById('hostList');
+  const all = activeHosts();
+  document.getElementById('searchWrap').style.display = all.length>=8 ? 'block' : 'none';
+  const q = (document.getElementById('hostSearch').value||'').trim().toLowerCase();
+  const hosts = q ? all.filter(h=>(hostName(h)+' '+(h.site||'')).toLowerCase().includes(q)) : all;
+
+  if(!hosts.length){
+    box.innerHTML = '<div class="card"><p class="sub">'+(q
+      ? 'Aucun résultat pour « '+esc(q)+' ».'
+      : 'Ajoute ta première personne avec le bouton ci-dessus.')+'</p></div>';
+  } else {
+    // regroupement par accueil : ceux de la config d'abord, puis les autres, puis sans accueil
+    const groups = [];
+    const seen = new Set();
+    cfg().sites.forEach(s=>{ groups.push([s, hosts.filter(h=>h.site===s)]); seen.add(s); });
+    const extra = [...new Set(hosts.map(h=>h.site).filter(s=>s && !seen.has(s)))].sort();
+    extra.forEach(s=>groups.push([s, hosts.filter(h=>h.site===s)]));
+    const none = hosts.filter(h=>!h.site);
+    if(none.length) groups.push(['Sans accueil', none]);
+    box.innerHTML = groups.filter(g=>g[1].length).map(([site, list])=>
+      '<div class="grouphead"><b>'+esc(site)+'</b><span class="mutd">'+list.length+'</span></div>'+
+      list.map(hostCardHTML).join('')
+    ).join('');
+  }
+
+  const arch = archivedHosts();
+  document.getElementById('archivedBlock').innerHTML = arch.length ?
+    '<div class="card" style="margin-top:14px"><details><summary style="cursor:pointer;font-weight:600;color:var(--ink2)">Archivés ('+arch.length+')</summary><div class="spacer"></div>'+
+    arch.map(h=>'<div class="row" style="padding:7px 0"><span class="grow" style="font-size:14px">'+esc(hostName(h))+
+      ' <span class="mutd">· parti(e) le '+frDate(h.archivedAt.slice(0,10))+'</span></span>'+
+      '<button class="btn small" onclick="unarchiveHost(\''+h.id+'\')">Réintégrer</button>'+
+      '<button class="btn small danger" onclick="deleteHost(\''+h.id+'\')">Suppr.</button></div>').join('')+
+    '</details></div>' : '';
+}
+
+/* ---------- modal hôte (ajout / modification) ---------- */
+let modalHostId = null;
+function fillSiteSelect(current){
+  const sel = document.getElementById('fSite');
+  const sites = cfg().sites.slice();
+  if(current && !sites.includes(current)) sites.push(current);
+  sel.innerHTML = '<option value="">— Aucun accueil —</option>'+
+    sites.map(s=>'<option value="'+esc(s)+'"'+(s===current?' selected':'')+'>'+esc(s)+'</option>').join('');
+}
+function openHostModal(id){
+  modalHostId = id;
+  const h = id ? hostById(id) : null;
+  document.getElementById('sheetTitle').textContent = h ? 'Modifier le profil' : 'Nouvel hôte / hôtesse';
+  document.getElementById('fFirst').value = h ? h.firstName : '';
+  document.getElementById('fLast').value = h ? (h.lastName||'') : '';
+  fillSiteSelect(h ? (h.site||'') : (cfg().sites[0]||''));
+  document.getElementById('fDate').value = h ? (h.startedOn||todayISO()) : todayISO();
+  document.getElementById('fComment').value = h ? (h.comment||'') : '';
+  document.getElementById('hostModal').classList.add('on');
+  setTimeout(()=>document.getElementById('fFirst').focus(), 60);
+}
+function closeHostModal(){ document.getElementById('hostModal').classList.remove('on'); modalHostId = null; }
+document.getElementById('hostModal').addEventListener('click', e=>{
+  if(e.target.id==='hostModal') closeHostModal();
+});
+function saveHostModal(){
+  const first = document.getElementById('fFirst').value.trim();
+  if(!first){ toast('Le prénom est obligatoire'); return; }
+  const fields = {
+    firstName:first,
+    lastName:document.getElementById('fLast').value.trim(),
+    site:document.getElementById('fSite').value,
+    startedOn:document.getElementById('fDate').value || todayISO(),
+    comment:document.getElementById('fComment').value.trim()
+  };
+  if(modalHostId){
+    const h = hostById(modalHostId);
+    Object.assign(h, fields);
+    save(); push('updateHost', h);
+    closeHostModal();
+    if(currentView==='fiche') openFiche(h.id); else renderEquipe();
+    toast('Profil mis à jour');
+  } else {
+    const nh = Object.assign({ id:uid(), createdAt:new Date().toISOString(), archivedAt:null }, fields);
+    state.hosts.push(nh);
+    save(); push('addHost', nh);
+    closeHostModal(); renderEquipe();
+    toast(first+' — profil créé');
+  }
+}
+function archiveHost(id){
+  const h = hostById(id);
+  if(!confirm('Archiver '+hostName(h)+' ?\nSon historique et ses stats sont conservés ; la personne pourra être réintégrée plus tard.')) return;
+  h.archivedAt = new Date().toISOString(); save(); push('updateHost', h); show('equipe');
+}
+function unarchiveHost(id){ const h = hostById(id); h.archivedAt = null; save();
+  push('updateHost', h); renderEquipe(); toast('Profil réintégré'); }
+function deleteHost(id){
+  const h = hostById(id);
+  if(!confirm('Supprimer DÉFINITIVEMENT '+hostName(h)+' ?\nTout son historique sera perdu. (Astuce : « Archiver » suffit dans la plupart des cas.)')) return;
+  if(!confirm('Dernière confirmation : suppression définitive de '+hostName(h)+' ?')) return;
+  state.hosts = state.hosts.filter(x=>x.id!==id);
+  delete state.checks[id]; save(); push('deleteHost', { id }); show('equipe');
+}
+function saveHostComment(id, value){
+  const h = hostById(id); if(!h) return;
+  if((h.comment||'') === value.trim()) return;
+  h.comment = value.trim();
+  save(); push('updateHost', h);
+}
+
+/* ---------- accueils & critères ---------- */
+function addSitePrompt(){
+  const name = prompt('Nom du nouvel accueil (ex. : Evergreen — Bât. Pacific) :');
+  if(!name || !name.trim()) return;
+  const c = cfg();
+  if(c.sites.includes(name.trim())){ toast('Cet accueil existe déjà'); return; }
+  saveConfig({ sites:[...c.sites, name.trim()], criteria:c.criteria });
+  renderEquipe(); toast('Accueil ajouté');
+}
+function addSite(){
+  const inp = document.getElementById('newSite');
+  const name = inp.value.trim(); if(!name) return;
+  const c = cfg();
+  if(c.sites.includes(name)){ toast('Cet accueil existe déjà'); return; }
+  saveConfig({ sites:[...c.sites, name], criteria:c.criteria });
+  inp.value=''; renderManagers(); toast('Accueil ajouté');
+}
+function removeSite(i){
+  const c = cfg();
+  const name = c.sites[i];
+  if(!confirm('Retirer l\'accueil « '+name+' » de la liste ?\nLes hôtes qui y sont rattachés le gardent en libellé.')) return;
+  saveConfig({ sites:c.sites.filter((_,j)=>j!==i), criteria:c.criteria });
+  renderManagers();
+}
+function addCriterion(){
+  const inp = document.getElementById('newCriterion');
+  const name = inp.value.trim(); if(!name) return;
+  const c = cfg();
+  if(c.criteria.includes(name)){ toast('Ce critère existe déjà'); return; }
+  saveConfig({ sites:c.sites, criteria:[...c.criteria, name] });
+  inp.value=''; renderManagers(); toast('Critère ajouté');
+}
+function removeCriterion(i){
+  const c = cfg();
+  const name = c.criteria[i];
+  if(!confirm('Retirer le critère « '+name+' » ?\nL\'historique déjà pointé le conserve.')) return;
+  saveConfig({ sites:c.sites, criteria:c.criteria.filter((_,j)=>j!==i) });
+  renderManagers();
+}
+function renderManagers(){
+  const c = cfg();
+  document.getElementById('criteriaList').innerHTML = c.criteria.map((r,i)=>
+    '<div class="mrow"><span>'+esc(r)+'</span><button onclick="removeCriterion('+i+')">Retirer</button></div>').join('')
+    || '<p class="mutd">Aucun critère — ajoute-en ci-dessous.</p>';
+  document.getElementById('sitesList').innerHTML = c.sites.map((s,i)=>
+    '<div class="mrow"><span>'+esc(s)+'</span><button onclick="removeSite('+i+')">Retirer</button></div>').join('')
+    || '<p class="mutd">Aucun accueil pour l\'instant.</p>';
+}
+
+/* ---------- FICHE ---------- */
+function barChart(data){
+  const has = data.some(d=>d.pct!=null);
+  if(!has) return '<p class="mutd">Pas encore de pointages sur cette période.</p>';
+  return '<div class="bars">'+data.map(d=>{
+    const h = d.pct==null ? 0 : Math.max(4, d.pct*0.92);
+    return '<div class="bar" title="'+(d.pct==null?'aucun pointage':Math.round(d.pct)+' % ('+d.n+' pointages)')+'">'+
+      '<span class="v">'+(d.pct==null?'':Math.round(d.pct)+'%')+'</span>'+
+      '<i class="'+(d.pct==null?'empty':'')+'" style="height:'+h+'%"></i>'+
+      '<span class="l">'+esc(d.label)+'</span></div>';
+  }).join('')+'</div>';
+}
+function reasonBars(reasons){
+  const entries = Object.entries(reasons).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return '<p class="mutd">Aucun motif enregistré.</p>';
+  const max = entries[0][1];
+  return '<div class="hbars">'+entries.map(([r,n])=>
+    '<div class="hb"><span class="lab" title="'+esc(r)+'">'+esc(r)+'</span>'+
+    '<span class="trk"><i style="width:'+(n/max*100)+'%"></i></span>'+
+    '<span class="n">'+n+'</span></div>').join('')+'</div>';
+}
+function openFiche(id){
+  const h = hostById(id); if(!h) return;
+  ficheId = id; currentView = 'fiche';
+  const s = hostStats(h);
+  let trend = '';
+  if(s.pctCurMonth!=null && s.pctPrevMonth!=null){
+    const d = s.pctCurMonth - s.pctPrevMonth;
+    trend = d>=2 ? '<span class="trend up">▲ +'+Math.round(d)+' pts vs mois dernier</span>'
+      : d<=-2 ? '<span class="trend down">▼ '+Math.round(d)+' pts vs mois dernier</span>'
+      : '<span class="trend" style="color:var(--muted)">stable vs mois dernier</span>';
+  }
+  const hist = [...s.list].reverse().slice(0,30).map(c=>
+    '<div class="histline"><span class="'+(c.status==='ok'?'stat-ok':'stat-ko')+'">'+
+    (c.status==='ok'?'OK':'Pas OK')+'</span> — '+frDate(c.date)+
+    (c.status==='not_ok'&&(c.reasons||[]).length ? '<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
+    (c.note ? '<div class="notebox">'+esc(c.note)+'</div>':'')+
+    '</div>').join('');
+
+  document.getElementById('view-fiche').innerHTML =
+    '<button class="link no-print" onclick="show(\'equipe\')">‹ Équipe</button>'+
+    '<div class="card"><div class="row">'+
+      '<span class="avatar" style="background:'+avatarColor(h)+';width:48px;height:48px;font-size:17px">'+esc(initials(h))+'</span>'+
+      '<div class="grow"><h2 style="margin:0">'+esc(hostName(h))+'</h2>'+
+      '<span class="mutd">'+(h.site?esc(h.site)+' · ':'')+'profil créé le '+frDate(h.startedOn)+'</span></div>'+
+      '<button class="btn small" onclick="openHostModal(\''+h.id+'\')">Modifier</button>'+
+    '</div></div>'+
+    '<div class="tiles">'+
+      '<div class="tile"><span>Parfait depuis la création</span><b style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':'var(--ink)'))+'">'+pctTxt(s.pct)+'</b>'+trend+'</div>'+
+      '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(s.pct30)+'</b></div>'+
+      '<div class="tile"><span>Série en cours</span><b>'+s.streak+' j.</b><span class="mutd">record : '+s.best+'</span></div>'+
+      '<div class="tile"><span>Pointages</span><b>'+s.total+'</b><span class="mutd">'+s.notOk+' incident'+(s.notOk>1?'s':'')+'</span></div>'+
+    '</div>'+
+    '<div class="card"><h3>Commentaire sur le profil</h3>'+
+      '<textarea id="ficheComment" placeholder="Note libre sur '+esc(h.firstName)+' (relationnel, points forts, points de vigilance…)" '+
+      'onblur="saveHostComment(\''+h.id+'\', this.value)">'+esc(h.comment||'')+'</textarea>'+
+      '<p class="mutd" style="margin-top:6px">Visible par toute l\'équipe encadrante, enregistré automatiquement.</p></div>'+
+    '<div class="card"><h3>Évolution — 6 derniers mois</h3>'+barChart(monthly(h,6))+'</div>'+
+    '<div class="card"><h3>Motifs de non-conformité</h3>'+reasonBars(s.reasons)+'</div>'+
+    '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun pointage pour l\'instant.</p>')+'</div>'+
+    '<div class="card no-print"><div class="row">'+
+      (h.archivedAt
+        ? '<button class="btn grow" onclick="unarchiveHost(\''+h.id+'\');openFiche(\''+h.id+'\')">Réintégrer</button>'
+        : '<button class="btn grow" onclick="archiveHost(\''+h.id+'\')">Archiver</button>')+
+      '<button class="btn danger grow" onclick="deleteHost(\''+h.id+'\')">Supprimer</button>'+
+    '</div></div>';
+  document.querySelectorAll('.view').forEach(s2=>s2.classList.remove('on'));
+  document.getElementById('view-fiche').classList.add('on');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v==='equipe'));
+  window.scrollTo(0,0);
+}
+
+/* ---------- STATS ---------- */
+function renderStats(){
+  const hosts = activeHosts();
+  const box = document.getElementById('view-stats');
+  const title = '<div class="view-title">Statistiques</div>';
+  if(!hosts.length && !archivedHosts().length){
+    box.innerHTML = title+'<div class="card"><p class="sub">Ajoute des hôtes et fais tes premiers pointages pour voir les statistiques.</p></div>';
+    return;
+  }
+  const today = teamDay(todayISO());
+  const t7 = teamRange(addDays(todayISO(),-6), todayISO());
+  const t30 = teamRange(addDays(todayISO(),-29), todayISO());
+  const tAll = teamRange(null, null);
+
+  const days = [];
+  for(let i=13;i>=0;i--){
+    const d = addDays(todayISO(),-i);
+    const td = teamDay(d);
+    const dd = new Date(d+'T12:00:00');
+    days.push({label:String(dd.getDate()), pct:td.pct, n:td.total});
+  }
+
+  const rank = hosts.map(h=>({h, s:hostStats(h)})).filter(x=>x.s.total>0)
+    .sort((a,b)=>(b.s.pct-a.s.pct)||(b.s.total-a.s.total));
+  const watch = rank.filter(x=>x.s.total>=3 && x.s.pct30!=null && x.s.pct30<70);
+
+  box.innerHTML = title+
+    '<div class="tiles">'+
+      '<div class="tile"><span>Aujourd\'hui</span><b>'+(today.total? today.ok+'/'+today.total:'—')+'</b><span class="mutd">tenues OK</span></div>'+
+      '<div class="tile"><span>7 derniers jours</span><b>'+pctTxt(t7.pct)+'</b></div>'+
+      '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(t30.pct)+'</b></div>'+
+      '<div class="tile"><span>Depuis le début</span><b>'+pctTxt(tAll.pct)+'</b><span class="mutd">'+tAll.total+' pointages</span></div>'+
+    '</div>'+
+    '<div class="card"><h3>Conformité de l\'équipe — 14 derniers jours</h3>'+barChart(days)+'</div>'+
+    '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
+    (watch.length ? '<div class="card"><h3>À surveiller — moins de 70 % sur 30 j.</h3>'+
+      watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
+      '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
+    '<div class="card"><h3>Classement — % parfait depuis la création</h3>'+
+      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>%</th><th>Pointages</th><th>Série</th></tr>'+
+      rank.map((x,i)=>'<tr><td style="color:var(--muted)">'+(i+1)+'</td>'+
+        '<td>'+esc(hostName(x.h))+'</td><td><b>'+pctTxt(x.s.pct)+'</b></td>'+
+        '<td>'+x.s.total+'</td><td>'+x.s.streak+' j.</td></tr>').join('')+'</table></div>'
+      : '<p class="mutd">Aucun pointage pour l\'instant.</p>')+
+    '</div>';
+}
+
+/* ---------- RAPPORT ---------- */
+function onRepPeriod(){
+  document.getElementById('customDates').style.display =
+    document.getElementById('repPeriod').value==='custom' ? 'flex':'none';
+}
+function reportRange(){
+  const v = document.getElementById('repPeriod').value;
+  const t = todayISO(); const now = new Date();
+  if(v==='week'){ const dow=(now.getDay()+6)%7; return [addDays(t,-dow), t, 'Semaine en cours']; }
+  if(v==='month'){ return [t.slice(0,8)+'01', t, 'Mois en cours']; }
+  if(v==='30'){ return [addDays(t,-29), t, '30 derniers jours']; }
+  if(v==='custom'){
+    const f=document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
+    if(!f||!to){ toast('Choisis les deux dates'); return null; }
+    return [f, to, 'Du '+frDate(f)+' au '+frDate(to)];
+  }
+  return [null, t, 'Depuis le début'];
+}
+function buildReport(preview){
+  const r = reportRange(); if(!r) return null;
+  const [from, to, label] = r;
+  const team = teamRange(from, to);
+  const hosts = [...activeHosts(), ...archivedHosts()];
+  const rows = hosts.map(h=>{
+    const l = checksInRange(h.id, from, to);
+    if(!l.length) return null;
+    const ok = l.filter(c=>c.status==='ok').length;
+    const rs = {};
+    l.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(x=>rs[x]=(rs[x]||0)+1));
+    const top = Object.entries(rs).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]).join(', ');
+    return { h, n:l.length, ok, ko:l.length-ok, pct:ok/l.length*100, top, list:l };
+  }).filter(Boolean).sort((a,b)=>b.pct-a.pct);
+
+  const incidents = [];
+  rows.forEach(r2=>r2.list.filter(c=>c.status==='not_ok').forEach(c=>
+    incidents.push({name:hostName(r2.h), ...c})));
+  incidents.sort((a,b)=>b.date.localeCompare(a.date));
+
+  document.getElementById('printzone').innerHTML =
+    '<div class="card"><div class="row">'+
+    '<div class="logo" style="width:42px;height:42px;font-size:19px">P</div>'+
+    '<div class="grow"><h2 style="margin:0">Pénélope · Suivi Tenues</h2>'+
+    '<span class="sub">Rapport de conformité — '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
+    '<div class="spacer"></div>'+
+    '<p><b>'+team.total+'</b> pointages · <b class="stat-ok">'+team.ok+' OK</b> · '+
+    '<b class="stat-ko">'+team.ko+' Pas OK</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
+    '<div class="card"><h3>Détail par personne</h3>'+
+    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Pointages</th><th>OK</th><th>Pas OK</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
+      rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
+      '<td>'+esc(r2.h.site||'—')+'</td>'+
+      '<td>'+r2.n+'</td><td>'+r2.ok+'</td><td>'+r2.ko+'</td><td><b>'+pctTxt(r2.pct)+'</b></td>'+
+      '<td>'+pctTxt(hostStats(r2.h).pct)+'</td>'+
+      '<td>'+esc(r2.top||'—')+'</td></tr>').join('')+'</table></div>'
+      : '<p class="mutd">Aucun pointage sur cette période.</p>')+'</div>'+
+    (incidents.length ? '<div class="card"><h3>Détail des non-conformités</h3>'+
+      incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> — '+frDate(c.date)+
+      ((c.reasons||[]).length?'<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
+      (c.note?'<div class="notebox">'+esc(c.note)+'</div>':'')+'</div>').join('')+'</div>' : '')+
+    '<div class="card"><p class="sub">Document interne Pénélope — données confidentielles.</p>'+
+    '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
+  if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
+  return {from, to, label};
+}
+function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 100); }
+function exportCSV(){
+  const r = reportRange(); if(!r) return;
+  const [from, to] = r;
+  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Motifs'+sep+'Note'];
+  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  for(const h of state.hosts){
+    for(const c of checksInRange(h.id, from, to)){
+      lines.push([frDate(c.date), q(h.firstName), q(h.lastName||''), q(h.site||''),
+        c.status==='ok'?'OK':'Pas OK', q((c.reasons||[]).join(', ')), q(c.note||'')].join(sep));
+    }
+  }
+  if(lines.length===1){ toast('Aucun pointage sur cette période'); return; }
+  download(String.fromCharCode(65279)+lines.join('\r\n'), 'suivi-tenues-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  toast('Fichier Excel téléchargé');
+}
+
+/* ---------- partage / sauvegarde ---------- */
+function download(content, filename, type){
+  const blob = new Blob([content], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+}
+const SEED_RE = /<script id="seed-data" type="application\/json">[\s\S]*?<\/script/;
+function exportApp(){
+  const data = JSON.stringify(Object.assign({}, state, {exportedAt:new Date().toISOString()}))
+    .replace(/<\//g,'<\\/');
+  const out = APP_SOURCE.replace(SEED_RE,
+    ()=>'<script id="seed-data" type="application/json">'+data+'<\/script');
+  download(out, 'suivi-tenues-penelope-'+todayISO()+'.html', 'text/html;charset=utf-8');
+  toast('Appli + données téléchargées');
+}
+function exportJSON(){
+  download(JSON.stringify(Object.assign({}, state, {exportedAt:new Date().toISOString()}), null, 1),
+    'sauvegarde-suivi-tenues-'+todayISO()+'.json', 'application/json');
+  toast('Sauvegarde téléchargée');
+}
+function importJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const d = JSON.parse(rd.result);
+      if(!Array.isArray(d.hosts)) throw 0;
+      if(!confirm('Remplacer les données actuelles par celles du fichier ('+d.hosts.length+' profils) ?\nCe remplacement vaudra pour TOUTE l\'équipe (synchronisé).')) return;
+      state = { hosts:d.hosts, checks:d.checks||{}, config:d.config||state.config,
+        createdAt:d.createdAt||new Date().toISOString() };
+      save(); push('importAll', { hosts:state.hosts, checks:state.checks });
+      if(state.config) push('setConfig', state.config);
+      show('pointage'); toast('Données importées');
+    }catch(e){ toast('Fichier non reconnu'); }
+  };
+  rd.readAsText(f); input.value='';
+}
+function wipeAll(){
+  if(!confirm('Tout effacer POUR TOUTE L\'ÉQUIPE ? Tous les profils et pointages seront perdus, sur tous les appareils.')) return;
+  if(!confirm('Vraiment sûr(e) ? Cette action est irréversible.\n(Astuce : exporte une sauvegarde avant.)')) return;
+  const keptConfig = state.config;
+  state = blankState(); state.config = keptConfig;
+  save(); push('wipeAll', {});
+  show('pointage'); toast('Données effacées');
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), 2400);
+}
+
+/* ---------- données incluses dans le fichier (seed) ---------- */
+let seed = null;
+try{ seed = JSON.parse(document.getElementById('seed-data').textContent); }catch(e){}
+function loadSeed(){
+  if(!confirm('Charger les données incluses dans ce fichier ?\nElles remplaceront les données actuelles pour TOUTE l\'équipe (synchronisé).')) return;
+  state = { hosts:seed.hosts||[], checks:seed.checks||{}, config:seed.config||state.config,
+    createdAt:seed.createdAt||new Date().toISOString() };
+  save(); push('importAll', { hosts:state.hosts, checks:state.checks });
+  if(state.config) push('setConfig', state.config);
+  dismissSeed(); show('pointage'); toast('Données du fichier chargées');
+}
+function dismissSeed(){ document.getElementById('seedBanner').style.display='none'; }
+
+/* ---------- démarrage ---------- */
+let lastToday = todayISO();
+function ensureToday(){
+  const t = todayISO();
+  if(t !== lastToday){
+    if(dateInput.value === lastToday) dateInput.value = t;
+    dateInput.max = t; lastToday = t;
+    document.getElementById('todayLabel').textContent =
+      frDateLong(new Date()).replace(/^./, c=>c.toUpperCase());
+    rerenderSoft();
+  }
+}
+(function init(){
+  const local = load();
+  if(local){ state = local; if(!('config' in state)) state.config = null; }
+  else if(seed && Array.isArray(seed.hosts) && !accessCode){
+    state = { hosts:seed.hosts||[], checks:seed.checks||{}, config:seed.config||null,
+      createdAt:seed.createdAt||new Date().toISOString() };
+    save();
+  } else {
+    state = blankState();
+  }
+  if(seed && Array.isArray(seed.hosts) && (local || accessCode)){
+    document.getElementById('seedInfo').textContent =
+      seed.hosts.length+' profils, export du '+(seed.exportedAt?frDate(seed.exportedAt.slice(0,10)):'?');
+    document.getElementById('seedBanner').style.display='block';
+  }
+  const now = new Date();
+  document.getElementById('todayLabel').textContent =
+    frDateLong(now).replace(/^./, c=>c.toUpperCase());
+  document.getElementById('appLink').textContent = SYNC_URL;
+  document.getElementById('loginCode').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  show('pointage');
+  syncUI();
+  if(!accessCode) showLogin(false);
+  else { flush(); pullAll(); }
+  setInterval(()=>{ ensureToday(); pullAll(); }, 45000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); pullAll(); } });
+  window.addEventListener('online', flush);
+})();
+</script>
+</body>
+</html>
