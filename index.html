@@ -272,6 +272,38 @@
   .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px }
   .sheet-head h2{ margin:0 }
 
+  /* ---------- micro-interactions ---------- */
+  .view.on{ animation: viewIn .24s ease-out }
+  @keyframes viewIn{ from{ opacity:0; transform:translateY(7px) } }
+  .btn, .seg button, .link, .ptile, .hostcard, nav.tabs button, .mrow button{
+    transition: background-color .16s, color .16s, transform .12s, box-shadow .16s, filter .16s }
+  .btn:hover{ filter:brightness(1.04) }
+  .btn.primary:hover{ filter:brightness(1.1) }
+  .btn:active, .seg button:active, .ptile:active{ transform:scale(.96) }
+  .hostcard:hover{ transform:translateY(-1px); box-shadow:0 3px 12px rgba(0,0,0,.09) }
+  .hostcard:active{ transform:scale(.985) }
+  .ptile .pavatar{ transition: transform .16s }
+  .ptile:hover .pavatar{ transform:scale(1.07) }
+  nav.tabs button .ic{ transition: transform .18s }
+  nav.tabs button.on .ic{ transform:translateY(-1px) scale(1.12) }
+  .bar i{ transform-origin:bottom; animation: rise .5s ease-out }
+  @keyframes rise{ from{ transform:scaleY(0) } }
+  .hbars .hb .trk i{ transform-origin:left; animation: slide .55s ease-out }
+  @keyframes slide{ from{ transform:scaleX(0) } }
+  .ring{ animation: pop .32s ease-out }
+  @keyframes pop{ from{ opacity:0; transform:scale(.86) } }
+  #hostModal.on{ animation: fadeIn .2s }
+  #hostModal.on #hostSheet{ animation: sheetUp .3s cubic-bezier(.2,.8,.25,1) }
+  @keyframes sheetUp{ from{ transform:translateY(48px); opacity:.5 } }
+  @keyframes fadeIn{ from{ opacity:0 } }
+  #loginOverlay.on > *, #profileOverlay.on > *{ animation: viewIn .32s ease-out }
+  .kozone{ animation: viewIn .2s ease-out }
+  #toast{ transform:translateX(-50%) translateY(8px); transition: opacity .25s, transform .25s }
+  #toast.on{ transform:translateX(-50%) translateY(0) }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation:none !important; transition:none !important }
+  }
+
   /* ---------- impression ---------- */
   @media print{
     body{ padding:0; background:#fff; color:#000 }
@@ -711,6 +743,27 @@ function frDateLong(d){
   return d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'}); }
 function addDays(isoStr,n){ const d = new Date(isoStr+'T12:00:00'); d.setDate(d.getDate()+n); return iso(d); }
 function pctTxt(p){ return p==null ? '—' : Math.round(p)+' %'; }
+function checkScore(c){
+  const vals = Object.values(c.items||{});
+  if(vals.length) return Math.round(vals.filter(v=>v && v.ok!==false).length / vals.length * 100);
+  return c.status==='ok' ? 100 : 0;
+}
+function rateLabel(p){
+  if(p==null) return '';
+  if(p>=100) return 'Parfait';
+  if(p>=90) return 'Très bien';
+  if(p>=75) return 'Bien';
+  if(p>=60) return 'Moyen';
+  return 'À surveiller';
+}
+function rateColor(p){
+  if(p==null) return 'var(--muted)';
+  if(p>=90) return 'var(--ok-text)';
+  if(p>=75) return '#96720a';
+  if(p>=60) return '#c05a11';
+  return 'var(--bad)';
+}
+function avgOf(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
 
 /* ---------- accès données ---------- */
 function activeHosts(){ return state.hosts.filter(h=>!h.archivedAt)
@@ -750,25 +803,24 @@ function checksInRange(id, from, to){
 }
 function hostStats(h){
   const list = checksInRange(h.id, null, null);
+  const scores = list.map(checkScore);
   const total = list.length;
-  const ok = list.filter(c=>c.status==='ok').length;
-  const pct = total ? ok/total*100 : null;
+  const pct = avgOf(scores);
   let streak = 0;
-  for(let i=list.length-1;i>=0;i--){ if(list[i].status==='ok') streak++; else break; }
+  for(let i=scores.length-1;i>=0;i--){ if(scores[i]===100) streak++; else break; }
   let best=0, run=0;
-  for(const c of list){ run = c.status==='ok' ? run+1 : 0; if(run>best) best=run; }
+  for(const sc of scores){ run = sc===100 ? run+1 : 0; if(run>best) best=run; }
   const d30 = addDays(todayISO(),-29);
-  const l30 = list.filter(c=>c.date>=d30);
-  const pct30 = l30.length ? l30.filter(c=>c.status==='ok').length/l30.length*100 : null;
+  const pct30 = avgOf(list.map((c,i)=>({c,sc:scores[i]})).filter(x=>x.c.date>=d30).map(x=>x.sc));
   const now = new Date();
   const mCur = iso(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0,7);
   const mPrev = iso(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
-  const pm = m => { const l=list.filter(c=>c.date.slice(0,7)===m);
-    return l.length ? l.filter(c=>c.status==='ok').length/l.length*100 : null; };
+  const pm = m => avgOf(list.map((c,i)=>({c,sc:scores[i]}))
+    .filter(x=>x.c.date.slice(0,7)===m).map(x=>x.sc));
   const reasons = {};
   list.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1));
-  return { total, ok, notOk:total-ok, pct, pct30, streak, best,
-    pctCurMonth:pm(mCur), pctPrevMonth:pm(mPrev), reasons, list };
+  return { total, notOk:scores.filter(x=>x<100).length, pct, pct30, streak, best,
+    pctCurMonth:pm(mCur), pctPrevMonth:pm(mPrev), reasons, list, scores };
 }
 function monthly(h, n){
   const out = []; const now = new Date();
@@ -776,26 +828,24 @@ function monthly(h, n){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const key = iso(d).slice(0,7);
     const l = checksInRange(h.id,null,null).filter(c=>c.date.slice(0,7)===key);
-    const ok = l.filter(c=>c.status==='ok').length;
-    out.push({ label:MONTHS_FR[d.getMonth()], pct: l.length? ok/l.length*100 : null, n:l.length });
+    out.push({ label:MONTHS_FR[d.getMonth()], pct: avgOf(l.map(checkScore)), n:l.length });
   }
   return out;
 }
 function teamDay(date){
-  let ok=0, ko=0;
-  for(const h of state.hosts){ const c = hostChecks(h.id)[date];
-    if(c){ if(c.status==='ok') ok++; else ko++; } }
-  return {ok, ko, total:ok+ko, pct: (ok+ko)? ok/(ok+ko)*100 : null};
+  const scores = [];
+  for(const h of state.hosts){ const c = hostChecks(h.id)[date]; if(c) scores.push(checkScore(c)); }
+  return { total:scores.length, pct: avgOf(scores) };
 }
 function teamRange(from, to){
-  let ok=0, ko=0; const reasons={};
+  const scores = []; const reasons = {};
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
-      if(c.status==='ok') ok++; else { ko++;
-        (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1); }
+      scores.push(checkScore(c));
+      if(c.status==='not_ok') (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1);
     }
   }
-  return {ok, ko, total:ok+ko, pct:(ok+ko)? ok/(ok+ko)*100 : null, reasons};
+  return { total:scores.length, pct: avgOf(scores), reasons };
 }
 
 /* ---------- navigation ---------- */
@@ -846,7 +896,10 @@ function renderPointage(){
         const items = (c && c.items) || {};
         const list = cfg().criteria.slice();
         Object.keys(items).forEach(r=>{ if(!list.includes(r)) list.push(r); });
+        const liveScore = c ? checkScore(c) : null;
         detail = '<div class="kozone">'+
+          (c ? '<div class="critrow" style="border-top:none"><span class="cl"><b>Note du jour</b></span>'+
+            '<b style="color:'+rateColor(liveScore)+'">'+Math.round(liveScore)+' % · '+rateLabel(liveScore)+'</b></div>' : '')+
           list.map(r=>{
             const it = items[r];
             const isOk = it ? it.ok !== false : true;
@@ -870,14 +923,15 @@ function renderPointage(){
           '</div>';
       }
       const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer la note du jour</button>' : '';
+      const sc = c ? checkScore(c) : null;
+      const scoreLine = c ? '<div class="hsite"><b style="color:'+rateColor(sc)+'">'+
+        Math.round(sc)+' % · '+rateLabel(sc)+'</b></div>' : '';
       return '<div class="hostline">'+
         '<div class="row">'+
-          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+
-          (st==='not_ok' ? '<div class="hsite stat-ko">'+c.reasons.length+' point'+(c.reasons.length>1?'s':'')+' signalé'+(c.reasons.length>1?'s':'')+'</div>' : '')+
-          '</div>'+
+          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+scoreLine+'</div>'+
           '<div class="seg">'+
-            '<button class="ok'+(st==='ok'?' sel':'')+'" onclick="markConforme(\''+h.id+'\',\''+date+'\')">Conforme</button>'+
-            '<button class="ko'+(showDetail?' sel':'')+'" onclick="openDetail(\''+h.id+'\',\''+date+'\')">Détailler</button>'+
+            '<button class="ok'+(sc===100?' sel':'')+'" onclick="markConforme(\''+h.id+'\',\''+date+'\')">Parfait</button>'+
+            '<button class="ko'+(showDetail?' sel':'')+'" onclick="openDetail(\''+h.id+'\',\''+date+'\')">Évaluer</button>'+
           '</div>'+
         '</div>'+ detail + clearLink +
       '</div>';
@@ -889,8 +943,9 @@ function renderPointage(){
   const td = teamDay(date);
   const n = hosts.length;
   document.getElementById('dayProgressText').innerHTML =
-    n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+' : '+
-        '<span class="stat-ok">'+td.ok+' conforme'+(td.ok>1?'s':'')+'</span> · <span class="stat-ko">'+td.ko+' non conforme'+(td.ko>1?'s':'')+'</span>' : '';
+    n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+
+        (td.pct!=null ? ' · moyenne <b style="color:'+rateColor(td.pct)+'">'+
+          Math.round(td.pct)+' % · '+rateLabel(td.pct)+'</b>' : '') : '';
   document.getElementById('dayProgressBar').style.width = n ? (td.total/n*100)+'%' : '0%';
   const rest = hosts.filter(h=>!hostChecks(h.id)[date]).length;
   document.getElementById('allOkWrap').innerHTML = rest>0
@@ -958,9 +1013,9 @@ function allOk(){
   const date = dateInput.value || todayISO();
   const rest = activeHosts().filter(h=>!hostChecks(h.id)[date]);
   if(!rest.length) return;
-  if(!confirm('Marquer '+rest.length+' hôte'+(rest.length>1?'s':'')+' comme conforme'+(rest.length>1?'s':'')+' pour ce jour ?')) return;
+  if(!confirm('Noter '+rest.length+' hôte'+(rest.length>1?'s':'')+' « Parfait » (100 %) pour ce jour ?')) return;
   rest.forEach(h=>setCheck(h.id, date, { items: allOkItems(), note:'' }));
-  renderPointage(); toast(rest.length+' hôte'+(rest.length>1?'s':'')+' conforme'+(rest.length>1?'s':''));
+  renderPointage(); toast(rest.length+' hôte'+(rest.length>1?'s':'')+' noté'+(rest.length>1?'s':'')+' Parfait');
 }
 function markConforme(id, date){
   openDetails.delete(id+'|'+date);
@@ -1277,11 +1332,12 @@ function openFiche(id){
       : d<=-2 ? '<span class="trend down">▼ '+Math.round(d)+' pts vs mois dernier</span>'
       : '<span class="trend" style="color:var(--muted)">stable vs mois dernier</span>';
   }
-  const hist = [...s.list].reverse().slice(0,30).map(c=>
-    '<div class="histline"><span class="'+(c.status==='ok'?'stat-ok':'stat-ko')+'">'+
-    (c.status==='ok'?'Conforme':'Non conforme')+'</span> · '+frDate(c.date)+
+  const hist = [...s.list].reverse().slice(0,30).map(c=>{
+    const sc = checkScore(c);
+    return '<div class="histline"><b style="color:'+rateColor(sc)+'">'+sc+' % · '+rateLabel(sc)+'</b>'+
+    ' · '+frDate(c.date)+
     (c.by ? ' <span class="mutd">· par '+esc(c.by)+'</span>' : '')+
-    checkDetailHTML(c)+'</div>').join('');
+    checkDetailHTML(c)+'</div>'; }).join('');
 
   document.getElementById('view-fiche').innerHTML =
     '<button class="link no-print" onclick="show(\'equipe\')">‹ Équipe</button>'+
@@ -1292,10 +1348,12 @@ function openFiche(id){
       '<button class="btn small" onclick="openHostModal(\''+h.id+'\')">Modifier</button>'+
     '</div></div>'+
     '<div class="tiles">'+
-      '<div class="tile"><span>Parfait depuis la création</span><b style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':'var(--ink)'))+'">'+pctTxt(s.pct)+'</b>'+trend+'</div>'+
-      '<div class="tile"><span>30 derniers jours</span><b>'+pctTxt(s.pct30)+'</b></div>'+
-      '<div class="tile"><span>Série en cours</span><b>'+s.streak+' j.</b><span class="mutd">record : '+s.best+'</span></div>'+
-      '<div class="tile"><span>Passages</span><b>'+s.total+'</b><span class="mutd">'+s.notOk+' incident'+(s.notOk>1?'s':'')+'</span></div>'+
+      '<div class="tile"><span>Note moyenne</span><b style="color:'+rateColor(s.pct)+'">'+pctTxt(s.pct)+'</b>'+
+        (s.pct!=null?'<span style="font-size:12px;font-weight:650;color:'+rateColor(s.pct)+'">'+rateLabel(s.pct)+'</span>':'')+trend+'</div>'+
+      '<div class="tile"><span>30 derniers jours</span><b style="color:'+rateColor(s.pct30)+'">'+pctTxt(s.pct30)+'</b>'+
+        (s.pct30!=null?'<span style="font-size:12px;font-weight:650;color:'+rateColor(s.pct30)+'">'+rateLabel(s.pct30)+'</span>':'')+'</div>'+
+      '<div class="tile"><span>Sans-faute d\'affilée</span><b>'+s.streak+' j.</b><span class="mutd">record : '+s.best+'</span></div>'+
+      '<div class="tile"><span>Passages</span><b>'+s.total+'</b><span class="mutd">'+s.notOk+' signalé'+(s.notOk>1?'s':'')+'</span></div>'+
     '</div>'+
     '<div class="card"><h3>Commentaire sur le profil</h3>'+
       '<textarea id="ficheComment" placeholder="Note libre sur '+esc(h.firstName)+' (relationnel, points forts, points de vigilance…)" '+
@@ -1320,35 +1378,36 @@ function openFiche(id){
 function ringHTML(label, pct, sub){
   const p = pct==null ? 0 : Math.max(0, Math.min(100, pct));
   const r = 30, c = 2*Math.PI*r;
-  const col = pct==null ? 'var(--baseline)'
-    : (p>=80 ? 'var(--series)' : (p>=60 ? '#c98500' : 'var(--bad)'));
+  const col = pct==null ? 'var(--baseline)' : rateColor(p);
   return '<div class="tile ringcard"><svg class="ring" viewBox="0 0 76 76">'+
     '<circle cx="38" cy="38" r="30" fill="none" stroke="var(--grid)" stroke-width="7"/>'+
     (p>0 ? '<circle cx="38" cy="38" r="30" fill="none" stroke="'+col+'" stroke-width="7" '+
       'stroke-linecap="round" stroke-dasharray="'+(p/100*c).toFixed(1)+' '+c.toFixed(1)+'" '+
       'transform="rotate(-90 38 38)"/>' : '')+
     '<text x="38" y="44" text-anchor="middle" class="rv">'+Math.round(p)+'%</text>'+
-    '</svg><span>'+esc(label)+'</span>'+(sub?'<span class="mutd">'+sub+'</span>':'')+'</div>';
+    '</svg><span>'+esc(label)+'</span>'+
+    (pct!=null ? '<span style="font-size:12px;font-weight:650;color:'+col+'">'+rateLabel(p)+'</span>' : '')+
+    (sub?'<span class="mutd">'+sub+'</span>':'')+'</div>';
 }
 function teamMonthly(n){
   const out = []; const now = new Date();
   for(let i=n-1;i>=0;i--){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const key = iso(d).slice(0,7);
-    let ok=0, tot=0;
+    const scores = [];
     for(const h of state.hosts)
       for(const c of checksInRange(h.id, null, null))
-        if(c.date.slice(0,7)===key){ tot++; if(c.status==='ok') ok++; }
-    out.push({ label:MONTHS_FR[d.getMonth()], pct: tot? ok/tot*100 : null, n:tot });
+        if(c.date.slice(0,7)===key) scores.push(checkScore(c));
+    out.push({ label:MONTHS_FR[d.getMonth()], pct: avgOf(scores), n:scores.length });
   }
   return out;
 }
 function accueilBars(){
   const rows = buildGroups(activeHosts()).map(([site, list])=>{
     const from = addDays(todayISO(), -29);
-    let ok=0, tot=0;
-    list.forEach(h=>checksInRange(h.id, from, null).forEach(c=>{ tot++; if(c.status==='ok') ok++; }));
-    return { site, pct: tot? ok/tot*100 : null, tot };
+    const scores = [];
+    list.forEach(h=>checksInRange(h.id, from, null).forEach(c=>scores.push(checkScore(c))));
+    return { site, pct: avgOf(scores), tot: scores.length };
   });
   if(!rows.length) return '<p class="mutd">Ajoutez des accueils et des hôtes pour comparer.</p>';
   return '<div class="hbars">'+rows.map(r=>
@@ -1377,26 +1436,27 @@ function renderStats(){
 
   const rank = hosts.map(h=>({h, s:hostStats(h)})).filter(x=>x.s.total>0)
     .sort((a,b)=>(b.s.pct-a.s.pct)||(b.s.total-a.s.total));
-  const watch = rank.filter(x=>x.s.total>=3 && x.s.pct30!=null && x.s.pct30<70);
+  const watch = rank.filter(x=>x.s.total>=3 && x.s.pct30!=null && x.s.pct30<75);
 
   box.innerHTML = title+
     '<div class="tiles">'+
-      ringHTML('Aujourd\'hui', today.pct, (today.ok+'/'+(today.total||hosts.length||0))+' conformes')+
+      ringHTML('Aujourd\'hui', today.pct, today.total+'/'+(hosts.length||0)+' notés')+
       ringHTML('7 derniers jours', t7.pct, t7.total+' passages')+
       ringHTML('30 derniers jours', t30.pct, t30.total+' passages')+
       ringHTML('Depuis le début', tAll.pct, tAll.total+' passages')+
     '</div>'+
-    '<div class="card"><h3>Conformité par accueil (30 j.)</h3>'+accueilBars()+'</div>'+
-    '<div class="card"><h3>Conformité de l\'équipe sur 14 jours</h3>'+barChart(days)+'</div>'+
+    '<div class="card"><h3>Note par accueil (30 j.)</h3>'+accueilBars()+'</div>'+
+    '<div class="card"><h3>Note de l\'équipe sur 14 jours</h3>'+barChart(days)+'</div>'+
     '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(teamMonthly(6))+'</div>'+
     '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
-    (watch.length ? '<div class="card"><h3>À surveiller (moins de 70 % sur 30 j.)</h3>'+
+    (watch.length ? '<div class="card"><h3>À surveiller (note sous 75 % sur 30 j.)</h3>'+
       watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
       '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
-    '<div class="card"><h3>Classement : % parfait depuis la création</h3>'+
-      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>%</th><th>Passages</th><th>Série</th></tr>'+
+    '<div class="card"><h3>Classement : note moyenne</h3>'+
+      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>Note</th><th>Passages</th><th>Sans-faute</th></tr>'+
       rank.map((x,i)=>'<tr><td style="color:var(--muted)">'+(i+1)+'</td>'+
-        '<td>'+esc(hostName(x.h))+'</td><td><b>'+pctTxt(x.s.pct)+'</b></td>'+
+        '<td>'+esc(hostName(x.h))+'</td><td><b style="color:'+rateColor(x.s.pct)+'">'+pctTxt(x.s.pct)+'</b> '+
+        '<span class="mutd">'+rateLabel(x.s.pct)+'</span></td>'+
         '<td>'+x.s.total+'</td><td>'+x.s.streak+' j.</td></tr>').join('')+'</table></div>'
       : '<p class="mutd">Aucun passage pour l\'instant.</p>')+
     '</div>';
@@ -1428,11 +1488,10 @@ function buildReport(preview){
   const rows = hosts.map(h=>{
     const l = checksInRange(h.id, from, to);
     if(!l.length) return null;
-    const ok = l.filter(c=>c.status==='ok').length;
     const rs = {};
     l.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(x=>rs[x]=(rs[x]||0)+1));
     const top = Object.entries(rs).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]).join(', ');
-    return { h, n:l.length, ok, ko:l.length-ok, pct:ok/l.length*100, top, list:l };
+    return { h, n:l.length, pct:avgOf(l.map(checkScore)), top, list:l };
   }).filter(Boolean).sort((a,b)=>b.pct-a.pct);
 
   const incidents = [];
@@ -1449,10 +1508,11 @@ function buildReport(preview){
     '<p><b>'+team.total+'</b> passages · <b class="stat-ok">'+team.ok+' OK</b> · '+
     '<b class="stat-ko">'+team.ko+' non conformes</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
-    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Conformes</th><th>Non conf.</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
+    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Note période</th><th>Appréciation</th><th>Note globale</th><th>Points récurrents</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
       '<td>'+esc(r2.h.site||'—')+'</td>'+
-      '<td>'+r2.n+'</td><td>'+r2.ok+'</td><td>'+r2.ko+'</td><td><b>'+pctTxt(r2.pct)+'</b></td>'+
+      '<td>'+r2.n+'</td><td><b style="color:'+rateColor(r2.pct)+'">'+pctTxt(r2.pct)+'</b></td>'+
+      '<td>'+rateLabel(r2.pct)+'</td>'+
       '<td>'+pctTxt(hostStats(r2.h).pct)+'</td>'+
       '<td>'+esc(r2.top||'—')+'</td></tr>').join('')+'</table></div>'
       : '<p class="mutd">Aucun passage sur cette période.</p>')+'</div>'+
@@ -1469,13 +1529,14 @@ function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 10
 function exportCSV(){
   const r = reportRange(); if(!r) return;
   const [from, to] = r;
-  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Noté par'];
+  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Note'+sep+'Appréciation'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Noté par'];
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
       const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
+      const sc = checkScore(c);
       lines.push([frDate(c.date), q(h.firstName), q(h.lastName||''), q(h.site||''),
-        c.status==='ok'?'Conforme':'Non conforme',
+        sc+' %', rateLabel(sc),
         q(failed.length ? failed.map(([k])=>k).join(', ') : (c.reasons||[]).join(', ')),
         q(failed.map(([k,v])=>(v.comment?k+' : '+v.comment:'')+(v.photo?' [photo]':'')).filter(Boolean).join(' | ')),
         q(c.note||''), q(c.by||'')].join(sep));
