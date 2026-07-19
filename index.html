@@ -717,19 +717,40 @@ async function doLogin(){
   try{
     await api('login');
     localStorage.setItem(CODE_KEY, c);
+    lastCodeEntry = Date.now();
     document.getElementById('loginOverlay').classList.remove('on');
     err.textContent = '';
     flush(); await pullAll(); show(currentView);
-    if(!evaluator) showProfiles(); else toast('Connecté');
+    if(pendingProfile){
+      evaluator = pendingProfile; pendingProfile = null;
+      setAuthTime(evaluator); refreshProfileUI(); toast('Bonjour '+evaluator);
+    } else if(!evaluator){
+      showProfiles();
+    } else {
+      setAuthTime(evaluator); toast('Session déverrouillée');
+    }
   }catch(e){
     if(e.message!=='bad_code'){ accessCode = null;
       err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.'; }
     else accessCode = null;
   }
 }
+function checkAuthLock(){
+  if(!evaluator) return;
+  const t = authTimes()[evaluator];
+  if(!t || Date.now()-t > AUTH_TTL){
+    pendingProfile = evaluator; evaluator = null;
+    refreshProfileUI();
+    showLogin(false);
+    document.getElementById('loginErr').textContent =
+      'Session expirée : entrez le code pour continuer.';
+  }
+}
 function logout(){
   if(!confirm('Se déconnecter de cet appareil ? (les données restent sur le serveur)')) return;
-  localStorage.removeItem(CODE_KEY); accessCode = null; showLogin(false);
+  localStorage.removeItem(CODE_KEY); localStorage.removeItem(AUTH_KEY);
+  accessCode = null; evaluator = null; pendingProfile = null; lastCodeEntry = 0;
+  refreshProfileUI(); showLogin(false);
 }
 async function changeCode(){
   const c = prompt("Nouveau code d'accès (8 caractères minimum, majuscules/minuscules comptent, à repartager à toute l'équipe) :");
@@ -974,9 +995,17 @@ function renderPointage(){
 const openDetails = new Set();
 
 /* ---------- profils de contrôleurs ---------- */
-const PROFILE_KEY = LS_KEY + '_profile';
-let evaluator = localStorage.getItem(PROFILE_KEY) || null;
+const AUTH_KEY = LS_KEY + '_auth';
+const AUTH_TTL = 60*60*1000; // le code est redemandé après une heure
+let evaluator = null;
+let pendingProfile = null;
+let lastCodeEntry = 0;
 let manageProfiles = false;
+function authTimes(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'{}'); }catch(e){ return {}; } }
+function setAuthTime(name){
+  const t = authTimes(); t[name] = Date.now();
+  try{ localStorage.setItem(AUTH_KEY, JSON.stringify(t)); }catch(e){}
+}
 function profileColor(name, i){
   const hues=[168,213,340,28,258,196,96,300];
   return 'hsl('+hues[i % hues.length]+',42%,40%)';
@@ -999,9 +1028,18 @@ function showProfiles(){
   document.getElementById('profileOverlay').classList.add('on');
 }
 function pickProfile(i){
-  evaluator = cfg().evaluators[i];
-  localStorage.setItem(PROFILE_KEY, evaluator);
+  const name = cfg().evaluators[i];
+  const t = authTimes()[name];
+  const fresh = (t && Date.now()-t < AUTH_TTL) || (Date.now()-lastCodeEntry < AUTH_TTL);
   document.getElementById('profileOverlay').classList.remove('on');
+  if(!accessCode || !fresh){
+    pendingProfile = name;
+    showLogin(false);
+    document.getElementById('loginErr').textContent = 'Profil '+name+' : entrez le code d\'accès.';
+    return;
+  }
+  evaluator = name;
+  setAuthTime(name);
   refreshProfileUI();
   toast('Bonjour '+evaluator);
 }
@@ -1018,7 +1056,7 @@ function removeProfile(i){
   const name = c.evaluators[i];
   if(!confirm('Retirer le profil « '+name+' » ?')) return;
   saveConfig({ sites:c.sites, criteria:c.criteria, evaluators:c.evaluators.filter((_,j)=>j!==i) });
-  if(evaluator===name){ evaluator=null; localStorage.removeItem(PROFILE_KEY); refreshProfileUI(); }
+  if(evaluator===name){ evaluator=null; refreshProfileUI(); }
   renderProfiles();
 }
 function toggleManageProfiles(){ manageProfiles = !manageProfiles; renderProfiles(); }
@@ -1698,9 +1736,9 @@ function ensureToday(){
   syncUI();
   refreshProfileUI();
   if(!accessCode) showLogin(false);
-  else { flush(); pullAll(); if(!evaluator) showProfiles(); }
-  setInterval(()=>{ ensureToday(); pullAll(); }, 45000);
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); pullAll(); } });
+  else { flush(); pullAll(); showProfiles(); }
+  setInterval(()=>{ ensureToday(); checkAuthLock(); pullAll(); }, 45000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); checkAuthLock(); pullAll(); } });
   window.addEventListener('online', flush);
 })();
 </script>
