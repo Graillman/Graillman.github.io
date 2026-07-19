@@ -263,7 +263,7 @@
     <div class="logo" style="margin:14px auto 0;width:54px;height:54px;font-size:24px;border-radius:14px">P</div>
     <div class="wordmark">Pénélope</div>
     <p class="sub">Suivi Prestation, équipe accueil</p>
-    <p class="mutd" style="margin-top:14px">Entre le code d'accès de l'équipe</p>
+    <p class="mutd" style="margin-top:14px">Entrez le code d'accès de l'équipe</p>
     <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
     <p class="mutd" id="loginErr" style="margin-top:10px"></p>
@@ -322,20 +322,13 @@
       <div class="progress"><i id="dayProgressBar" style="width:0%"></i></div>
       <div id="allOkWrap"></div>
     </div>
-    <div class="row no-print" style="margin-bottom:12px">
-      <button class="btn small grow" onclick="openHostModal(null)">Ajouter un hôte / hôtesse</button>
-      <button class="btn small grow" onclick="addSitePrompt()">Ajouter un accueil</button>
-    </div>
     <div class="card" id="pointageList"></div>
   </section>
 
   <!-- ================= ÉQUIPE ================= -->
   <section class="view" id="view-equipe">
     <div class="view-title">Équipe</div>
-    <div class="row no-print" style="margin-bottom:12px">
-      <button class="btn primary grow" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>
-      <button class="btn" onclick="addSitePrompt()">Ajouter un accueil</button>
-    </div>
+    <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>
     <div class="card no-print" id="searchWrap" style="display:none;padding:6px 12px;border-radius:12px">
       <input id="hostSearch" placeholder="Rechercher un hôte, un accueil…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderEquipe()">
     </div>
@@ -354,7 +347,7 @@
     <div class="card no-print">
       <h2>Critères d'évaluation</h2>
       <p class="sub" style="margin-bottom:8px">Les motifs proposés quand une prestation n'est pas
-      conforme (tenue, comportement…). Ajoute ou retire les tiens, pour toute l'équipe.</p>
+      conforme (tenue, comportement…). Ajoutez ou retirez les vôtres, pour toute l'équipe.</p>
       <div id="criteriaList"></div>
       <div class="addrow">
         <input id="newCriterion" placeholder="Nouveau critère (ex. : Posture à l'accueil)">
@@ -373,7 +366,7 @@
   <section class="view" id="view-rapport">
     <div class="view-title">Rapport</div>
     <div class="card no-print">
-      <p class="sub" style="margin-bottom:10px">Génère un rapport de conformité à transmettre :
+      <p class="sub" style="margin-bottom:10px">Rapport de conformité à transmettre :
       aperçu à l'écran, impression / PDF, ou export Excel.</p>
       <select id="repPeriod" onchange="onRepPeriod()" style="margin-bottom:8px">
         <option value="week">Cette semaine</option>
@@ -391,7 +384,7 @@
         <button class="btn grow" onclick="exportCSV()">Excel</button>
       </div>
       <p class="mutd" style="margin-top:10px">« Imprimer / PDF » ouvre la fenêtre d'impression :
-      choisis « Enregistrer en PDF » pour obtenir un fichier à envoyer.</p>
+      choisissez « Enregistrer en PDF » pour obtenir un fichier à envoyer.</p>
     </div>
     <div id="printzone"></div>
   </section>
@@ -404,17 +397,6 @@
       <p class="sub" style="margin-bottom:10px">Code d'accès chiffré, base verrouillée, protection
       anti-intrusion, hébergement en France.</p>
       <button class="btn" onclick="showSecurity()">Voir le détail des protections</button>
-    </div>
-    <div class="card">
-      <h2>Sauvegarde</h2>
-      <p class="sub" style="margin-bottom:10px">Tout est enregistré et synchronisé automatiquement.
-      Tu peux en plus télécharger une copie de secours.</p>
-      <button class="btn" style="margin-bottom:8px" onclick="exportApp()">Copie de l'appli + données</button>
-      <div class="row">
-        <button class="btn neutral grow" onclick="exportJSON()">Exporter les données</button>
-        <button class="btn neutral grow" onclick="document.getElementById('importFile').click()">Importer</button>
-      </div>
-      <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
     </div>
     <div class="card">
       <h2>Compte</h2>
@@ -480,7 +462,7 @@
     </div>
     <div class="card">
       <h3>Bonnes pratiques</h3>
-      <p class="sub">Partage le code uniquement aux responsables concernés, et change-le
+      <p class="sub">Partagez le code uniquement aux responsables concernés et changez-le
       régulièrement (Réglages → « Changer le code »), par exemple à chaque départ dans l'équipe.</p>
     </div>
   </section>
@@ -642,7 +624,7 @@ function rerenderSoft(){
 function showLogin(bad){
   const ov = document.getElementById('loginOverlay');
   ov.classList.add('on');
-  document.getElementById('loginErr').textContent = bad ? 'Code incorrect, réessaie.' : '';
+  document.getElementById('loginErr').textContent = bad ? 'Code incorrect, réessayez.' : '';
 }
 async function doLogin(){
   const c = document.getElementById('loginCode').value.trim();
@@ -658,7 +640,7 @@ async function doLogin(){
     flush(); await pullAll(); show(currentView); toast('Connecté');
   }catch(e){
     if(e.message!=='bad_code'){ accessCode = null;
-      err.textContent = 'Connexion impossible. Vérifie ta connexion internet.'; }
+      err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.'; }
     else accessCode = null;
   }
 }
@@ -801,8 +783,7 @@ function renderPointage(){
   const hosts = activeHosts();
   const box = document.getElementById('pointageList');
   if(!hosts.length){
-    box.innerHTML = '<p class="sub" style="margin-bottom:12px">Aucun hôte pour l\'instant.</p>'+
-      '<button class="btn primary no-print" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>';
+    box.innerHTML = '<p class="sub">Aucun hôte pour l\'instant. Ajoutez votre équipe depuis l\'onglet Équipe.</p>';
   } else {
     const lineHTML = h => {
       const c = hostChecks(h.id)[date];
@@ -927,7 +908,7 @@ function renderEquipe(){
   if(!hosts.length){
     box.innerHTML = '<div class="card"><p class="sub">'+(q
       ? 'Aucun résultat pour « '+esc(q)+' ».'
-      : 'Ajoute ta première personne avec le bouton ci-dessus.')+'</p></div>';
+      : 'Ajoutez votre première personne avec le bouton ci-dessus.')+'</p></div>';
   } else {
     box.innerHTML = buildGroups(hosts).map(([site, list])=>
       groupHeadHTML(site, list.length) + list.map(hostCardHTML).join('')
@@ -1060,7 +1041,7 @@ function renderManagers(){
   const c = cfg();
   document.getElementById('criteriaList').innerHTML = c.criteria.map((r,i)=>
     '<div class="mrow"><span>'+esc(r)+'</span><button onclick="removeCriterion('+i+')">Retirer</button></div>').join('')
-    || '<p class="mutd">Aucun critère. Ajoute-en ci-dessous.</p>';
+    || '<p class="mutd">Aucun critère. Ajoutez-en ci-dessous.</p>';
   document.getElementById('sitesList').innerHTML = c.sites.map((s,i)=>
     '<div class="mrow"><span>'+esc(s)+'</span><button onclick="removeSite('+i+')">Retirer</button></div>').join('')
     || '<p class="mutd">Aucun accueil pour l\'instant.</p>';
@@ -1172,7 +1153,7 @@ function accueilBars(){
     list.forEach(h=>checksInRange(h.id, from, null).forEach(c=>{ tot++; if(c.status==='ok') ok++; }));
     return { site, pct: tot? ok/tot*100 : null, tot };
   });
-  if(!rows.length) return '<p class="mutd">Ajoute des accueils et des hôtes pour comparer.</p>';
+  if(!rows.length) return '<p class="mutd">Ajoutez des accueils et des hôtes pour comparer.</p>';
   return '<div class="hbars">'+rows.map(r=>
     '<div class="hb"><span class="lab" title="'+esc(r.site)+'">'+
       '<span class="dot" style="background:'+siteColor(r.site)+'"></span>'+esc(r.site)+'</span>'+
@@ -1237,7 +1218,7 @@ function reportRange(){
   if(v==='30'){ return [addDays(t,-29), t, '30 derniers jours']; }
   if(v==='custom'){
     const f=document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
-    if(!f||!to){ toast('Choisis les deux dates'); return null; }
+    if(!f||!to){ toast('Choisissez les deux dates'); return null; }
     return [f, to, 'Du '+frDate(f)+' au '+frDate(to)];
   }
   return [null, t, 'Depuis le début'];
@@ -1345,7 +1326,7 @@ function importJSON(input){
 }
 function wipeAll(){
   if(!confirm('Tout effacer POUR TOUTE L\'ÉQUIPE ? Tous les profils et passages seront perdus, sur tous les appareils.')) return;
-  if(!confirm('Vraiment sûr(e) ? Cette action est irréversible.\n(Astuce : exporte une sauvegarde avant.)')) return;
+  if(!confirm('Vraiment sûr(e) ? Cette action est irréversible.')) return;
   const keptConfig = state.config;
   state = blankState(); state.config = keptConfig;
   save(); push('wipeAll', {});
