@@ -1,7 +1,7 @@
 {
   "name": "Suivi Prestation · Pénélope",
   "short_name": "Pénélope",
-  "description": "Suivi quotidien de la prestation d'accueil — équipe Pénélope",
+  "description": "Suivi quotidien de la prestation d'accueil, équipe Pénélope",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -262,7 +262,7 @@
   <div id="loginBox" class="card">
     <div class="logo" style="margin:14px auto 0;width:54px;height:54px;font-size:24px;border-radius:14px">P</div>
     <div class="wordmark">Pénélope</div>
-    <p class="sub">Suivi Prestation — équipe accueil</p>
+    <p class="sub">Suivi Prestation, équipe accueil</p>
     <p class="mutd" style="margin-top:14px">Entre le code d'accès de l'équipe</p>
     <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
@@ -347,14 +347,14 @@
       standards…). Chaque hôte y est rattaché et l'équipe est classée par accueil.</p>
       <div id="sitesList"></div>
       <div class="addrow">
-        <input id="newSite" placeholder="Nouvel accueil (ex. : Evergreen — Bât. Pacific)">
+        <input id="newSite" placeholder="Nouvel accueil (ex. : Bâtiment Pacific)">
         <button class="btn" onclick="addSite()">Ajouter</button>
       </div>
     </div>
     <div class="card no-print">
       <h2>Critères d'évaluation</h2>
       <p class="sub" style="margin-bottom:8px">Les motifs proposés quand une prestation n'est pas
-      conforme (tenue, comportement…). Ajoute ou retire les tiens — pour toute l'équipe.</p>
+      conforme (tenue, comportement…). Ajoute ou retire les tiens, pour toute l'équipe.</p>
       <div id="criteriaList"></div>
       <div class="addrow">
         <input id="newCriterion" placeholder="Nouveau critère (ex. : Posture à l'accueil)">
@@ -427,7 +427,7 @@
       <h2>Zone dangereuse</h2>
       <button class="btn danger" onclick="wipeAll()">Tout effacer (pour toute l'équipe)</button>
     </div>
-    <p class="mutd" style="text-align:center;margin:18px 0">Suivi Prestation — conçu pour l'équipe Pénélope</p>
+    <p class="mutd" style="text-align:center;margin:18px 0">Suivi Prestation, conçu pour l'équipe Pénélope</p>
   </section>
 
   <!-- ================= SÉCURITÉ ================= -->
@@ -474,7 +474,7 @@
       <div class="secitem">
         <svg class="ic-s" viewBox="0 0 24 24"><path d="M9 11V8a3 3 0 0 1 6 0v3"/><rect x="6" y="11" width="12" height="9" rx="2"/></svg>
         <div><b>Données minimales</b>
-        <span class="sub">Seuls le prénom, le nom, l'accueil et les passages sont enregistrés —
+        <span class="sub">Seuls le prénom, le nom, l'accueil et les passages sont enregistrés,
         rien d'autre. Usage strictement interne ; export et suppression possibles à tout moment.</span></div>
       </div>
     </div>
@@ -565,7 +565,7 @@ async function api(action, payload){
   if(!j.ok && j.error==='locked'){
     showLogin(false);
     document.getElementById('loginErr').textContent =
-      'Trop de tentatives — accès bloqué environ 15 minutes.';
+      'Trop de tentatives : accès bloqué environ 15 minutes.';
     throw new Error('bad_code');
   }
   if(!j.ok && j.error==='bad_code'){ showLogin(true); throw new Error('bad_code'); }
@@ -607,7 +607,7 @@ function syncUI(){
   if(!el) return;
   if(accessCode && queue.length){
     el.style.display = 'block';
-    el.textContent = (online ? '' : 'Hors ligne — ') + queue.length +
+    el.textContent = (online ? '' : 'Hors ligne : ') + queue.length +
       ' modification' + (queue.length>1?'s':'') + ' en attente de synchronisation';
   } else el.style.display = 'none';
 }
@@ -658,7 +658,7 @@ async function doLogin(){
     flush(); await pullAll(); show(currentView); toast('Connecté');
   }catch(e){
     if(e.message!=='bad_code'){ accessCode = null;
-      err.textContent = 'Connexion impossible — vérifie ta connexion internet.'; }
+      err.textContent = 'Connexion impossible. Vérifie ta connexion internet.'; }
     else accessCode = null;
   }
 }
@@ -837,7 +837,7 @@ function renderPointage(){
   const td = teamDay(date);
   const n = hosts.length;
   document.getElementById('dayProgressText').innerHTML =
-    n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+' — '+
+    n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+' : '+
         '<span class="stat-ok">'+td.ok+' OK</span> · <span class="stat-ko">'+td.ko+' Pas OK</span>' : '';
   document.getElementById('dayProgressBar').style.width = n ? (td.total/n*100)+'%' : '0%';
   const rest = hosts.filter(h=>!hostChecks(h.id)[date]).length;
@@ -950,7 +950,7 @@ function fillSiteSelect(current){
   const sel = document.getElementById('fSite');
   const sites = cfg().sites.slice();
   if(current && !sites.includes(current)) sites.push(current);
-  sel.innerHTML = '<option value="">— Aucun accueil —</option>'+
+  sel.innerHTML = '<option value="">Aucun accueil</option>'+
     sites.map(s=>'<option value="'+esc(s)+'"'+(s===current?' selected':'')+'>'+esc(s)+'</option>').join('');
 }
 function openHostModal(id){
@@ -991,7 +991,7 @@ function saveHostModal(){
     state.hosts.push(nh);
     save(); push('addHost', nh);
     closeHostModal(); renderEquipe();
-    toast(first+' — profil créé');
+    toast('Profil de '+first+' créé');
   }
 }
 function archiveHost(id){
@@ -1017,7 +1017,7 @@ function saveHostComment(id, value){
 
 /* ---------- accueils & critères ---------- */
 function addSitePrompt(){
-  const name = prompt('Nom du nouvel accueil (ex. : Evergreen — Bât. Pacific) :');
+  const name = prompt('Nom du nouvel accueil (ex. : Bâtiment Pacific) :');
   if(!name || !name.trim()) return;
   const c = cfg();
   if(c.sites.includes(name.trim())){ toast('Cet accueil existe déjà'); return; }
@@ -1060,7 +1060,7 @@ function renderManagers(){
   const c = cfg();
   document.getElementById('criteriaList').innerHTML = c.criteria.map((r,i)=>
     '<div class="mrow"><span>'+esc(r)+'</span><button onclick="removeCriterion('+i+')">Retirer</button></div>').join('')
-    || '<p class="mutd">Aucun critère — ajoute-en ci-dessous.</p>';
+    || '<p class="mutd">Aucun critère. Ajoute-en ci-dessous.</p>';
   document.getElementById('sitesList').innerHTML = c.sites.map((s,i)=>
     '<div class="mrow"><span>'+esc(s)+'</span><button onclick="removeSite('+i+')">Retirer</button></div>').join('')
     || '<p class="mutd">Aucun accueil pour l\'instant.</p>';
@@ -1100,7 +1100,7 @@ function openFiche(id){
   }
   const hist = [...s.list].reverse().slice(0,30).map(c=>
     '<div class="histline"><span class="'+(c.status==='ok'?'stat-ok':'stat-ko')+'">'+
-    (c.status==='ok'?'OK':'Pas OK')+'</span> — '+frDate(c.date)+
+    (c.status==='ok'?'OK':'Pas OK')+'</span> · '+frDate(c.date)+
     (c.status==='not_ok'&&(c.reasons||[]).length ? '<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
     (c.note ? '<div class="notebox">'+esc(c.note)+'</div>':'')+
     '</div>').join('');
@@ -1123,7 +1123,7 @@ function openFiche(id){
       '<textarea id="ficheComment" placeholder="Note libre sur '+esc(h.firstName)+' (relationnel, points forts, points de vigilance…)" '+
       'onblur="saveHostComment(\''+h.id+'\', this.value)">'+esc(h.comment||'')+'</textarea>'+
       '<p class="mutd" style="margin-top:6px">Visible par toute l\'équipe encadrante, enregistré automatiquement.</p></div>'+
-    '<div class="card"><h3>Évolution — 6 derniers mois</h3>'+barChart(monthly(h,6))+'</div>'+
+    '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(monthly(h,6))+'</div>'+
     '<div class="card"><h3>Motifs de non-conformité</h3>'+reasonBars(s.reasons)+'</div>'+
     '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun passage pour l\'instant.</p>')+'</div>'+
     '<div class="card no-print"><div class="row">'+
@@ -1209,13 +1209,13 @@ function renderStats(){
       ringHTML('Depuis le début', tAll.pct, tAll.total+' passages')+
     '</div>'+
     '<div class="card"><h3>Conformité par accueil (30 j.)</h3>'+accueilBars()+'</div>'+
-    '<div class="card"><h3>Conformité de l\'équipe — 14 derniers jours</h3>'+barChart(days)+'</div>'+
-    '<div class="card"><h3>Évolution — 6 derniers mois</h3>'+barChart(teamMonthly(6))+'</div>'+
+    '<div class="card"><h3>Conformité de l\'équipe sur 14 jours</h3>'+barChart(days)+'</div>'+
+    '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(teamMonthly(6))+'</div>'+
     '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
-    (watch.length ? '<div class="card"><h3>À surveiller — moins de 70 % sur 30 j.</h3>'+
+    (watch.length ? '<div class="card"><h3>À surveiller (moins de 70 % sur 30 j.)</h3>'+
       watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
       '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
-    '<div class="card"><h3>Classement — % parfait depuis la création</h3>'+
+    '<div class="card"><h3>Classement : % parfait depuis la création</h3>'+
       (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>%</th><th>Passages</th><th>Série</th></tr>'+
       rank.map((x,i)=>'<tr><td style="color:var(--muted)">'+(i+1)+'</td>'+
         '<td>'+esc(hostName(x.h))+'</td><td><b>'+pctTxt(x.s.pct)+'</b></td>'+
@@ -1266,7 +1266,7 @@ function buildReport(preview){
     '<div class="card"><div class="row">'+
     '<div class="logo" style="width:42px;height:42px;font-size:19px">P</div>'+
     '<div class="grow"><h2 style="margin:0">Pénélope · Suivi Prestation</h2>'+
-    '<span class="sub">Rapport de conformité — '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
+    '<span class="sub">Rapport de conformité · '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
     '<div class="spacer"></div>'+
     '<p><b>'+team.total+'</b> passages · <b class="stat-ok">'+team.ok+' OK</b> · '+
     '<b class="stat-ko">'+team.ko+' Pas OK</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
@@ -1279,10 +1279,10 @@ function buildReport(preview){
       '<td>'+esc(r2.top||'—')+'</td></tr>').join('')+'</table></div>'
       : '<p class="mutd">Aucun passage sur cette période.</p>')+'</div>'+
     (incidents.length ? '<div class="card"><h3>Détail des non-conformités</h3>'+
-      incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> — '+frDate(c.date)+
+      incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> · '+frDate(c.date)+
       ((c.reasons||[]).length?'<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
       (c.note?'<div class="notebox">'+esc(c.note)+'</div>':'')+'</div>').join('')+'</div>' : '')+
-    '<div class="card"><p class="sub">Document interne Pénélope — données confidentielles.</p>'+
+    '<div class="card"><p class="sub">Document interne Pénélope. Données confidentielles.</p>'+
     '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return {from, to, label};
