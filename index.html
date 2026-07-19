@@ -234,6 +234,29 @@
   .wordmark{ font-size:26px; font-weight:700; letter-spacing:.4px; margin-top:14px }
   .wordmark + .sub{ margin-top:3px }
 
+  /* ---------- sélecteur de profil ---------- */
+  #profileOverlay{ position:fixed; inset:0; z-index:95; background:var(--page);
+    display:none; place-items:center; padding:24px; text-align:center }
+  #profileOverlay.on{ display:grid }
+  .ptitle{ font-size:22px; font-weight:700; margin-bottom:26px }
+  .pgrid{ display:flex; flex-wrap:wrap; gap:22px; justify-content:center; max-width:420px;
+    margin:0 auto }
+  .ptile{ background:none; border:none; width:88px }
+  .ptile .pavatar{ width:76px; height:76px; border-radius:20px; margin:0 auto 8px;
+    display:grid; place-items:center; font-size:30px; font-weight:600; color:#fff;
+    position:relative }
+  .ptile span{ font-size:14px; font-weight:600; color:var(--ink2); display:block;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .ptile .pavatar .rm{ position:absolute; top:-7px; right:-7px; width:24px; height:24px;
+    border-radius:50%; background:var(--bad); color:#fff; font-size:13px; font-weight:700;
+    display:grid; place-items:center }
+  .ptile.add .pavatar{ background:var(--surface); color:var(--muted);
+    border:1.5px dashed var(--baseline); box-shadow:none }
+  .pmanage{ margin-top:30px }
+  .photorow{ display:flex; align-items:center; gap:10px; margin:0 0 8px }
+  .pthumb{ width:56px; height:56px; object-fit:cover; border-radius:10px; display:block }
+  .pphoto{ max-width:170px; max-height:170px; border-radius:10px; margin-top:6px; display:block }
+
   /* ---------- modal hôte ---------- */
   #hostModal{ position:fixed; inset:0; z-index:90; display:none;
     background:rgba(0,0,0,.35); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
@@ -272,6 +295,14 @@
     <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
     <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
     <p class="mutd" id="loginErr" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<div id="profileOverlay">
+  <div>
+    <div class="ptitle">Qui fait la tournée ?</div>
+    <div class="pgrid" id="profileGrid"></div>
+    <button class="link pmanage" id="manageProfilesBtn" onclick="toggleManageProfiles()">Gérer les profils</button>
   </div>
 </div>
 
@@ -405,10 +436,12 @@
     </div>
     <div class="card">
       <h2>Compte</h2>
-      <div class="row">
+      <p class="sub" style="margin-bottom:10px">Profil actif : <b id="currentProfile"></b></p>
+      <div class="row" style="margin-bottom:8px">
+        <button class="btn grow" onclick="showProfiles()">Changer de profil</button>
         <button class="btn grow" onclick="changeCode()">Changer le code d'accès</button>
-        <button class="btn neutral grow" onclick="logout()">Se déconnecter</button>
       </div>
+      <button class="btn neutral" onclick="logout()">Se déconnecter</button>
     </div>
     <div class="card">
       <h2>Zone dangereuse</h2>
@@ -520,11 +553,13 @@ function cfg(){
   const c = state && state.config;
   return {
     sites: (c && Array.isArray(c.sites)) ? c.sites : [],
-    criteria: (c && Array.isArray(c.criteria) && c.criteria.length) ? c.criteria : DEFAULT_CRITERIA
+    criteria: (c && Array.isArray(c.criteria) && c.criteria.length) ? c.criteria : DEFAULT_CRITERIA,
+    evaluators: (c && Array.isArray(c.evaluators)) ? c.evaluators : ['Noé','Kamil','Carole']
   };
 }
 function saveConfig(next){
-  state.config = { sites: next.sites, criteria: next.criteria };
+  state.config = { sites: next.sites, criteria: next.criteria,
+    evaluators: next.evaluators || cfg().evaluators };
   save();
   push('setConfig', state.config);
 }
@@ -608,7 +643,7 @@ async function pullAll(){
     const map = {};
     (d.checks||[]).forEach(c=>{ (map[c.host_id] = map[c.host_id]||{})[c.check_date] =
       { status:c.status, reasons:c.reasons||[], items:c.items||{}, note:c.note||'',
-        updatedAt:c.updated_at }; });
+        by:c.evaluator||'', updatedAt:c.updated_at }; });
     state.checks = map;
     if(d.config) state.config = d.config;
     try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
@@ -642,7 +677,8 @@ async function doLogin(){
     localStorage.setItem(CODE_KEY, c);
     document.getElementById('loginOverlay').classList.remove('on');
     err.textContent = '';
-    flush(); await pullAll(); show(currentView); toast('Connecté');
+    flush(); await pullAll(); show(currentView);
+    if(!evaluator) showProfiles(); else toast('Connecté');
   }catch(e){
     if(e.message!=='bad_code'){ accessCode = null;
       err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.'; }
@@ -690,9 +726,10 @@ function setCheck(hostId, date, patch){
   c.items = c.items || {};
   c.reasons = Object.keys(c.items).filter(k=>!c.items[k].ok);
   c.status = c.reasons.length ? 'not_ok' : 'ok';
+  c.by = evaluator || c.by || '';
   state.checks[hostId][date] = c;
   save();
-  push('setCheck', { hostId, date, status:c.status, items:c.items, note:c.note||'' });
+  push('setCheck', { hostId, date, status:c.status, items:c.items, note:c.note||'', by:c.by });
 }
 function allOkItems(){
   const items = {};
@@ -818,7 +855,13 @@ function renderPointage(){
               '<button class="ko'+(!isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ko" data-h="'+h.id+'" data-d="'+date+'">&#10007;</button>'+
               '</div></div>'+
               (!isOk ? '<input class="ccomment" placeholder="Commentaire (ex. : badge oublié ce matin)" '+
-                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" value="'+esc(it && it.comment || '')+'">' : '');
+                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" value="'+esc(it && it.comment || '')+'">'+
+                '<div class="photorow">'+
+                (it && it.photo
+                  ? '<img class="pthumb" src="'+it.photo+'">'+
+                    '<button class="link" data-delphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">retirer la photo</button>'
+                  : '<button class="btn small" data-addphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">Ajouter une photo</button>')+
+                '</div>' : '');
           }).join('')+
           (st==='not_ok' ? '<div class="repzone"><label>Ce que j\'ai répondu</label>'+
             '<textarea placeholder="Ex. : première fois, c\'est noté, merci de ne plus l\'oublier." '+
@@ -854,6 +897,62 @@ function renderPointage(){
       (rest===n ? 'tout le monde' : 'les '+rest+' restants')+' OK</button>' : '';
 }
 const openDetails = new Set();
+
+/* ---------- profils de contrôleurs ---------- */
+const PROFILE_KEY = LS_KEY + '_profile';
+let evaluator = localStorage.getItem(PROFILE_KEY) || null;
+let manageProfiles = false;
+function profileColor(name, i){
+  const hues=[168,213,340,28,258,196,96,300];
+  return 'hsl('+hues[i % hues.length]+',42%,40%)';
+}
+function renderProfiles(){
+  const grid = document.getElementById('profileGrid');
+  grid.innerHTML = cfg().evaluators.map((name,i)=>
+    '<button class="ptile" onclick="'+(manageProfiles?'removeProfile('+i+')':'pickProfile('+i+')')+'">'+
+    '<span class="pavatar" style="background:'+profileColor(name, i)+'">'+esc(name[0].toUpperCase())+
+    (manageProfiles?'<span class="rm">&#10005;</span>':'')+'</span>'+
+    '<span>'+esc(name)+'</span></button>').join('')+
+    '<button class="ptile add" onclick="addProfile()">'+
+    '<span class="pavatar">+</span><span>Ajouter</span></button>';
+  document.getElementById('manageProfilesBtn').textContent =
+    manageProfiles ? 'Terminé' : 'Gérer les profils';
+}
+function showProfiles(){
+  manageProfiles = false;
+  renderProfiles();
+  document.getElementById('profileOverlay').classList.add('on');
+}
+function pickProfile(i){
+  evaluator = cfg().evaluators[i];
+  localStorage.setItem(PROFILE_KEY, evaluator);
+  document.getElementById('profileOverlay').classList.remove('on');
+  refreshProfileUI();
+  toast('Bonjour '+evaluator);
+}
+function addProfile(){
+  const name = prompt('Prénom du nouveau profil :');
+  if(!name || !name.trim()) return;
+  const c = cfg();
+  if(c.evaluators.includes(name.trim())){ toast('Ce profil existe déjà'); return; }
+  saveConfig({ sites:c.sites, criteria:c.criteria, evaluators:[...c.evaluators, name.trim()] });
+  renderProfiles();
+}
+function removeProfile(i){
+  const c = cfg();
+  const name = c.evaluators[i];
+  if(!confirm('Retirer le profil « '+name+' » ?')) return;
+  saveConfig({ sites:c.sites, criteria:c.criteria, evaluators:c.evaluators.filter((_,j)=>j!==i) });
+  if(evaluator===name){ evaluator=null; localStorage.removeItem(PROFILE_KEY); refreshProfileUI(); }
+  renderProfiles();
+}
+function toggleManageProfiles(){ manageProfiles = !manageProfiles; renderProfiles(); }
+function refreshProfileUI(){
+  document.getElementById('todayLabel').textContent =
+    frDateLong(new Date()).replace(/^./, c=>c.toUpperCase()) + (evaluator ? ' · '+evaluator : '');
+  const cp = document.getElementById('currentProfile');
+  if(cp) cp.textContent = evaluator || 'aucun';
+}
 function allOk(){
   const date = dateInput.value || todayISO();
   const rest = activeHosts().filter(h=>!hostChecks(h.id)[date]);
@@ -887,9 +986,45 @@ function noteInput(id, date, ta){
   noteTimer = setTimeout(()=>setCheck(id, date, { note: ta.value }), 450);
 }
 let ccTimer = null;
+let pendingPhoto = null;
+const photoInput = document.createElement('input');
+photoInput.type = 'file'; photoInput.accept = 'image/*'; photoInput.hidden = true;
+document.body.appendChild(photoInput);
+photoInput.addEventListener('change', ()=>{
+  const f = photoInput.files[0]; photoInput.value = '';
+  if(!f || !pendingPhoto) return;
+  const { h, d, crit } = pendingPhoto; pendingPhoto = null;
+  const img = new Image();
+  img.onload = ()=>{
+    const MAX = 900;
+    const k = Math.min(1, MAX/Math.max(img.width, img.height));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.width*k); cv.height = Math.round(img.height*k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    const data = cv.toDataURL('image/jpeg', 0.6);
+    URL.revokeObjectURL(img.src);
+    if(data.length > 400000){ toast('Photo trop lourde, réessayez'); return; }
+    setPhoto(h, d, crit, data);
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(img.src); toast('Image illisible'); };
+  img.src = URL.createObjectURL(f);
+});
+function setPhoto(id, date, crit, data){
+  const c = hostChecks(id)[date]; if(!c) return;
+  const items = Object.assign({}, c.items||{});
+  if(!items[crit]) items[crit] = { ok:false, comment:'' };
+  items[crit] = Object.assign({}, items[crit], { photo: data });
+  setCheck(id, date, { items });
+  renderPointage();
+}
 document.getElementById('pointageList').addEventListener('click', e=>{
   const t = e.target.closest('[data-crit]');
   if(t){ toggleCrit(t.dataset.h, t.dataset.d, t.dataset.crit, t.dataset.v==='ok'); return; }
+  const ap = e.target.closest('[data-addphoto]');
+  if(ap){ pendingPhoto = { h:ap.dataset.h, d:ap.dataset.d, crit:ap.dataset.addphoto };
+    photoInput.click(); return; }
+  const dp = e.target.closest('[data-delphoto]');
+  if(dp){ setPhoto(dp.dataset.h, dp.dataset.d, dp.dataset.delphoto, ''); return; }
   const cl = e.target.closest('[data-clear]');
   if(cl){ openDetails.delete(cl.dataset.clear+'|'+cl.dataset.d);
     clearCheck(cl.dataset.clear, cl.dataset.d); renderPointage(); }
@@ -1105,6 +1240,7 @@ function checkDetailHTML(c){
       ? failed.map(([k,v])=> esc(k)+(v.comment ? ' : '+esc(v.comment) : ''))
       : (c.reasons||[]).map(esc);
     if(parts.length) out += '<br><span class="sub">'+parts.join(' · ')+'</span>';
+    failed.forEach(([k,v])=>{ if(v.photo) out += '<img class="pphoto" src="'+v.photo+'" alt="'+esc(k)+'">'; });
   }
   if(c.note) out += '<div class="notebox">Réponse : '+esc(c.note)+'</div>';
   return out;
@@ -1143,6 +1279,7 @@ function openFiche(id){
   const hist = [...s.list].reverse().slice(0,30).map(c=>
     '<div class="histline"><span class="'+(c.status==='ok'?'stat-ok':'stat-ko')+'">'+
     (c.status==='ok'?'Conforme':'Non conforme')+'</span> · '+frDate(c.date)+
+    (c.by ? ' <span class="mutd">· par '+esc(c.by)+'</span>' : '')+
     checkDetailHTML(c)+'</div>').join('');
 
   document.getElementById('view-fiche').innerHTML =
@@ -1320,6 +1457,7 @@ function buildReport(preview){
       : '<p class="mutd">Aucun passage sur cette période.</p>')+'</div>'+
     (incidents.length ? '<div class="card"><h3>Détail des non-conformités</h3>'+
       incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> · '+frDate(c.date)+
+      (c.by ? ' <span class="mutd">· par '+esc(c.by)+'</span>' : '')+
       checkDetailHTML(c)+'</div>').join('')+'</div>' : '')+
     '<div class="card"><p class="sub">Document interne Pénélope. Données confidentielles.</p>'+
     '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
@@ -1330,7 +1468,7 @@ function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 10
 function exportCSV(){
   const r = reportRange(); if(!r) return;
   const [from, to] = r;
-  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'];
+  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Noté par'];
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
@@ -1338,8 +1476,8 @@ function exportCSV(){
       lines.push([frDate(c.date), q(h.firstName), q(h.lastName||''), q(h.site||''),
         c.status==='ok'?'Conforme':'Non conforme',
         q(failed.length ? failed.map(([k])=>k).join(', ') : (c.reasons||[]).join(', ')),
-        q(failed.filter(([,v])=>v.comment).map(([k,v])=>k+' : '+v.comment).join(' | ')),
-        q(c.note||'')].join(sep));
+        q(failed.map(([k,v])=>(v.comment?k+' : '+v.comment:'')+(v.photo?' [photo]':'')).filter(Boolean).join(' | ')),
+        q(c.note||''), q(c.by||'')].join(sep));
     }
   }
   if(lines.length===1){ toast('Aucun passage sur cette période'); return; }
@@ -1420,8 +1558,7 @@ function ensureToday(){
   if(t !== lastToday){
     if(dateInput.value === lastToday) dateInput.value = t;
     dateInput.max = t; lastToday = t;
-    document.getElementById('todayLabel').textContent =
-      frDateLong(new Date()).replace(/^./, c=>c.toUpperCase());
+    refreshProfileUI();
     rerenderSoft();
   }
 }
@@ -1446,8 +1583,9 @@ function ensureToday(){
   document.getElementById('loginCode').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   show('pointage');
   syncUI();
+  refreshProfileUI();
   if(!accessCode) showLogin(false);
-  else { flush(); pullAll(); }
+  else { flush(); pullAll(); if(!evaluator) showProfiles(); }
   setInterval(()=>{ ensureToday(); pullAll(); }, 45000);
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); pullAll(); } });
   window.addEventListener('online', flush);
