@@ -129,11 +129,16 @@
   .seg button + button{ border-left:1px solid var(--baseline) }
   .seg button.ok.sel{ background:var(--ok-bg); color:var(--ok-text) }
   .seg button.ko.sel{ background:var(--bad-soft); color:var(--bad) }
-  .kozone{ margin-top:12px; padding:12px; background:var(--page); border-radius:12px }
-  .chips{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px }
-  .chip{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
-    border-radius:99px; padding:7px 12px; font-size:12.5px }
-  .chip.sel{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad); font-weight:600 }
+  .kozone{ margin-top:12px; padding:4px 12px 12px; background:var(--page); border-radius:12px }
+  .critrow{ display:flex; align-items:center; gap:8px; padding:9px 0;
+    border-top:1px solid var(--hairline) }
+  .critrow:first-child{ border-top:none }
+  .critrow .cl{ flex:1; min-width:0; font-size:13.5px }
+  .seg.mini button{ padding:6px 11px; min-width:42px; font-size:13px }
+  .ccomment{ margin:0 0 4px; font-size:13px; padding:8px 11px }
+  .repzone{ margin-top:10px }
+  .repzone label{ display:block; font-size:12px; font-weight:600; color:var(--ink2);
+    margin-bottom:5px }
   .clearday{ margin-top:6px; font-size:13px }
 
   /* ---------- équipe / fiche ---------- */
@@ -491,9 +496,8 @@
 const APP_SOURCE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
 const LS_KEY = 'penelope_suivi_tenues_v1';
-const DEFAULT_CRITERIA = ['Tenue non conforme','Tenue froissée / tachée','Chaussures non conformes',
-  'Coiffure / présentation','Badge manquant','Pas de bonjour / accueil froid','Manque de sourire',
-  'Téléphone personnel à l\'accueil','Retard','Comportement inapproprié','Autre'];
+const DEFAULT_CRITERIA = ['Tenue conforme','Coiffure / présentation soignée','Badge visible',
+  'Bonjour / accueil chaleureux','Sourire','Téléphone rangé','Ponctualité','Posture professionnelle'];
 const MONTHS_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 
 /* ---------- état ---------- */
@@ -603,7 +607,8 @@ async function pullAll(){
       startedOn:h.started_on, createdAt:h.created_at, archivedAt:h.archived_at }));
     const map = {};
     (d.checks||[]).forEach(c=>{ (map[c.host_id] = map[c.host_id]||{})[c.check_date] =
-      { status:c.status, reasons:c.reasons||[], note:c.note||'', updatedAt:c.updated_at }; });
+      { status:c.status, reasons:c.reasons||[], items:c.items||{}, note:c.note||'',
+        updatedAt:c.updated_at }; });
     state.checks = map;
     if(d.config) state.config = d.config;
     try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
@@ -679,11 +684,20 @@ function hostChecks(id){ return state.checks[id] || {}; }
 function hostName(h){ return (h.firstName+' '+(h.lastName||'')).trim(); }
 function setCheck(hostId, date, patch){
   if(!state.checks[hostId]) state.checks[hostId] = {};
-  const cur = state.checks[hostId][date] || { status:null, reasons:[], note:'' };
+  const cur = state.checks[hostId][date] || { status:null, reasons:[], items:{}, note:'' };
   const c = Object.assign({}, cur, patch, {updatedAt:new Date().toISOString()});
+  // statut et points signalés dérivés de la grille par critère
+  c.items = c.items || {};
+  c.reasons = Object.keys(c.items).filter(k=>!c.items[k].ok);
+  c.status = c.reasons.length ? 'not_ok' : 'ok';
   state.checks[hostId][date] = c;
   save();
-  push('setCheck', { hostId, date, status:c.status, reasons:c.reasons||[], note:c.note||'' });
+  push('setCheck', { hostId, date, status:c.status, items:c.items, note:c.note||'' });
+}
+function allOkItems(){
+  const items = {};
+  cfg().criteria.forEach(r=>{ items[r] = { ok:true, comment:'' }; });
+  return items;
 }
 function clearCheck(hostId, date){
   if(state.checks[hostId]){ delete state.checks[hostId][date]; save();
@@ -788,27 +802,40 @@ function renderPointage(){
     const lineHTML = h => {
       const c = hostChecks(h.id)[date];
       const st = c ? c.status : null;
-      let koZone = '';
-      if(st==='not_ok'){
-        const sel = c.reasons||[];
+      const showDetail = openDetails.has(h.id+'|'+date) || st==='not_ok';
+      let detail = '';
+      if(showDetail){
+        const items = (c && c.items) || {};
         const list = cfg().criteria.slice();
-        sel.forEach(r=>{ if(!list.includes(r)) list.push(r); });
-        koZone = '<div class="kozone">'+
-          '<div class="chips">'+list.map(r=>
-            '<button class="chip'+(sel.includes(r)?' sel':'')+'" data-h="'+h.id+'" data-d="'+date+'" data-r="'+esc(r)+'">'+esc(r)+'</button>').join('')+'</div>'+
-          '<textarea placeholder="Notes du jour (détails, consigne donnée…)" '+
-            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)">'+esc(c.note||'')+'</textarea>'+
+        Object.keys(items).forEach(r=>{ if(!list.includes(r)) list.push(r); });
+        detail = '<div class="kozone">'+
+          list.map(r=>{
+            const it = items[r];
+            const isOk = it ? it.ok !== false : true;
+            return '<div class="critrow"><span class="cl">'+esc(r)+'</span>'+
+              '<div class="seg mini">'+
+              '<button class="ok'+(isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ok" data-h="'+h.id+'" data-d="'+date+'">&#10003;</button>'+
+              '<button class="ko'+(!isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ko" data-h="'+h.id+'" data-d="'+date+'">&#10007;</button>'+
+              '</div></div>'+
+              (!isOk ? '<input class="ccomment" placeholder="Commentaire (ex. : badge oublié ce matin)" '+
+                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" value="'+esc(it && it.comment || '')+'">' : '');
+          }).join('')+
+          (st==='not_ok' ? '<div class="repzone"><label>Ce que j\'ai répondu</label>'+
+            '<textarea placeholder="Ex. : première fois, c\'est noté, merci de ne plus l\'oublier." '+
+            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)">'+esc(c && c.note || '')+'</textarea></div>' : '')+
           '</div>';
       }
       const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer la note du jour</button>' : '';
       return '<div class="hostline">'+
         '<div class="row">'+
-          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div></div>'+
-          '<div class="seg">'+
-            '<button class="ok'+(st==='ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'ok\')">OK</button>'+
-            '<button class="ko'+(st==='not_ok'?' sel':'')+'" onclick="mark(\''+h.id+'\',\''+date+'\',\'not_ok\')">Pas OK</button>'+
+          '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+
+          (st==='not_ok' ? '<div class="hsite stat-ko">'+c.reasons.length+' point'+(c.reasons.length>1?'s':'')+' signalé'+(c.reasons.length>1?'s':'')+'</div>' : '')+
           '</div>'+
-        '</div>'+ koZone + clearLink +
+          '<div class="seg">'+
+            '<button class="ok'+(st==='ok'?' sel':'')+'" onclick="markConforme(\''+h.id+'\',\''+date+'\')">Conforme</button>'+
+            '<button class="ko'+(showDetail?' sel':'')+'" onclick="openDetail(\''+h.id+'\',\''+date+'\')">Détailler</button>'+
+          '</div>'+
+        '</div>'+ detail + clearLink +
       '</div>';
     };
     box.innerHTML = buildGroups(hosts).map(([site, list])=>
@@ -819,33 +846,39 @@ function renderPointage(){
   const n = hosts.length;
   document.getElementById('dayProgressText').innerHTML =
     n ? '<b>'+td.total+'/'+n+'</b> noté'+(td.total>1?'s':'')+' : '+
-        '<span class="stat-ok">'+td.ok+' OK</span> · <span class="stat-ko">'+td.ko+' Pas OK</span>' : '';
+        '<span class="stat-ok">'+td.ok+' conforme'+(td.ok>1?'s':'')+'</span> · <span class="stat-ko">'+td.ko+' non conforme'+(td.ko>1?'s':'')+'</span>' : '';
   document.getElementById('dayProgressBar').style.width = n ? (td.total/n*100)+'%' : '0%';
   const rest = hosts.filter(h=>!hostChecks(h.id)[date]).length;
   document.getElementById('allOkWrap').innerHTML = rest>0
     ? '<button class="btn small" style="margin-top:12px" onclick="allOk()">Marquer '+
       (rest===n ? 'tout le monde' : 'les '+rest+' restants')+' OK</button>' : '';
 }
+const openDetails = new Set();
 function allOk(){
   const date = dateInput.value || todayISO();
   const rest = activeHosts().filter(h=>!hostChecks(h.id)[date]);
   if(!rest.length) return;
-  if(!confirm('Marquer '+rest.length+' hôte'+(rest.length>1?'s':'')+' comme OK pour ce jour ?')) return;
-  rest.forEach(h=>setCheck(h.id, date, { status:'ok', reasons:[], note:'' }));
-  renderPointage(); toast(rest.length+' hôte'+(rest.length>1?'s':'')+' noté'+(rest.length>1?'s':'')+' OK');
+  if(!confirm('Marquer '+rest.length+' hôte'+(rest.length>1?'s':'')+' comme conforme'+(rest.length>1?'s':'')+' pour ce jour ?')) return;
+  rest.forEach(h=>setCheck(h.id, date, { items: allOkItems(), note:'' }));
+  renderPointage(); toast(rest.length+' hôte'+(rest.length>1?'s':'')+' conforme'+(rest.length>1?'s':''));
 }
-function mark(id, date, status){
-  const c = hostChecks(id)[date];
-  if(c && c.status===status) return;
-  setCheck(id, date, { status, reasons: status==='ok'?[]:( (c&&c.reasons)||[] ),
-    note: status==='ok' ? '' : ((c&&c.note)||'') });
+function markConforme(id, date){
+  openDetails.delete(id+'|'+date);
+  setCheck(id, date, { items: allOkItems(), note:'' });
   renderPointage();
 }
-function toggleReason(id, date, reason){
-  const c = hostChecks(id)[date]; if(!c) return;
-  const rs = new Set(c.reasons||[]);
-  rs.has(reason) ? rs.delete(reason) : rs.add(reason);
-  setCheck(id, date, { reasons:[...rs] });
+function openDetail(id, date){
+  const key = id+'|'+date;
+  if(openDetails.has(key)){ openDetails.delete(key); }
+  else openDetails.add(key);
+  renderPointage();
+}
+function toggleCrit(id, date, crit, isOk){
+  const c = hostChecks(id)[date];
+  const items = Object.assign({}, (c && c.items) || allOkItems());
+  if(!items[crit]) items[crit] = { ok:true, comment:'' };
+  items[crit] = { ok:isOk, comment: isOk ? '' : (items[crit].comment||'') };
+  setCheck(id, date, { items });
   renderPointage();
 }
 let noteTimer = null;
@@ -853,11 +886,27 @@ function noteInput(id, date, ta){
   clearTimeout(noteTimer);
   noteTimer = setTimeout(()=>setCheck(id, date, { note: ta.value }), 450);
 }
+let ccTimer = null;
 document.getElementById('pointageList').addEventListener('click', e=>{
-  const chip = e.target.closest('.chip');
-  if(chip){ toggleReason(chip.dataset.h, chip.dataset.d, chip.dataset.r); return; }
+  const t = e.target.closest('[data-crit]');
+  if(t){ toggleCrit(t.dataset.h, t.dataset.d, t.dataset.crit, t.dataset.v==='ok'); return; }
   const cl = e.target.closest('[data-clear]');
-  if(cl){ clearCheck(cl.dataset.clear, cl.dataset.d); renderPointage(); }
+  if(cl){ openDetails.delete(cl.dataset.clear+'|'+cl.dataset.d);
+    clearCheck(cl.dataset.clear, cl.dataset.d); renderPointage(); }
+});
+document.getElementById('pointageList').addEventListener('input', e=>{
+  const inp = e.target.closest('input[data-cc]');
+  if(!inp) return;
+  const { h, d, cc } = inp.dataset;
+  const val = inp.value;
+  clearTimeout(ccTimer);
+  ccTimer = setTimeout(()=>{
+    const c = hostChecks(h)[d]; if(!c) return;
+    const items = Object.assign({}, c.items||{});
+    if(!items[cc]) items[cc] = { ok:false, comment:'' };
+    items[cc] = { ok:items[cc].ok, comment: val };
+    setCheck(h, d, { items });
+  }, 450);
 });
 
 /* ---------- ÉQUIPE ---------- */
@@ -1048,6 +1097,18 @@ function renderManagers(){
 }
 
 /* ---------- FICHE ---------- */
+function checkDetailHTML(c){
+  let out = '';
+  if(c.status==='not_ok'){
+    const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
+    const parts = failed.length
+      ? failed.map(([k,v])=> esc(k)+(v.comment ? ' : '+esc(v.comment) : ''))
+      : (c.reasons||[]).map(esc);
+    if(parts.length) out += '<br><span class="sub">'+parts.join(' · ')+'</span>';
+  }
+  if(c.note) out += '<div class="notebox">Réponse : '+esc(c.note)+'</div>';
+  return out;
+}
 function barChart(data){
   const has = data.some(d=>d.pct!=null);
   if(!has) return '<p class="mutd">Pas encore de passages sur cette période.</p>';
@@ -1081,10 +1142,8 @@ function openFiche(id){
   }
   const hist = [...s.list].reverse().slice(0,30).map(c=>
     '<div class="histline"><span class="'+(c.status==='ok'?'stat-ok':'stat-ko')+'">'+
-    (c.status==='ok'?'OK':'Pas OK')+'</span> · '+frDate(c.date)+
-    (c.status==='not_ok'&&(c.reasons||[]).length ? '<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
-    (c.note ? '<div class="notebox">'+esc(c.note)+'</div>':'')+
-    '</div>').join('');
+    (c.status==='ok'?'Conforme':'Non conforme')+'</span> · '+frDate(c.date)+
+    checkDetailHTML(c)+'</div>').join('');
 
   document.getElementById('view-fiche').innerHTML =
     '<button class="link no-print" onclick="show(\'equipe\')">‹ Équipe</button>'+
@@ -1250,9 +1309,9 @@ function buildReport(preview){
     '<span class="sub">Rapport de conformité · '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
     '<div class="spacer"></div>'+
     '<p><b>'+team.total+'</b> passages · <b class="stat-ok">'+team.ok+' OK</b> · '+
-    '<b class="stat-ko">'+team.ko+' Pas OK</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
+    '<b class="stat-ko">'+team.ko+' non conformes</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
-    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>OK</th><th>Pas OK</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
+    (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Conformes</th><th>Non conf.</th><th>% période</th><th>% depuis création</th><th>Motifs principaux</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
       '<td>'+esc(r2.h.site||'—')+'</td>'+
       '<td>'+r2.n+'</td><td>'+r2.ok+'</td><td>'+r2.ko+'</td><td><b>'+pctTxt(r2.pct)+'</b></td>'+
@@ -1261,8 +1320,7 @@ function buildReport(preview){
       : '<p class="mutd">Aucun passage sur cette période.</p>')+'</div>'+
     (incidents.length ? '<div class="card"><h3>Détail des non-conformités</h3>'+
       incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> · '+frDate(c.date)+
-      ((c.reasons||[]).length?'<br><span class="sub">'+esc(c.reasons.join(', '))+'</span>':'')+
-      (c.note?'<div class="notebox">'+esc(c.note)+'</div>':'')+'</div>').join('')+'</div>' : '')+
+      checkDetailHTML(c)+'</div>').join('')+'</div>' : '')+
     '<div class="card"><p class="sub">Document interne Pénélope. Données confidentielles.</p>'+
     '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
@@ -1272,12 +1330,16 @@ function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 10
 function exportCSV(){
   const r = reportRange(); if(!r) return;
   const [from, to] = r;
-  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Motifs'+sep+'Note'];
+  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Statut'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'];
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
+      const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
       lines.push([frDate(c.date), q(h.firstName), q(h.lastName||''), q(h.site||''),
-        c.status==='ok'?'OK':'Pas OK', q((c.reasons||[]).join(', ')), q(c.note||'')].join(sep));
+        c.status==='ok'?'Conforme':'Non conforme',
+        q(failed.length ? failed.map(([k])=>k).join(', ') : (c.reasons||[]).join(', ')),
+        q(failed.filter(([,v])=>v.comment).map(([k,v])=>k+' : '+v.comment).join(' | ')),
+        q(c.note||'')].join(sep));
     }
   }
   if(lines.length===1){ toast('Aucun passage sur cette période'); return; }
