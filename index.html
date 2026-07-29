@@ -262,19 +262,58 @@
   .pphoto{ max-width:170px; max-height:170px; border-radius:10px; margin-top:6px; display:block }
 
   /* ---------- modal hôte ---------- */
-  #hostModal{ position:fixed; inset:0; z-index:90; display:none;
+  #hostModal, .sheetwrap{ position:fixed; inset:0; z-index:90; display:none;
     background:rgba(0,0,0,.35); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
     align-items:flex-end; justify-content:center }
-  #hostModal.on{ display:flex }
-  #hostSheet{ background:var(--surface); width:100%; max-width:560px;
-    border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  #hostModal.on, .sheetwrap.on{ display:flex }
+  #hostSheet, .sheetbox{ background:var(--surface); width:100%; max-width:560px;
+    border-radius:22px 22px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:88dvh; overflow-y:auto }
   @media (min-width:600px){
-    #hostModal{ align-items:center; padding:24px }
-    #hostSheet{ border-radius:20px }
+    #hostModal, .sheetwrap{ align-items:center; padding:24px }
+    #hostSheet, .sheetbox{ border-radius:22px }
   }
+  .sheetwrap.on .sheetbox{ animation: sheetUp .3s cubic-bezier(.2,.8,.25,1) }
   .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px }
   .sheet-head h2{ margin:0 }
+
+  /* ---------- inventaire ---------- */
+  .artcard{ background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
+    padding:14px 15px; margin-bottom:10px }
+  .arthead{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px }
+  .artname{ font-weight:650; font-size:15px }
+  .artmeta{ color:var(--muted); font-size:12px; margin-top:2px }
+  .arttotal{ font-weight:750; font-size:17px; font-variant-numeric:tabular-nums; white-space:nowrap }
+  .sizegrid{ display:flex; flex-wrap:wrap; gap:7px }
+  .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
+    border-radius:10px; padding:6px 4px 5px; text-align:center; line-height:1.15 }
+  .sizecell .sz{ display:block; font-size:10.5px; color:var(--muted); font-weight:600;
+    text-transform:uppercase; letter-spacing:.3px }
+  .sizecell .qt{ display:block; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums }
+  .sizecell.low{ border-color:#e0a93a; background:rgba(224,169,58,.10) }
+  .sizecell.low .qt{ color:#8a6a09 }
+  .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
+  .sizecell.out .qt{ color:var(--bad) }
+  .stockchip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:650;
+    padding:3px 9px; border-radius:99px; background:var(--tint); color:var(--brand) }
+  .movline{ display:flex; align-items:center; gap:10px; padding:9px 0;
+    border-top:1px solid var(--hairline); font-size:13.5px }
+  .movline:first-child{ border-top:none }
+  .movdelta{ font-weight:750; font-variant-numeric:tabular-nums; min-width:38px; text-align:right }
+  .movdelta.up{ color:var(--ok-text) } .movdelta.down{ color:var(--bad) }
+  .qtyrow{ display:flex; align-items:center; gap:12px; justify-content:center; margin:14px 0 }
+  .qtybtn{ width:52px; height:52px; border-radius:16px; border:none; font-size:26px; font-weight:600;
+    background:var(--tint); color:var(--brand); display:grid; place-items:center }
+  .qtyval{ font-size:34px; font-weight:750; min-width:82px; text-align:center;
+    font-variant-numeric:tabular-nums; letter-spacing:-1px }
+  .sizepick{ display:flex; flex-wrap:wrap; gap:7px; margin-top:4px }
+  .sizepick button{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
+    border-radius:9px; padding:7px 11px; font-size:13px; font-weight:600; min-width:46px }
+  .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
+  .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
+  .filterrow button{ flex:none; border:1px solid var(--baseline); background:var(--surface);
+    color:var(--ink2); border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:600 }
+  .filterrow button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
 
   /* ---------- micro-interactions ---------- */
   .view.on{ animation: viewIn .24s ease-out }
@@ -345,6 +384,64 @@
     <p class="sub" style="margin-bottom:26px">Sélectionnez votre profil pour continuer</p>
     <div class="pgrid" id="profileGrid"></div>
     <button class="link pmanage" id="manageProfilesBtn" onclick="toggleManageProfiles()">Gérer les profils</button>
+  </div>
+</div>
+
+<div id="artModal" class="sheetwrap">
+  <div class="sheetbox">
+    <div class="sheet-head">
+      <h2 id="artTitle">Nouvel article</h2>
+      <button class="link" onclick="closeArticleModal()">Fermer</button>
+    </div>
+    <label class="f">Désignation *</label>
+    <input id="aName" placeholder="Ex. : Veste tailleur">
+    <label class="f">Catégorie</label>
+    <select id="aCat"></select>
+    <label class="f">Pour</label>
+    <select id="aGender"></select>
+    <label class="f">Couleur</label>
+    <input id="aColor" list="colorList" placeholder="Ex. : Bleu marine">
+    <datalist id="colorList"></datalist>
+    <label class="f">Tailles disponibles</label>
+    <select id="aSizeType" onchange="renderSizePick()"></select>
+    <div class="sizepick" id="aSizes"></div>
+    <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée pour chacune.</p>
+    <label class="f">Seuil d'alerte par taille</label>
+    <input id="aMin" type="number" min="0" step="1" value="2">
+    <p class="mutd" style="margin-top:4px">En dessous de ce nombre, la taille passe en alerte.</p>
+    <div class="spacer"></div><div class="spacer"></div>
+    <button class="btn primary" style="width:100%" onclick="saveArticleModal()">Enregistrer</button>
+    <div id="artDanger"></div>
+  </div>
+</div>
+
+<div id="moveModal" class="sheetwrap">
+  <div class="sheetbox">
+    <div class="sheet-head">
+      <h2 id="moveTitle">Mouvement</h2>
+      <button class="link" onclick="closeMoveModal()">Fermer</button>
+    </div>
+    <p class="sub" id="moveSub"></p>
+    <div class="qtyrow">
+      <button class="qtybtn" onclick="bumpMove(-1)">&minus;</button>
+      <span class="qtyval" id="moveQty">+1</span>
+      <button class="qtybtn" onclick="bumpMove(1)">+</button>
+    </div>
+    <label class="f">Motif</label>
+    <select id="moveReason" onchange="onMoveReason()"></select>
+    <div id="moveHostWrap" style="display:none">
+      <label class="f">Personne concernée</label>
+      <select id="moveHost"></select>
+    </div>
+    <div id="moveMotifWrap" style="display:none">
+      <label class="f">Motif</label>
+      <select id="moveMotif"></select>
+    </div>
+    <label class="f">Précision (facultatif)</label>
+    <input id="moveNote" maxlength="200" placeholder="Fait observable uniquement">
+    <div class="spacer"></div><div class="spacer"></div>
+    <button class="btn primary" style="width:100%" onclick="saveMove()">Valider le mouvement</button>
+    <p class="mutd" style="margin-top:10px;text-align:center">Chaque mouvement est horodaté et signé. Il ne peut pas être modifié : une erreur se corrige par un mouvement inverse.</p>
   </div>
 </div>
 
@@ -467,13 +564,35 @@
   </section>
 
   <!-- ================= RÉGLAGES ================= -->
+  <!-- ================= STOCK ================= -->
+  <section class="view" id="view-stock">
+    <div class="view-title">Stock</div>
+    <div class="tiles" id="invKpi"></div>
+    <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openArticleModal(null)">Ajouter un article</button>
+    <div class="card no-print" style="padding:6px 12px;border-radius:12px;margin-bottom:10px">
+      <input id="invSearch" placeholder="Rechercher un article, une couleur…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderStock()">
+    </div>
+    <div class="filterrow no-print" id="invFilters"></div>
+    <div id="invAlerts"></div>
+    <div id="invList"></div>
+    <div class="card no-print" style="margin-top:6px">
+      <h3>Derniers mouvements</h3>
+      <div id="invHistory"></div>
+      <div class="spacer"></div>
+      <button class="btn neutral" onclick="exportStockCSV()">Exporter le stock (Excel)</button>
+    </div>
+  </section>
+
   <section class="view" id="view-reglages">
     <div class="view-title">Réglages</div>
     <div class="card">
       <h2>Sécurité &amp; confidentialité</h2>
       <p class="sub" style="margin-bottom:10px">Code d'accès chiffré, base verrouillée, protection
       anti-intrusion, hébergement en France.</p>
-      <button class="btn" onclick="showSecurity()">Voir le détail des protections</button>
+      <div class="row">
+        <button class="btn grow" onclick="showSecurity()">Détail des protections</button>
+        <button class="btn grow" onclick="showRgpd()">Protection des données</button>
+      </div>
     </div>
     <div class="card">
       <h2>Compte</h2>
@@ -495,54 +614,296 @@
   <section class="view" id="view-securite">
     <button class="link no-print" onclick="show('reglages')">‹ Réglages</button>
     <div class="view-title">Sécurité</div>
+
     <div class="card">
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.6-3 7.9-7 9.2C8 18.9 5 15.6 5 11V6z"/><path d="m9.2 11.8 2 2 3.6-4.2"/></svg>
-        <div><b>Accès réservé à l'équipe</b>
-        <span class="sub">L'application est protégée par un code d'accès connu des seuls responsables.
-        Sans lui, impossible de voir ou modifier quoi que ce soit.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-        <div><b>Code jamais stocké en clair</b>
-        <span class="sub">Le code est transformé en empreinte cryptographique (SHA-256 avec sel
-        aléatoire). Même en cas de fuite de la base, il resterait illisible.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        <div><b>Protection anti-intrusion</b>
-        <span class="sub">Après 8 codes erronés, l'adresse qui essaie est bloquée 15 minutes.
-        Deviner le code par force brute est impraticable.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6"/><path d="M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"/></svg>
-        <div><b>Base de données verrouillée</b>
-        <span class="sub">Aucun accès public, sous aucune forme : seul le serveur de l'application
-        peut lire ou écrire (verrouillage RLS). Audit de sécurité Supabase : aucune alerte.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><path d="M4 15a4 4 0 0 1 .8-7.9 5.5 5.5 0 0 1 10.8-1A4.5 4.5 0 0 1 19 15"/><path d="M8 19h8"/></svg>
-        <div><b>Chiffrement de bout en bout</b>
-        <span class="sub">Toutes les communications passent en HTTPS (TLS). Rien ne circule
-        en clair sur le réseau.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.2 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.2-3.8-8.5s1.3-6.2 3.8-8.5z"/></svg>
-        <div><b>Hébergé en France</b>
-        <span class="sub">Les données sont stockées à Paris (Union européenne), sur une
-        infrastructure certifiée.</span></div>
-      </div>
-      <div class="secitem">
-        <svg class="ic-s" viewBox="0 0 24 24"><path d="M9 11V8a3 3 0 0 1 6 0v3"/><rect x="6" y="11" width="12" height="9" rx="2"/></svg>
-        <div><b>Données minimales</b>
-        <span class="sub">Seuls le prénom, le nom, l'accueil et les passages sont enregistrés,
-        rien d'autre. Usage strictement interne ; export et suppression possibles à tout moment.</span></div>
-      </div>
+      <p class="sub">Cette page décrit comment l'application protège les données enregistrées :
+      où elles sont, qui peut les voir, comment elles sont protégées, et combien de temps elles
+      sont conservées. Elle est écrite pour être lue sans connaissance technique.</p>
+      <div class="sep"></div>
+      <p class="sub">Aucun système n'est infaillible. Nous ne promettons pas l'invulnérabilité :
+      nous décrivons des mesures précises et vérifiables, <b>y compris leurs limites</b>.</p>
     </div>
+
+    <div class="card">
+      <h3>1. Où sont les données</h3>
+      <p class="sub">La base de données est hébergée par <b>Supabase</b>, qui s'appuie sur
+      l'infrastructure d'<b>Amazon Web Services</b>, dans la région <b>Europe (Paris)</b>,
+      code <code>eu-west-3</code>. Les évaluations, les profils et le stock sont donc stockés
+      <b>en France</b>, dans des centres de données d'Île-de-France.</p>
+      <div class="sep"></div>
+      <p class="sub">La page que vous consultez est publiée séparément via <b>GitHub Pages</b>.
+      Elle ne contient <b>aucune donnée</b> : uniquement le code d'affichage. Les informations
+      n'apparaissent qu'après saisie du code d'accès et proviennent alors de la base hébergée
+      en France.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Deux précisions de transparence.</b> Les journaux techniques, les données
+      de compte et de facturation de l'hébergeur peuvent être traités hors de l'Union européenne,
+      sous couvert des clauses contractuelles types de la Commission européenne ; ils ne portent
+      pas sur le contenu des évaluations. Par ailleurs, un hébergement en France ne vaut pas
+      immunité aux lois étrangères : l'hébergeur et le fournisseur d'infrastructure sont des
+      sociétés de droit américain, soumises notamment au <i>CLOUD Act</i>. Ce service n'est donc
+      pas présenté comme un « cloud souverain » et ne bénéficie pas de la qualification
+      SecNumCloud de l'ANSSI.</p>
+    </div>
+
+    <div class="card">
+      <h3>2. Certifications de l'hébergeur</h3>
+      <p class="sub">Supabase indique publiquement, sur sa page sécurité officielle, être conforme
+      au référentiel <b>SOC 2 Type 2</b> avec audit annuel indépendant, et être <b>certifié
+      ISO/IEC 27001</b> pour son système de management de la sécurité.</p>
+      <div class="sep"></div>
+      <p class="sub">Trois précisions honnêtes : SOC 2 donne lieu à un rapport d'attestation et
+      non à un certificat ; ces documents ne sont pas publics ; et surtout <b>ils portent sur la
+      plateforme, pas sur cette application</b>. Nous ne revendiquons aucune certification pour
+      l'application elle-même.</p>
+    </div>
+
+    <div class="card">
+      <h3>3. Qui peut voir les données</h3>
+      <p class="sub">L'application est réservée à l'encadrement : elle s'ouvre avec un
+      <b>code d'accès unique partagé par l'équipe encadrante</b>, puis chacun sélectionne son
+      profil (Noé, Kamil, Carole…) afin que chaque évaluation soit signée.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Limite à connaître, énoncée sans détour :</b> le profil est une signature,
+      pas une barrière. Toute personne disposant du code peut choisir n'importe quel profil.
+      La confidentialité repose donc sur la diffusion restreinte du code d'accès. Ne le
+      communiquez qu'aux responsables concernés et changez-le à chaque départ.</p>
+      <div class="sep"></div>
+      <p class="sub">L'hébergeur, en tant que sous-traitant au sens de l'article 28 du RGPD,
+      dispose techniquement des moyens d'accéder aux données qu'il stocke, puisqu'il détient les
+      clés de chiffrement. Il s'engage contractuellement à ne pas les exploiter. Enfin, des
+      données peuvent devoir être communiquées sur réquisition judiciaire.</p>
+    </div>
+
+    <div class="card">
+      <h3>4. Comment le code d'accès est protégé</h3>
+      <p class="sub">Le code <b>n'est jamais conservé en clair</b>. Il est transformé en empreinte
+      cryptographique <b>SHA-256 combinée à un sel aléatoire</b>. Ni le code, ni un moyen direct
+      de le reconstituer, ne figurent dans la base.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Nous préférons être transparents sur les limites de ce choix.</b> SHA-256
+      est une fonction rapide, conçue pour vérifier l'intégrité de données, pas pour protéger des
+      secrets d'authentification. Le sel empêche l'usage de tables précalculées, mais il ne
+      ralentit pas un attaquant. Les algorithmes dédiés — <b>Argon2id, scrypt, bcrypt</b> —
+      sont délibérément lents et constituent la référence recommandée par l'OWASP, le NIST et la
+      CNIL. Un condensat SHA-256 salé offre une résistance inférieure à ce type d'attaque, et nous
+      ne prétendons pas le contraire. <b>D'où l'importance d'un code long et propre à ce
+      service.</b></p>
+      <div class="sep"></div>
+      <p class="sub">La vérification s'effectue <b>côté serveur</b>, dans une fonction hébergée à
+      Paris, jamais dans le navigateur. Le code ne circule jamais en clair sur le réseau.</p>
+    </div>
+
+    <div class="card">
+      <h3>5. Chiffrement</h3>
+      <p class="sub"><b>En transit.</b> Toutes les communications sont chiffrées par TLS (HTTPS),
+      en version 1.2 ou supérieure. Rien ne circule en clair sur Internet.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Au repos.</b> Les données en base et les sauvegardes sont chiffrées sur
+      les disques par l'hébergeur avec l'algorithme <b>AES-256</b>.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Ce que cela protège, et ce que cela ne protège pas.</b> Le chiffrement au
+      repos protège contre un accès physique aux supports. Il ne rend pas les données illisibles
+      pour l'application ni pour l'hébergeur, qui détient les clés. <b>Il ne s'agit donc pas d'un
+      chiffrement de bout en bout</b>, et nous n'employons pas cette expression : pour afficher
+      une note ou calculer une moyenne, les serveurs doivent accéder aux données en clair.</p>
+    </div>
+
+    <div class="card">
+      <h3>6. Verrouillage de la base de données</h3>
+      <p class="sub">La base utilise le mécanisme <b>Row Level Security</b> de PostgreSQL, qui
+      filtre l'accès au niveau du moteur de base lui-même, et non dans le code de l'application :
+      la règle s'applique même si le code applicatif comporte un défaut.</p>
+      <div class="sep"></div>
+      <p class="sub">Le verrouillage est activé sur <b>la totalité des tables, sans aucune règle
+      d'accès public</b>. Le refus s'applique donc par défaut : aucune ligne ne peut être lue ni
+      modifiée depuis l'extérieur. Seule la fonction serveur hébergée à Paris, qui détient une clé
+      de service jamais transmise au navigateur, peut lire et écrire — et elle exige le code
+      d'accès à chaque requête. L'audit de sécurité automatique de la plateforme ne remonte
+      aucune alerte.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Limite :</b> ce mécanisme protège le contenu, non l'existence des tables,
+      et peut être contourné par les comptes d'administration de la base. Il est nécessaire, non
+      suffisant : il est complété par le cloisonnement strict des clés de service.</p>
+    </div>
+
+    <div class="card">
+      <h3>7. Tentatives et durée de session</h3>
+      <p class="sub"><b>Limitation des tentatives.</b> Après <b>8 codes erronés</b>, l'adresse
+      réseau est bloquée <b>15 minutes</b>. Le décompte est appliqué côté serveur : il ne peut pas
+      être contourné en rechargeant la page.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Session limitée à une heure.</b> Le profil est redemandé à chaque
+      ouverture et le code doit être ressaisi dès que la dernière saisie date de plus d'une heure,
+      y compris si l'application reste ouverte. Un appareil oublié sur un comptoir ne donne donc
+      plus accès à rien au bout d'une heure.</p>
+    </div>
+
+    <div class="card">
+      <h3>8. La page publique ne contient aucune donnée</h3>
+      <p class="sub">L'interface est publiée sur GitHub Pages et servie en HTTPS, avec un
+      certificat fourni et renouvelé automatiquement. Le dépôt ne contient <b>ni note, ni nom,
+      ni observation, ni photo, ni stock</b> : uniquement le code d'affichage et l'adresse
+      publique du service.</p>
+      <div class="sep"></div>
+      <p class="sub">L'application déclare une politique de sécurité du contenu restrictive et ne
+      charge <b>aucune bibliothèque, aucune police et aucun script externes</b> : la typographie
+      et le logo sont intégrés au fichier. Aucune adresse de page n'est communiquée à un tiers.</p>
+    </div>
+
+    <div class="card">
+      <h3>9. Sauvegardes</h3>
+      <p class="sub">Le projet est hébergé sur l'<b>offre gratuite</b> de la plateforme. Cette
+      offre ne comprend <b>ni sauvegarde automatique exploitable, ni restauration à un instant
+      T</b> : nous ne promettons donc pas une restauration à la minute près. Un export manuel
+      complet, à conserver hors de la plateforme, est recommandé chaque semaine.</p>
+      <div class="sep"></div>
+      <p class="sub">Deux autres limites de cette offre, signalées par honnêteté : le projet peut
+      être suspendu après une longue période sans activité (restaurable ensuite), et aucun
+      engagement de disponibilité ne s'applique.</p>
+    </div>
+
+    <div class="card">
+      <h3>10. Ce que l'application ne fait pas</h3>
+      <p class="sub">Aucun pistage, aucun cookie publicitaire, aucun outil de mesure d'audience.
+      Aucune publicité. Aucune revente ni cession de données. Aucun service tiers.
+      <b>Aucune reconnaissance faciale, aucune détection de visage, aucune analyse d'émotion ou
+      de sourire</b> — cette interdiction est durable. Aucune géolocalisation, aucun accès au
+      micro, aucun accès à la caméra en dehors d'une photo déclenchée explicitement.
+      <b>Aucune décision automatisée</b> : une note n'entraîne jamais par elle-même de
+      conséquence, elle est toujours interprétée par un responsable.
+      <b>Aucun classement nominatif</b> n'est produit ni exporté.</p>
+    </div>
+
+    <div class="card">
+      <h3>11. Nos sous-traitants</h3>
+      <p class="sub"><b>Supabase</b> — base de données et fonction serveur. Données hébergées en
+      France (AWS, région Paris) ; journaux et données de compte possiblement hors UE.
+      Sous-traitant au sens de l'article 28 du RGPD.</p>
+      <div class="sep"></div>
+      <p class="sub"><b>GitHub</b> — publication de l'interface publique, qui ne contient aucune
+      donnée personnelle.</p>
+      <div class="sep"></div>
+      <p class="sub">Aucun autre prestataire : ni outil d'e-mailing, ni outil de support, ni
+      service d'analyse. <b>À faire signer :</b> l'accord de sous-traitance (DPA) avec l'hébergeur
+      n'est pas conclu automatiquement à l'ouverture d'un compte ; il doit être demandé depuis la
+      console d'administration puis signé.</p>
+    </div>
+
+    <div class="card">
+      <h3>12. En cas de perte d'un téléphone</h3>
+      <p class="sub">Prévenez le responsable du site dès que possible. La mesure immédiate est
+      simple et efficace : <b>changer le code d'accès</b> depuis Réglages → Compte, puis le
+      communiquer à l'équipe. L'ancien code devient aussitôt inopérant sur tous les appareils.
+      Rappel : la session se verrouille de toute façon au bout d'une heure.</p>
+    </div>
+
+    <div class="card">
+      <h3>13. Conservation des données</h3>
+      <p class="sub">Le détail des évaluations est conservé <b>30 jours</b>, puis remplacé
+      automatiquement par une <b>moyenne mensuelle conservée 3 ans</b>. Les photos sont supprimées
+      au bout de <b>7 jours</b>. Cette purge s'exécute chaque jour sur le serveur, sans
+      intervention.</p>
+      <div class="sep"></div>
+      <p class="sub">Ce choix suit la position de la CNIL : conserver longtemps des indicateurs de
+      performance individualisés est disproportionné. Il préserve néanmoins la mesure de la
+      qualité dans le temps, puisque les moyennes mensuelles restent exactes.</p>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="showRgpd()">Voir la notice de protection des données</button>
+    </div>
+
     <div class="card">
       <h3>Bonnes pratiques</h3>
       <p class="sub">Partagez le code uniquement aux responsables concernés et changez-le
-      régulièrement (Réglages → « Changer le code »), par exemple à chaque départ dans l'équipe.</p>
+      régulièrement, notamment à chaque départ dans l'équipe. Privilégiez un code long, propre à
+      ce service. Ne photographiez jamais une personne.</p>
+    </div>
+  </section>
+
+  <!-- ================= NOTICE RGPD ================= -->
+  <section class="view" id="view-rgpd">
+    <button class="link no-print" onclick="showSecurity()">‹ Sécurité</button>
+    <div class="view-title">Protection des données</div>
+
+    <div class="card">
+      <p class="sub">Cette notice décrit le traitement de données personnelles mis en œuvre par
+      l'application. <b>Elle doit être portée à la connaissance des hôtes et hôtesses évalués</b> :
+      c'est une obligation d'information prévue à l'article 13 du RGPD.</p>
+    </div>
+
+    <div class="card">
+      <h3>Responsable du traitement</h3>
+      <p class="sub">L'entreprise Pénélope, représentée par le responsable du site Evergreen.
+      Pour toute question ou pour exercer vos droits, adressez-vous à votre responsable de site
+      ou au référent protection des données de l'entreprise.</p>
+    </div>
+
+    <div class="card">
+      <h3>Finalité</h3>
+      <p class="sub">Suivre et améliorer la qualité de la prestation d'accueil (tenue,
+      ponctualité, qualité de l'accueil), accompagner les équipes, et gérer le stock des tenues
+      professionnelles.</p>
+    </div>
+
+    <div class="card">
+      <h3>Base légale</h3>
+      <p class="sub"><b>Intérêt légitime de l'employeur</b> (article 6.1.f du RGPD) à s'assurer de
+      la qualité de la prestation qu'il fournit à son client.</p>
+      <div class="sep"></div>
+      <p class="sub">Le traitement <b>ne repose pas sur votre consentement</b> : dans une relation
+      de travail, le lien de subordination ne permet pas un consentement libre. C'est pourquoi
+      l'application ne comporte aucune case « j'accepte ». En contrepartie, vous disposez d'un
+      <b>droit d'opposition</b> pour des raisons tenant à votre situation particulière.</p>
+    </div>
+
+    <div class="card">
+      <h3>Données traitées</h3>
+      <p class="sub">Prénom, nom, accueil de rattachement, date d'arrivée ; notes par critère et
+      appréciations factuelles ; observations et réponses apportées ; identité de l'évaluateur ;
+      taille et dotation en tenues. <b>Aucune donnée bancaire, de santé, de visiteur ou de
+      client.</b></p>
+    </div>
+
+    <div class="card">
+      <h3>Durées de conservation</h3>
+      <p class="sub">Détail des évaluations et observations : <b>30 jours</b>.
+      Photos : <b>7 jours</b>. Moyennes mensuelles consolidées : <b>3 ans</b> (durée alignée sur
+      l'article L1332-5 du Code du travail). Dotation en tenues : durée de la mission, puis
+      3 mois. La suppression est automatique.</p>
+    </div>
+
+    <div class="card">
+      <h3>Destinataires</h3>
+      <p class="sub">Les seuls responsables habilités de l'équipe encadrante Pénélope, et
+      l'hébergeur en qualité de sous-traitant technique. <b>Aucune diffusion à des tiers.</b></p>
+    </div>
+
+    <div class="card">
+      <h3>Vos droits</h3>
+      <p class="sub">Vous disposez d'un droit d'accès, de rectification, d'effacement, de
+      limitation, de portabilité et d'opposition. Concrètement :</p>
+      <div class="sep"></div>
+      <p class="sub"><b>Accès et portabilité :</b> votre responsable édite en un clic, depuis
+      votre fiche, un dossier complet reprenant toutes les données vous concernant, y compris les
+      observations rédigées à votre sujet.<br>
+      <b>Rectification, opposition, effacement :</b> adressez votre demande à votre responsable.
+      Une réponse motivée vous est due <b>sous un mois</b>.<br>
+      <b>Réclamation :</b> vous pouvez à tout moment saisir la CNIL (www.cnil.fr).</p>
+    </div>
+
+    <div class="card">
+      <h3>Ce que l'application ne fait pas</h3>
+      <p class="sub">Aucun classement nominatif, aucune décision automatisée, aucune
+      reconnaissance faciale, aucune géolocalisation, aucune surveillance en continu. Les
+      évaluations résultent d'un passage ponctuel effectué par un responsable identifié.</p>
+    </div>
+
+    <div class="card">
+      <h3>À faire par l'entreprise avant la mise en service</h3>
+      <p class="sub">Trois formalités relèvent de l'organisation et non du logiciel :
+      <b>informer les personnes évaluées</b> (remise de cette notice) ;
+      <b>informer et consulter le CSE</b> préalablement à la mise en œuvre d'un dispositif de
+      contrôle de l'activité (articles L2312-38 du Code du travail) ;
+      <b>inscrire le traitement au registre</b> prévu à l'article 30 du RGPD.</p>
     </div>
   </section>
 </main>
@@ -552,6 +913,8 @@
     <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.6 12.3 2.3 2.3 4.5-5"/></svg>Passage</button>
   <button data-v="equipe">
     <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.6 19c.7-3 2.8-4.6 5.4-4.6s4.7 1.6 5.4 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.7 14.7c2.2.3 4 1.7 4.7 4.3"/></svg>Équipe</button>
+  <button data-v="stock">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M3.6 8.2 12 4l8.4 4.2v7.6L12 20l-8.4-4.2z"/><path d="M3.6 8.2 12 12.4l8.4-4.2M12 12.4V20"/></svg>Stock</button>
   <button data-v="stats">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 20v-6M11 20V5M17 20v-9"/><path d="M3 20h18"/></svg>Stats</button>
   <button data-v="rapport">
@@ -577,7 +940,8 @@ const MONTHS_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','
 
 /* ---------- état ---------- */
 let state = null;
-function blankState(){ return { hosts:[], checks:{}, config:null, createdAt:new Date().toISOString() }; }
+function blankState(){ return { hosts:[], checks:{}, config:null, monthly:[],
+  inv:{ articles:[], variants:[], moves:[] }, createdAt:new Date().toISOString() }; }
 function load(){
   try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
   return null;
@@ -688,6 +1052,20 @@ async function pullAll(){
         by:c.evaluator||'', updatedAt:c.updated_at }; });
     state.checks = map;
     if(d.config) state.config = d.config;
+    state.monthly = (d.monthly||[]).map(m=>({ hostId:m.host_id, month:m.month,
+      sum:m.sum_score||0, n:m.n||0 }));
+    if(d.inv){
+      state.inv = {
+        articles: (d.inv.articles||[]).map(a=>({ id:a.id, name:a.name, category:a.category||'',
+          gender:a.gender||'Mixte', color:a.color||'', sizeType:a.size_type||'alpha',
+          minStock:a.min_stock||0, createdAt:a.created_at, archivedAt:a.archived_at })),
+        variants: (d.inv.variants||[]).map(v=>({ id:v.id, articleId:v.article_id, size:v.size,
+          sku:v.sku||'', position:v.position||0 })),
+        moves: (d.inv.moves||[]).map(m=>({ id:m.id, variantId:m.variant_id, delta:m.delta,
+          reason:m.reason||'', note:m.note||'', hostId:m.host_id||null, by:m.evaluator||'',
+          at:m.created_at }))
+      };
+    }
     try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
     online = true;
     rerenderSoft();
@@ -700,6 +1078,7 @@ function rerenderSoft(){
   if(document.getElementById('hostModal').classList.contains('on')) return;
   if(currentView==='pointage') renderPointage();
   else if(currentView==='equipe'){ renderEquipe(); renderManagers(); }
+  else if(currentView==='stock') renderStock();
   else if(currentView==='stats') renderStats();
   else if(currentView==='fiche'){ if(hostById(ficheId)) openFiche(ficheId); else show('equipe'); }
 }
@@ -804,6 +1183,17 @@ function rateColor(p){
   return 'var(--bad)';
 }
 function avgOf(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
+/* Bilans mensuels : le détail quotidien est purgé au bout de 30 jours (RGPD),
+   mais la mesure de la qualité reste exacte grâce à ces sommes conservées. */
+function monthlyAgg(hostId, month){
+  return (state.monthly||[]).filter(m=>(!hostId||m.hostId===hostId) && (!month||m.month===month))
+    .reduce((acc,m)=>({ sum:acc.sum+m.sum, n:acc.n+m.n }), { sum:0, n:0 });
+}
+function blendAvg(scores, agg){
+  const n = scores.length + agg.n;
+  if(!n) return null;
+  return (scores.reduce((a,b)=>a+b,0) + agg.sum) / n;
+}
 
 /* ---------- accès données ---------- */
 function activeHosts(){ return state.hosts.filter(h=>!h.archivedAt)
@@ -844,8 +1234,9 @@ function checksInRange(id, from, to){
 function hostStats(h){
   const list = checksInRange(h.id, null, null);
   const scores = list.map(checkScore);
-  const total = list.length;
-  const pct = avgOf(scores);
+  const agg = monthlyAgg(h.id, null);
+  const total = list.length + agg.n;
+  const pct = blendAvg(scores, agg);
   let streak = 0;
   for(let i=scores.length-1;i>=0;i--){ if(scores[i]===100) streak++; else break; }
   let best=0, run=0;
@@ -855,8 +1246,8 @@ function hostStats(h){
   const now = new Date();
   const mCur = iso(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0,7);
   const mPrev = iso(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
-  const pm = m => avgOf(list.map((c,i)=>({c,sc:scores[i]}))
-    .filter(x=>x.c.date.slice(0,7)===m).map(x=>x.sc));
+  const pm = m => blendAvg(list.map((c,i)=>({c,sc:scores[i]}))
+    .filter(x=>x.c.date.slice(0,7)===m).map(x=>x.sc), monthlyAgg(h.id, m));
   const reasons = {};
   list.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1));
   return { total, notOk:scores.filter(x=>x<100).length, pct, pct30, streak, best,
@@ -868,7 +1259,8 @@ function monthly(h, n){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const key = iso(d).slice(0,7);
     const l = checksInRange(h.id,null,null).filter(c=>c.date.slice(0,7)===key);
-    out.push({ label:MONTHS_FR[d.getMonth()], pct: avgOf(l.map(checkScore)), n:l.length });
+    const ag = monthlyAgg(h.id, key);
+    out.push({ label:MONTHS_FR[d.getMonth()], pct: blendAvg(l.map(checkScore), ag), n:l.length+ag.n });
   }
   return out;
 }
@@ -885,7 +1277,8 @@ function teamRange(from, to){
       if(c.status==='not_ok') (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1);
     }
   }
-  return { total:scores.length, pct: avgOf(scores), reasons };
+  const ag = (from===null && to===null) ? monthlyAgg(null, null) : { sum:0, n:0 };
+  return { total:scores.length+ag.n, pct: blendAvg(scores, ag), reasons };
 }
 
 /* ---------- navigation ---------- */
@@ -903,7 +1296,15 @@ function show(v){
   window.scrollTo(0,0);
   if(v==='pointage') renderPointage();
   if(v==='equipe'){ renderEquipe(); renderManagers(); }
+  if(v==='stock') renderStock();
   if(v==='stats') renderStats();
+}
+function showRgpd(){
+  currentView = 'rgpd';
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('view-rgpd').classList.add('on');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v==='reglages'));
+  window.scrollTo(0,0);
 }
 function showSecurity(){
   currentView = 'securite';
@@ -949,17 +1350,19 @@ function renderPointage(){
               '<button class="ko'+(!isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ko" data-h="'+h.id+'" data-d="'+date+'">&#10007;</button>'+
               '</div></div>'+
               (!isOk ? '<input class="ccomment" placeholder="Commentaire (ex. : badge oublié ce matin)" '+
-                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" value="'+esc(it && it.comment || '')+'">'+
+                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" maxlength="300" value="'+esc(it && it.comment || '')+'">'+
                 '<div class="photorow">'+
                 (it && it.photo
                   ? '<img class="pthumb" src="'+it.photo+'">'+
                     '<button class="link" data-delphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">retirer la photo</button>'
-                  : '<button class="btn small" data-addphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">Ajouter une photo</button>')+
-                '</div>' : '');
+                  : '<button class="btn small" data-addphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">Photo du poste</button>')+
+                '</div>'+
+                (it && it.photo ? '' : '<p class="mutd" style="margin:2px 0 4px">Photographiez le poste ou l\'élément concerné, jamais une personne.</p>') : '');
           }).join('')+
           (st==='not_ok' ? '<div class="repzone"><label>Ce que j\'ai répondu</label>'+
+            '<p class="mutd" style="margin:-2px 0 6px">Décrivez un fait daté et vérifiable. N\'écrivez rien sur l\'apparence physique, la santé, la vie privée, l\'origine ou les convictions. Cette observation est communicable à la personne concernée si elle la demande.</p>'+
             '<textarea placeholder="Ex. : première fois, c\'est noté, merci de ne plus l\'oublier." '+
-            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)">'+esc(c && c.note || '')+'</textarea></div>' : '')+
+            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)" maxlength="300">'+esc(c && c.note || '')+'</textarea></div>' : '')+
           '</div>';
       }
       const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer la note du jour</button>' : '';
@@ -1107,6 +1510,7 @@ photoInput.addEventListener('change', ()=>{
   const f = photoInput.files[0]; photoInput.value = '';
   if(!f || !pendingPhoto) return;
   const { h, d, crit } = pendingPhoto; pendingPhoto = null;
+  if(!confirm('Confirmez-vous qu\'aucune personne n\'est identifiable sur cette photo ?\n\nLes photos sont automatiquement supprimées au bout de 7 jours.')){ return; }
   const img = new Image();
   img.onload = ()=>{
     const MAX = 900;
@@ -1419,6 +1823,10 @@ function openFiche(id){
     '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(monthly(h,6))+'</div>'+
     '<div class="card"><h3>Motifs de non-conformité</h3>'+reasonBars(s.reasons)+'</div>'+
     '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun passage pour l\'instant.</p>')+'</div>'+
+    '<div class="card no-print"><h3>Données personnelles</h3>'+
+      '<p class="sub" style="margin-bottom:10px">'+esc(h.firstName)+' peut demander à consulter les données '+
+      'la ou le concernant. Ce bouton produit le dossier complet, à lui remettre.</p>'+
+      '<button class="btn" style="width:100%" onclick="exportHostData(\''+h.id+'\')">Éditer le dossier personnel</button></div>'+
     '<div class="card no-print"><div class="row">'+
       (h.archivedAt
         ? '<button class="btn grow" onclick="unarchiveHost(\''+h.id+'\');openFiche(\''+h.id+'\')">Réintégrer</button>'
@@ -1429,6 +1837,45 @@ function openFiche(id){
   document.getElementById('view-fiche').classList.add('on');
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v==='equipe'));
   window.scrollTo(0,0);
+}
+
+/* Droit d'accès (art. 15 RGPD) : dossier complet d'une personne, remis sur demande. */
+function exportHostData(id){
+  const h = hostById(id); if(!h) return;
+  const s = hostStats(h);
+  const sep=';'; const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const L = [];
+  L.push('DOSSIER PERSONNEL — SUIVI PRESTATION PENELOPE');
+  L.push('Édité le'+sep+q(frDate(todayISO())));
+  L.push('');
+  L.push('IDENTITE');
+  L.push('Prénom'+sep+q(h.firstName));
+  L.push('Nom'+sep+q(h.lastName||''));
+  L.push('Accueil'+sep+q(h.site||''));
+  L.push('Date d\'arrivée'+sep+q(frDate(h.startedOn)));
+  L.push('Commentaire sur le profil'+sep+q(h.comment||''));
+  L.push('');
+  L.push('SYNTHESE');
+  L.push('Note moyenne'+sep+q(pctTxt(s.pct)));
+  L.push('Nombre de passages conservés'+sep+s.total);
+  L.push('');
+  L.push('EVALUATIONS DETAILLEES (conservées 30 jours)');
+  L.push('Date'+sep+'Note'+sep+'Appréciation'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Évaluateur');
+  s.list.slice().reverse().forEach(c=>{
+    const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
+    const sc = checkScore(c);
+    L.push([q(frDate(c.date)), sc+' %', q(rateLabel(sc)),
+      q(failed.map(([k])=>k).join(', ')),
+      q(failed.filter(([,v])=>v.comment).map(([k,v])=>k+' : '+v.comment).join(' | ')),
+      q(c.note||''), q(c.by||'')].join(sep));
+  });
+  L.push('');
+  L.push('VOS DROITS');
+  L.push(q('Vous pouvez demander la rectification, la limitation ou l\'effacement de ces données, et vous opposer au traitement pour des raisons tenant à votre situation particulière. Adressez votre demande au responsable du site. Une réponse motivée vous sera apportée sous un mois.'));
+  download(String.fromCharCode(65279)+L.join('\r\n'),
+    'dossier-'+(h.firstName+'-'+(h.lastName||'')).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+todayISO()+'.csv',
+    'text/csv;charset=utf-8');
+  toast('Dossier personnel édité');
 }
 
 /* ---------- STATS ---------- */
@@ -1455,7 +1902,8 @@ function teamMonthly(n){
     for(const h of state.hosts)
       for(const c of checksInRange(h.id, null, null))
         if(c.date.slice(0,7)===key) scores.push(checkScore(c));
-    out.push({ label:MONTHS_FR[d.getMonth()], pct: avgOf(scores), n:scores.length });
+    const ag = monthlyAgg(null, key);
+    out.push({ label:MONTHS_FR[d.getMonth()], pct: blendAvg(scores, ag), n:scores.length+ag.n });
   }
   return out;
 }
@@ -1505,8 +1953,8 @@ function renderStats(){
     days.push({label:String(dd.getDate()), pct:td.pct, n:td.total});
   }
 
-  const rank = hosts.map(h=>({h, s:hostStats(h)})).filter(x=>x.s.total>0)
-    .sort((a,b)=>(b.s.pct-a.s.pct)||(b.s.total-a.s.total));
+  const rank = hosts.map(h=>({h, s:hostStats(h)})).filter(x=>x.s.total>0);
+  const alpha = [...rank].sort((a,b)=>hostName(a.h).localeCompare(hostName(b.h),'fr'));
   const watch = rank.filter(x=>x.s.total>=3 && x.s.pct30!=null && x.s.pct30<75);
 
   box.innerHTML = title+
@@ -1520,18 +1968,375 @@ function renderStats(){
     '<div class="card"><h3>Note de l\'équipe sur 14 jours</h3>'+barChart(days)+'</div>'+
     '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(teamMonthly(6))+'</div>'+
     '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
-    (watch.length ? '<div class="card"><h3>À surveiller (note sous 75 % sur 30 j.)</h3>'+
+    (watch.length ? '<div class="card"><h3>Points de vigilance (note sous 75 % sur 30 j.)</h3>'+
       watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
       '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
-    '<div class="card"><h3>Classement : note moyenne</h3>'+
-      (rank.length ? '<div class="tablewrap"><table><tr><th></th><th>Hôte</th><th>Note</th><th>Passages</th><th>Sans-faute</th></tr>'+
-      rank.map((x,i)=>'<tr><td style="color:var(--muted)">'+(i+1)+'</td>'+
+    '<div class="card"><h3>Suivi par personne</h3>'+
+      (alpha.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Note</th><th>Passages</th></tr>'+
+      alpha.map(x=>'<tr>'+
         '<td>'+esc(hostName(x.h))+'</td><td><b style="color:'+rateColor(x.s.pct)+'">'+pctTxt(x.s.pct)+'</b> '+
         gradePill(x.s.pct)+'</td>'+
-        '<td>'+x.s.total+'</td><td>'+x.s.streak+' j.</td></tr>').join('')+'</table></div>'
+        '<td>'+x.s.total+'</td></tr>').join('')+'</table></div>'
       : '<p class="mutd">Aucun passage pour l\'instant.</p>')+
+      '<p class="mutd" style="margin-top:10px">Liste par ordre alphabétique. L\'application ne produit '+
+      'volontairement aucun classement nominatif : ces résultats sont un outil d\'accompagnement, '+
+      'pas un palmarès, et ne doivent pas être diffusés.</p>'+
     '</div>';
   animateRings();
+}
+
+
+/* ==================== INVENTAIRE DES TENUES ====================
+   Modèle des systèmes de gestion de stock professionnels :
+   article (modèle) -> variantes (tailles) -> registre de mouvements.
+   Le stock affiché est TOUJOURS la somme des mouvements : rien n'est
+   écrasé, tout est traçable et auditable.                            */
+
+const INV_CATEGORIES = ['Polo','Chemise','Chemisier','T-shirt','Pull / maille','Gilet',
+  'Veste / blazer','Softshell','Parka / manteau','Tunique / blouse','Pantalon','Jupe','Robe',
+  'Foulard / écharpe','Cravate','Ceinture','Chaussures','Porte-badge','Parapluie','Autre accessoire'];
+const INV_GENDERS = ['Mixte / unisexe','Coupe femme','Coupe homme'];
+const INV_COLORS = ['Noir','Blanc','Bleu marine','Bleu','Bleu ciel','Gris','Anthracite','Bordeaux',
+  'Rouge','Vert','Beige','Taupe'];
+/* Gammes de tailles réelles du vêtement professionnel en France.
+   « centrales » = tailles les plus demandées : leur rupture déclenche une alerte
+   renforcée (une gamme sans ses tailles centrales est dite « cassée »). */
+const SIZE_SETS = {
+  alpha:     { label:'Tailles alpha (XS à 4XL)',      sizes:['XS','S','M','L','XL','2XL','3XL','4XL'], mid:['M','L','XL'] },
+  femme:     { label:'Tailles femme (34 à 52)',       sizes:['34','36','38','40','42','44','46','48','50','52'], mid:['38','40','42'] },
+  homme:     { label:'Tailles homme (38 à 60)',       sizes:['38','40','42','44','46','48','50','52','54','56','58','60'], mid:['42','44','46'] },
+  doublet:   { label:'Tailles homme par doublets',    sizes:['38/40','42/44','46/48','50/52','54/56','58/60'], mid:['42/44','46/48'] },
+  blouse:    { label:'Blouse / tunique (0 à 6)',      sizes:['0','1','2','3','4','5','6'], mid:['1','2'] },
+  chemise:   { label:'Chemise — tour de cou (36 à 45)', sizes:['36','37','38','39','40','41','42','43','44','45'], mid:['39','40','41'] },
+  chaussure: { label:'Pointures (35 à 48)',           sizes:['35','36','37','38','39','40','41','42','43','44','45','46','47','48'], mid:['38','39','40','41','42','43'] },
+  unique:    { label:'Taille unique',                 sizes:['TU'], mid:[] }
+};
+/* Types de mouvement standards de la gestion de stock textile.
+   sign : +1 entrée, -1 sortie, 0 signe libre. */
+const MOVE_REASONS = [
+  { v:'Réception fournisseur',    sign:1,  host:false, motif:false },
+  { v:'Remise à un collaborateur',sign:-1, host:true,  motif:false },
+  { v:'Restitution en stock',     sign:1,  host:true,  motif:false },
+  { v:'Perte / non retrouvé',     sign:-1, host:true,  motif:true  },
+  { v:'Mise au rebut',            sign:-1, host:false, motif:true  },
+  { v:'Ajustement d\'inventaire', sign:0,  host:false, motif:true  },
+  { v:'Envoi en blanchisserie',   sign:-1, host:false, motif:false },
+  { v:'Retour de blanchisserie',  sign:1,  host:false, motif:false },
+  { v:'Retour fournisseur',       sign:-1, host:false, motif:true  }
+];
+/* Motifs pré-définis : jamais de champ libre pour la cause d'un écart. */
+const MOVE_MOTIFS = {
+  'Perte / non retrouvé':      ['Égaré, non retrouvé','Non restitué au départ','Vol présumé'],
+  'Mise au rebut':             ['Usure normale','Déchiré / troué','Tache indélébile'],
+  'Ajustement d\'inventaire':  ['Écart constaté au comptage','Trouvé en plus','Erreur de saisie','Solde initial de mise en service'],
+  'Retour fournisseur':        ['Défaut fabricant','Taille inadaptée','Déchiré / troué']
+};
+
+function invData(){
+  if(!state.inv) state.inv = { articles:[], variants:[], moves:[] };
+  state.inv.articles = state.inv.articles || [];
+  state.inv.variants = state.inv.variants || [];
+  state.inv.moves = state.inv.moves || [];
+  return state.inv;
+}
+function stockMap(){
+  const m = {};
+  invData().moves.forEach(mv=>{ m[mv.variantId] = (m[mv.variantId]||0) + (mv.delta||0); });
+  return m;
+}
+function articleVariants(articleId){
+  return invData().variants.filter(v=>v.articleId===articleId)
+    .sort((a,b)=>(a.position||0)-(b.position||0));
+}
+function articleById(id){ return invData().articles.find(a=>a.id===id); }
+function variantById(id){ return invData().variants.find(v=>v.id===id); }
+function activeArticles(){ return invData().articles.filter(a=>!a.archivedAt); }
+function skuOf(article, size){
+  const clean = t => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(0,4);
+  const g = /femme/i.test(article.gender||'') ? 'F' : (/homme/i.test(article.gender||'') ? 'H' : 'U');
+  return [clean(article.category)||'ART', clean(article.name), clean(article.color)||'STD',
+    g, String(size).toUpperCase()].join('-');
+}
+
+/* ---------- rendu de la page Stock ---------- */
+let invFilter = 'Tout';
+function renderStock(){
+  const box = document.getElementById('invList');
+  const stock = stockMap();
+  const arts = activeArticles();
+
+  // indicateurs
+  let totalQty = 0, refs = 0, alerts = 0, outs = 0;
+  arts.forEach(a=>articleVariants(a.id).forEach(v=>{
+    const q = stock[v.id]||0; totalQty += q; refs++;
+    if(q<=0) outs++; else if(q <= (a.minStock||0)) alerts++;
+  }));
+  const today = todayISO();
+  const todayMoves = invData().moves.filter(m=>(m.at||'').slice(0,10)===today).length;
+  document.getElementById('invKpi').innerHTML =
+    '<div class="tile"><span>Pièces en stock</span><b>'+totalQty+'</b></div>'+
+    '<div class="tile"><span>Références suivies</span><b>'+refs+'</b><span class="mutd">'+arts.length+' article'+(arts.length>1?'s':'')+'</span></div>'+
+    '<div class="tile"><span>En alerte</span><b style="color:'+(alerts?'#8a6a09':'var(--ink)')+'">'+alerts+'</b><span class="mutd">sous le seuil</span></div>'+
+    '<div class="tile"><span>Ruptures</span><b style="color:'+(outs?'var(--bad)':'var(--ink)')+'">'+outs+'</b><span class="mutd">'+todayMoves+' mouvement'+(todayMoves>1?'s':'')+' aujourd\'hui</span></div>';
+
+  // filtres par catégorie
+  const cats = ['Tout', ...new Set(arts.map(a=>a.category).filter(Boolean))];
+  document.getElementById('invFilters').innerHTML = arts.length ? cats.map(c=>
+    '<button class="'+(invFilter===c?'sel':'')+'" onclick="setInvFilter(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('') : '';
+
+  // liste
+  const q = (document.getElementById('invSearch').value||'').trim().toLowerCase();
+  let list = arts;
+  if(invFilter!=='Tout') list = list.filter(a=>a.category===invFilter);
+  if(q) list = list.filter(a=>(a.name+' '+a.color+' '+a.category+' '+a.gender).toLowerCase().includes(q));
+
+  // alertes en tête
+  const alertRows = [];
+  arts.forEach(a=>articleVariants(a.id).forEach(v=>{
+    const qy = stock[v.id]||0;
+    if(qy <= (a.minStock||0)) alertRows.push({a, v, q:qy});
+  }));
+  alertRows.sort((x,y)=>x.q-y.q);
+  // gammes dont une taille centrale est en rupture : priorité de réassort
+  const broken = [];
+  arts.forEach(a=>{
+    const mid = (SIZE_SETS[a.sizeType]||SIZE_SETS.alpha).mid || [];
+    const outMid = articleVariants(a.id).filter(v=>mid.includes(v.size) && (stock[v.id]||0)<=0);
+    if(outMid.length) broken.push({a, sizes:outMid.map(v=>v.size)});
+  });
+  document.getElementById('invAlerts').innerHTML = (broken.length
+    ? '<div class="card" style="border-left:3px solid var(--bad)"><h3>Tailles courantes en rupture</h3>'+
+      broken.map(b=>'<div class="movline"><span class="grow">'+esc(b.a.name)+
+      ' <span class="mutd">'+esc(b.a.color||'')+'</span></span><b class="stat-ko">'+
+      b.sizes.map(esc).join(' · ')+'</b></div>').join('')+
+      '<p class="mutd" style="margin-top:8px">Ce sont les tailles les plus demandées : à réapprovisionner en priorité.</p></div>'
+    : '') + (alertRows.length
+    ? '<div class="card"><h3>À réapprovisionner</h3>'+alertRows.slice(0,8).map(r=>
+        '<div class="movline"><span class="grow">'+esc(r.a.name)+' <span class="mutd">'+esc(r.a.color||'')+' · taille '+esc(r.v.size)+'</span></span>'+
+        '<b style="color:'+(r.q<=0?'var(--bad)':'#8a6a09')+'">'+r.q+'</b></div>').join('')+
+      (alertRows.length>8 ? '<p class="mutd" style="margin-top:8px">+ '+(alertRows.length-8)+' autre'+(alertRows.length-8>1?'s':'')+'</p>' : '')+'</div>'
+    : '');
+
+  if(!arts.length){
+    box.innerHTML = '<div class="card"><p class="sub">Aucun article pour l\'instant. Créez votre premier article : vous pourrez générer toutes ses tailles d\'un seul coup.</p></div>';
+  } else if(!list.length){
+    box.innerHTML = '<div class="card"><p class="sub">Aucun article ne correspond à cette recherche.</p></div>';
+  } else {
+    box.innerHTML = list.map(a=>{
+      const vars = articleVariants(a.id);
+      const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
+      return '<div class="artcard">'+
+        '<div class="arthead"><div class="grow">'+
+          '<div class="artname">'+esc(a.name)+'</div>'+
+          '<div class="artmeta">'+[a.category, a.gender, a.color].filter(Boolean).map(esc).join(' · ')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right"><div class="arttotal">'+tot+'</div>'+
+        '<button class="link" style="font-size:12.5px;padding:2px" onclick="openArticleModal(\''+a.id+'\')">Modifier</button></div>'+
+        '</div>'+
+        '<div class="sizegrid">'+vars.map(v=>{
+          const qy = stock[v.id]||0;
+          const cls = qy<=0 ? 'out' : (qy <= (a.minStock||0) ? 'low' : '');
+          return '<button class="sizecell '+cls+'" onclick="openMoveModal(\''+v.id+'\')">'+
+            '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
+        }).join('')+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // historique
+  const hist = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).slice(0,40);
+  document.getElementById('invHistory').innerHTML = hist.length ? hist.map(m=>{
+    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
+    const who = m.hostId ? (hostById(m.hostId) ? ' · '+esc(hostName(hostById(m.hostId))) : '') : '';
+    return '<div class="movline">'+
+      '<span class="movdelta '+(m.delta>0?'up':'down')+'">'+(m.delta>0?'+':'')+m.delta+'</span>'+
+      '<span class="grow">'+(a?esc(a.name):'—')+' <span class="mutd">'+(v?'taille '+esc(v.size):'')+'</span>'+
+      '<br><span class="mutd">'+esc(m.reason||'')+who+(m.note?' · '+esc(m.note):'')+'</span></span>'+
+      '<span class="mutd" style="white-space:nowrap">'+frDate(String(m.at||'').slice(0,10))+(m.by?'<br>'+esc(m.by):'')+'</span>'+
+    '</div>';
+  }).join('') : '<p class="mutd">Aucun mouvement enregistré.</p>';
+}
+function setInvFilter(c){ invFilter = c; renderStock(); }
+
+/* ---------- création / modification d'un article ---------- */
+let modalArticleId = null;
+let pickedSizes = [];
+function fillSelect(id, values, current){
+  document.getElementById(id).innerHTML = values.map(v=>{
+    const val = typeof v==='string' ? v : v.v, lab = typeof v==='string' ? v : v.label;
+    return '<option value="'+esc(val)+'"'+(val===current?' selected':'')+'>'+esc(lab)+'</option>';
+  }).join('');
+}
+function renderSizePick(){
+  const type = document.getElementById('aSizeType').value;
+  const set = SIZE_SETS[type] || SIZE_SETS.alpha;
+  if(!pickedSizes.length || !pickedSizes.every(x=>set.sizes.includes(x))) pickedSizes = set.sizes.slice();
+  document.getElementById('aSizes').innerHTML = set.sizes.map(sz=>
+    '<button class="'+(pickedSizes.includes(sz)?'sel':'')+'" onclick="toggleSize(\''+sz+'\')">'+sz+'</button>').join('');
+}
+function toggleSize(sz){
+  pickedSizes = pickedSizes.includes(sz) ? pickedSizes.filter(x=>x!==sz) : [...pickedSizes, sz];
+  renderSizePick();
+}
+function openArticleModal(id){
+  modalArticleId = id;
+  const a = id ? articleById(id) : null;
+  document.getElementById('artTitle').textContent = a ? 'Modifier l\'article' : 'Nouvel article';
+  fillSelect('aCat', INV_CATEGORIES, a ? a.category : INV_CATEGORIES[0]);
+  fillSelect('aGender', INV_GENDERS, a ? a.gender : 'Mixte');
+  fillSelect('aSizeType', Object.keys(SIZE_SETS).map(k=>({v:k, label:SIZE_SETS[k].label})),
+    a ? a.sizeType : 'alpha');
+  document.getElementById('aName').value = a ? a.name : '';
+  document.getElementById('aColor').value = a ? (a.color||'') : '';
+  document.getElementById('aMin').value = a ? (a.minStock||0) : 2;
+  pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : [];
+  renderSizePick();
+  document.getElementById('artDanger').innerHTML = a
+    ? '<div class="sep"></div><button class="btn danger" style="width:100%" onclick="archiveArticle(\''+a.id+'\')">Retirer cet article du stock</button>'
+    : '';
+  document.getElementById('artModal').classList.add('on');
+  setTimeout(()=>document.getElementById('aName').focus(), 60);
+}
+function closeArticleModal(){ document.getElementById('artModal').classList.remove('on'); modalArticleId=null; }
+function saveArticleModal(){
+  const name = document.getElementById('aName').value.trim();
+  if(!name){ toast('La désignation est obligatoire'); return; }
+  if(!pickedSizes.length){ toast('Sélectionnez au moins une taille'); return; }
+  const type = document.getElementById('aSizeType').value;
+  const order = (SIZE_SETS[type]||SIZE_SETS.alpha).sizes;
+  const art = {
+    id: modalArticleId || uid(),
+    name,
+    category: document.getElementById('aCat').value,
+    gender: document.getElementById('aGender').value,
+    color: document.getElementById('aColor').value.trim(),
+    sizeType: type,
+    minStock: Math.max(0, parseInt(document.getElementById('aMin').value,10)||0),
+    createdAt: modalArticleId ? (articleById(modalArticleId).createdAt) : new Date().toISOString(),
+    archivedAt: null
+  };
+  const inv = invData();
+  if(modalArticleId){
+    inv.articles = inv.articles.map(a=>a.id===art.id ? art : a);
+  } else {
+    inv.articles.push(art);
+  }
+  // variantes : on ajoute les nouvelles tailles, on conserve celles qui ont un historique
+  const existing = articleVariants(art.id);
+  const added = [];
+  pickedSizes.forEach(sz=>{
+    if(!existing.some(v=>v.size===sz)){
+      const v = { id:uid(), articleId:art.id, size:sz, sku:skuOf(art, sz),
+        position: Math.max(0, order.indexOf(sz)) };
+      inv.variants.push(v); added.push(v);
+    }
+  });
+  const removed = existing.filter(v=>!pickedSizes.includes(v.size));
+  const stock = stockMap();
+  const reallyRemoved = removed.filter(v=>!(stock[v.id]||0) && !inv.moves.some(m=>m.variantId===v.id));
+  if(reallyRemoved.length){
+    const ids = new Set(reallyRemoved.map(v=>v.id));
+    inv.variants = inv.variants.filter(v=>!ids.has(v.id));
+  }
+  save();
+  push('invSaveArticle', { article:art, variants:articleVariants(art.id),
+    removedVariantIds: reallyRemoved.map(v=>v.id) });
+  closeArticleModal(); renderStock();
+  toast(modalArticleId ? 'Article mis à jour' : name+' ajouté avec '+pickedSizes.length+' taille'+(pickedSizes.length>1?'s':''));
+}
+function archiveArticle(id){
+  const a = articleById(id); if(!a) return;
+  if(!confirm('Retirer « '+a.name+' » du stock ?\nL\'historique de ses mouvements est conservé.')) return;
+  a.archivedAt = new Date().toISOString();
+  save(); push('invSaveArticle', { article:a, variants:articleVariants(a.id), removedVariantIds:[] });
+  closeArticleModal(); renderStock(); toast('Article retiré du stock');
+}
+
+/* ---------- mouvement de stock ---------- */
+let moveVariantId = null, moveQty = 1;
+function openMoveModal(variantId){
+  moveVariantId = variantId; moveQty = 1;
+  const v = variantById(variantId); const a = v ? articleById(v.articleId) : null;
+  if(!v || !a) return;
+  const cur = stockMap()[v.id]||0;
+  document.getElementById('moveTitle').textContent = a.name;
+  document.getElementById('moveSub').innerHTML = [a.color, a.gender].filter(Boolean).map(esc).join(' · ')+
+    ' · <b>taille '+esc(v.size)+'</b> · en stock : <b>'+cur+'</b>';
+  fillSelect('moveReason', MOVE_REASONS.map(r=>r.v), 'Réception fournisseur');
+  const hosts = activeHosts();
+  document.getElementById('moveHost').innerHTML = '<option value="">Non précisé</option>'+
+    hosts.map(h=>'<option value="'+h.id+'">'+esc(hostName(h))+'</option>').join('');
+  document.getElementById('moveNote').value = '';
+  onMoveReason();
+  document.getElementById('moveModal').classList.add('on');
+}
+function closeMoveModal(){ document.getElementById('moveModal').classList.remove('on'); moveVariantId=null; }
+function onMoveReason(){
+  const r = MOVE_REASONS.find(x=>x.v===document.getElementById('moveReason').value) || MOVE_REASONS[0];
+  document.getElementById('moveHostWrap').style.display = r.host ? 'block' : 'none';
+  const mw = document.getElementById('moveMotifWrap');
+  const motifs = MOVE_MOTIFS[r.v];
+  if(r.motif && motifs){
+    mw.style.display = 'block';
+    document.getElementById('moveMotif').innerHTML = motifs.map(m=>'<option>'+esc(m)+'</option>').join('');
+  } else mw.style.display = 'none';
+  if(r.sign>0 && moveQty<0) moveQty = Math.abs(moveQty);
+  if(r.sign<0 && moveQty>0) moveQty = -Math.abs(moveQty);
+  updateMoveQty();
+}
+function bumpMove(d){
+  const r = MOVE_REASONS.find(x=>x.v===document.getElementById('moveReason').value) || MOVE_REASONS[0];
+  moveQty += d;
+  if(r.sign>0) moveQty = Math.max(1, moveQty);
+  if(r.sign<0) moveQty = Math.min(-1, moveQty);
+  if(r.sign===0 && moveQty===0) moveQty = d>0 ? 1 : -1;
+  updateMoveQty();
+}
+function updateMoveQty(){
+  const el = document.getElementById('moveQty');
+  el.textContent = (moveQty>0?'+':'')+moveQty;
+  el.style.color = moveQty>0 ? 'var(--ok-text)' : 'var(--bad)';
+}
+function saveMove(){
+  if(!moveVariantId || !moveQty) return;
+  const reason = document.getElementById('moveReason').value;
+  const r = MOVE_REASONS.find(x=>x.v===reason) || MOVE_REASONS[0];
+  const mv = {
+    id: uid(), variantId: moveVariantId, delta: moveQty, reason,
+    note: [document.getElementById('moveMotifWrap').style.display!=='none'
+        ? document.getElementById('moveMotif').value : '',
+      document.getElementById('moveNote').value.trim()].filter(Boolean).join(' — '),
+    hostId: r.host ? (document.getElementById('moveHost').value||null) : null,
+    by: evaluator || '', at: new Date().toISOString()
+  };
+  invData().moves.push(mv);
+  save(); push('invMove', mv);
+  closeMoveModal(); renderStock();
+  toast((moveQty>0?'+':'')+moveQty+' · '+reason);
+}
+
+/* ---------- export ---------- */
+function exportStockCSV(){
+  const sep=';'; const stock = stockMap();
+  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines = ['Référence'+sep+'Article'+sep+'Catégorie'+sep+'Pour'+sep+'Couleur'+sep+'Taille'+sep+'Stock'+sep+'Seuil'+sep+'Statut'];
+  activeArticles().forEach(a=>articleVariants(a.id).forEach(v=>{
+    const qy = stock[v.id]||0;
+    lines.push([q(v.sku), q(a.name), q(a.category), q(a.gender), q(a.color), q(v.size), qy,
+      a.minStock||0, qy<=0?'Rupture':(qy<=(a.minStock||0)?'Alerte':'OK')].join(sep));
+  }));
+  if(lines.length===1){ toast('Aucun article à exporter'); return; }
+  lines.push('');
+  lines.push('Mouvements'+sep+'Date'+sep+'Article'+sep+'Taille'+sep+'Quantité'+sep+'Motif'+sep+'Personne'+sep+'Commentaire'+sep+'Saisi par');
+  [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).forEach(m=>{
+    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
+    const h = m.hostId ? hostById(m.hostId) : null;
+    lines.push([''+sep+frDate(String(m.at||'').slice(0,10)), q(a?a.name:''), q(v?v.size:''),
+      (m.delta>0?'+':'')+m.delta, q(m.reason), q(h?hostName(h):''), q(m.note), q(m.by)].join(sep));
+  });
+  download(String.fromCharCode(65279)+lines.join('\r\n'), 'stock-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  toast('Stock exporté');
 }
 
 /* ---------- RAPPORT ---------- */
@@ -1592,7 +2397,9 @@ function buildReport(preview){
       incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> · '+frDate(c.date)+
       (c.by ? ' <span class="mutd">· par '+esc(c.by)+'</span>' : '')+
       checkDetailHTML(c)+'</div>').join('')+'</div>' : '')+
-    '<div class="card"><p class="sub">Document interne Pénélope. Données confidentielles.</p>'+
+    '<div class="card"><p class="sub"><b>Document confidentiel</b> — résultats d\'évaluation professionnelle '+
+    '(art. L1222-3 du Code du travail). Diffusion interdite hors des personnes habilitées. '+
+    'Le détail des évaluations est conservé 30 jours, puis remplacé par une moyenne mensuelle conservée 3 ans.</p>'+
     '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return {from, to, label};
@@ -1732,6 +2539,7 @@ function ensureToday(){
     frDateLong(now).replace(/^./, c=>c.toUpperCase());
   document.getElementById('loginCode').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.querySelectorAll('img.brandimg').forEach(i=>{ i.src = LOGO_URI; });
+  document.getElementById('colorList').innerHTML = INV_COLORS.map(c=>'<option value="'+c+'">').join('');
   show('pointage');
   syncUI();
   refreshProfileUI();
