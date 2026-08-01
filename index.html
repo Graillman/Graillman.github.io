@@ -1123,8 +1123,11 @@ async function pullAll(){
 }
 function rerenderSoft(){
   const a = document.activeElement;
-  if(a && (a.tagName==='TEXTAREA' || (a.tagName==='INPUT' && (a.type==='text'||a.type==='search')))) return;
+  if(a && (a.tagName==='TEXTAREA' ||
+    (a.tagName==='INPUT' && (a.type==='text'||a.type==='search'||a.type==='number')))) return;
   if(document.getElementById('hostModal').classList.contains('on')) return;
+  // saisie directe des quantités en cours : ne pas re-rendre la grille sous les doigts
+  if(typeof qtyEdit !== 'undefined' && qtyEdit) return;
   if(currentView==='pointage') renderPointage();
   else if(currentView==='equipe'){ renderEquipe(); renderManagers(); }
   else if(currentView==='stock') renderStock();
