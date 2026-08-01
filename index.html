@@ -280,7 +280,8 @@
   .sheet-head h2{ margin:0 }
 
   /* ---------- inventaire ---------- */
-  .artcard{ background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
+  .artcard{ content-visibility:auto; contain-intrinsic-size:auto 190px;
+    background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
     padding:14px 15px; margin-bottom:10px }
   .arthead{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px }
   .artname{ font-weight:650; font-size:15px }
@@ -468,7 +469,7 @@
       <button class="link" onclick="closePickModal()">Fermer</button>
     </div>
     <p class="sub" id="pickHint"></p>
-    <input id="pickSearch" placeholder="Rechercher un vêtement…" oninput="renderPick()">
+    <input id="pickSearch" placeholder="Rechercher un vêtement…" oninput="debRender(renderPick)">
     <div id="pickList"></div>
   </div>
 </div>
@@ -562,7 +563,7 @@
     <div class="view-title">Équipe</div>
     <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>
     <div class="card no-print" id="searchWrap" style="display:none;padding:6px 12px;border-radius:12px">
-      <input id="hostSearch" placeholder="Rechercher un hôte, un accueil…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderEquipe()">
+      <input id="hostSearch" placeholder="Rechercher un hôte, un accueil…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderEquipe)">
     </div>
     <div id="hostList"></div>
     <div id="archivedBlock"></div>
@@ -638,7 +639,7 @@
         <button class="btn neutral" style="width:100%" onclick="openArticleModal(null)">Ajouter un article</button>
       </div>
       <div class="card no-print" style="padding:6px 12px;border-radius:12px;margin-bottom:10px">
-        <input id="invSearch" placeholder="Rechercher un article, une couleur, une marque…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderStock()">
+        <input id="invSearch" placeholder="Rechercher un article, une couleur, une marque…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderStock)">
       </div>
       <div class="filterrow no-print" id="invFilters"></div>
       <div id="invAlerts"></div>
@@ -965,14 +966,27 @@ function load(){
   try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
   return null;
 }
-function save(){
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-    const t = document.getElementById('savedTag');
-    t.classList.add('on'); clearTimeout(save._t);
-    save._t = setTimeout(()=>t.classList.remove('on'), 1600);
-  }catch(e){ toast('Impossible d\'enregistrer (stockage plein ?)'); }
+/* Écriture différée. Sérialiser l'état entier coûte ~70 ms dès qu'il contient
+   des photos, et save() est appelé à chaque clic : payé tel quel, c'est le fil
+   principal bloqué à chaque pointage. On regroupe donc les écritures
+   rapprochées en une seule, et on force l'écriture dès que la page passe en
+   arrière-plan ou se ferme, pour ne rien perdre. L'envoi au serveur, lui,
+   reste immédiat : c'est lui qui fait foi. */
+let saveTimer = null;
+function flushSave(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  catch(e){ toast('Impossible d\'enregistrer (stockage plein ?)'); }
 }
+function save(){
+  const t = document.getElementById('savedTag');
+  t.classList.add('on'); clearTimeout(save._t);
+  save._t = setTimeout(()=>t.classList.remove('on'), 1600);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(flushSave, 400);
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) flushSave(); });
+window.addEventListener('pagehide', flushSave);
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function cfg(){
   const c = state && state.config;
@@ -1092,6 +1106,9 @@ async function pullAll(){
   }catch(e){ if(e.message!=='bad_code') online = false; }
   syncUI();
 }
+/* Une frappe ne doit pas déclencher un rendu complet par caractère. */
+let debTimer = null;
+function debRender(fn){ clearTimeout(debTimer); debTimer = setTimeout(fn, 120); }
 function rerenderSoft(){
   const a = document.activeElement;
   if(a && (a.tagName==='TEXTAREA' ||
