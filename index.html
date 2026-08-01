@@ -124,7 +124,9 @@
     box-shadow:0 1px 3px rgba(16,24,40,.14) }
   .seg button.ko.sel{ background:#fff; color:var(--bad);
     box-shadow:0 1px 3px rgba(16,24,40,.14) }
-  .seg button.sel{ animation:selpop .22s ease-out }
+  .seg button.sel{ animation:selpop .22s ease-out; background:#fff; color:var(--ink);
+    box-shadow:0 1px 3px rgba(16,24,40,.14) }
+  .seg.wide{ width:100% } .seg.wide button{ flex:1; min-width:0 }
   @keyframes selpop{ 50%{ transform:scale(1.1) } }
   .kozone{ margin-top:12px; padding:4px 12px 12px; background:var(--page); border-radius:12px }
   .critrow{ display:flex; align-items:center; gap:8px; padding:9px 0;
@@ -294,6 +296,18 @@
   .sizecell.low .qt{ color:#8a6a09 }
   .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
   .sizecell.out .qt{ color:var(--bad) }
+  /* saisie directe : la cellule de taille devient un champ de quantité */
+  .sizecell.edit{ border-color:var(--brand); background:var(--surface); padding:5px 6px 6px }
+  .sizecell.edit input{ width:100%; border:none; box-shadow:none; background:transparent;
+    text-align:center; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
+    padding:0; margin:0; color:var(--brand); -moz-appearance:textfield }
+  .sizecell.edit input::-webkit-outer-spin-button,
+  .sizecell.edit input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
+  .editbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;
+    background:var(--tint); border-radius:14px; padding:12px 14px; font-size:13px }
+  .editbar .btn{ flex:none; padding:8px 14px; font-size:13px }
+  .brandtag{ display:inline-block; font-size:11px; font-weight:650; vertical-align:1px;
+    padding:2px 7px; border-radius:99px; background:var(--tint); color:var(--brand) }
   .stockchip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:650;
     padding:3px 9px; border-radius:99px; background:var(--tint); color:var(--brand) }
   .movline{ display:flex; align-items:center; gap:10px; padding:9px 0;
@@ -310,6 +324,7 @@
   .sizepick button{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
     border-radius:9px; padding:7px 11px; font-size:13px; font-weight:600; min-width:46px }
   .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
+  .sizepick button.free{ border-style:dashed }
   .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
   .filterrow button{ flex:none; border:1px solid var(--baseline); background:var(--surface);
     color:var(--ink2); border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:600 }
@@ -402,10 +417,18 @@
     <label class="f">Couleur</label>
     <input id="aColor" list="colorList" placeholder="Ex. : Bleu marine">
     <datalist id="colorList"></datalist>
+    <label class="f">Marque / modèle (facultatif)</label>
+    <input id="aBrand" maxlength="40" placeholder="Ex. : Hawaypant, Devred, Runner">
     <label class="f">Tailles disponibles</label>
-    <select id="aSizeType" onchange="renderSizePick()"></select>
+    <select id="aSizeType" onchange="onSizeTypeChange()"></select>
     <div class="sizepick" id="aSizes"></div>
-    <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée pour chacune.</p>
+    <div class="row" style="gap:6px;margin-top:8px">
+      <input id="aCustomSize" maxlength="12" placeholder="Autre taille (ex. 56, Inconnue)"
+        style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomSize()}">
+      <button class="btn neutral" style="flex:none" onclick="addCustomSize()">Ajouter</button>
+    </div>
+    <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée
+    pour chacune. Vous pouvez mélanger les gammes (S/M et L, par exemple) ou ajouter une taille libre.</p>
     <label class="f">Seuil d'alerte par taille</label>
     <input id="aMin" type="number" min="0" step="1" value="2">
     <p class="mutd" style="margin-top:4px">En dessous de ce nombre, la taille passe en alerte.</p>
@@ -420,6 +443,10 @@
     <div class="sheet-head">
       <h2 id="moveTitle">Mouvement</h2>
       <button class="link" onclick="closeMoveModal()">Fermer</button>
+    </div>
+    <div id="moveVariantWrap" style="display:none">
+      <label class="f">Article et taille</label>
+      <select id="moveVariant" onchange="onMoveVariantChange()"></select>
     </div>
     <p class="sub" id="moveSub"></p>
     <div class="qtyrow">
@@ -567,19 +594,40 @@
   <!-- ================= STOCK ================= -->
   <section class="view" id="view-stock">
     <div class="view-title">Stock</div>
-    <div class="tiles" id="invKpi"></div>
-    <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openArticleModal(null)">Ajouter un article</button>
-    <div class="card no-print" style="padding:6px 12px;border-radius:12px;margin-bottom:10px">
-      <input id="invSearch" placeholder="Rechercher un article, une couleur…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderStock()">
+    <div class="seg wide no-print" id="invTabs" style="margin-bottom:12px">
+      <button class="sel" onclick="setInvTab('stock')">Stock</button>
+      <button onclick="setInvTab('mouv')">Entrées · sorties</button>
     </div>
-    <div class="filterrow no-print" id="invFilters"></div>
-    <div id="invAlerts"></div>
-    <div id="invList"></div>
-    <div class="card no-print" style="margin-top:6px">
-      <h3>Derniers mouvements</h3>
-      <div id="invHistory"></div>
+
+    <div id="invPaneStock">
+      <div class="tiles" id="invKpi"></div>
+      <div id="invEditBar" class="no-print"></div>
+      <div class="no-print" id="invActions" style="margin-bottom:12px">
+        <button class="btn primary" style="width:100%;margin-bottom:8px" onclick="toggleQtyEdit()">Modifier les quantités</button>
+        <button class="btn neutral" style="width:100%" onclick="openArticleModal(null)">Ajouter un article</button>
+      </div>
+      <div class="card no-print" style="padding:6px 12px;border-radius:12px;margin-bottom:10px">
+        <input id="invSearch" placeholder="Rechercher un article, une couleur, une marque…" style="border:none;box-shadow:none;padding:8px 2px" oninput="renderStock()">
+      </div>
+      <div class="filterrow no-print" id="invFilters"></div>
+      <div id="invAlerts"></div>
+      <div id="invList"></div>
       <div class="spacer"></div>
-      <button class="btn neutral" onclick="exportStockCSV()">Exporter le stock (Excel)</button>
+      <button class="btn neutral no-print" style="width:100%" onclick="exportStockCSV()">Exporter le stock (Excel)</button>
+    </div>
+
+    <div id="invPaneMouv" style="display:none">
+      <div class="tiles" id="movKpi"></div>
+      <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openMovePicker()">Enregistrer une entrée ou une sortie</button>
+      <div class="filterrow no-print" id="movFilters"></div>
+      <div class="card">
+        <h3>Journal des mouvements</h3>
+        <p class="sub" style="margin-bottom:6px">Chaque ligne est horodatée et signée. Le stock affiché
+        dans l'onglet « Stock » est toujours la somme de ces mouvements.</p>
+        <div id="invHistory"></div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn neutral no-print" style="width:100%" onclick="exportMovesCSV()">Exporter les mouvements (Excel)</button>
     </div>
   </section>
 
@@ -1057,8 +1105,9 @@ async function pullAll(){
     if(d.inv){
       state.inv = {
         articles: (d.inv.articles||[]).map(a=>({ id:a.id, name:a.name, category:a.category||'',
-          gender:a.gender||'Mixte', color:a.color||'', sizeType:a.size_type||'alpha',
-          minStock:a.min_stock||0, createdAt:a.created_at, archivedAt:a.archived_at })),
+          gender:a.gender||'Mixte / unisexe', color:a.color||'', brand:a.brand||'',
+          sizeType:a.size_type||'alpha', minStock:a.min_stock||0, note:a.note||'',
+          createdAt:a.created_at, archivedAt:a.archived_at })),
         variants: (d.inv.variants||[]).map(v=>({ id:v.id, articleId:v.article_id, size:v.size,
           sku:v.sku||'', position:v.position||0 })),
         moves: (d.inv.moves||[]).map(m=>({ id:m.id, variantId:m.variant_id, delta:m.delta,
@@ -1992,18 +2041,20 @@ function renderStats(){
    Le stock affiché est TOUJOURS la somme des mouvements : rien n'est
    écrasé, tout est traçable et auditable.                            */
 
-const INV_CATEGORIES = ['Polo','Chemise','Chemisier','T-shirt','Pull / maille','Gilet',
-  'Veste / blazer','Softshell','Parka / manteau','Tunique / blouse','Pantalon','Jupe','Robe',
-  'Foulard / écharpe','Cravate','Ceinture','Chaussures','Porte-badge','Parapluie','Autre accessoire'];
+const INV_CATEGORIES = ['Polo','Chemise','Chemisier','T-shirt','Pull col rond','Col roulé',
+  'Pull / maille','Gilet','Veste / blazer','Softshell','Parka / manteau','Tunique / blouse',
+  'Pantalon','Jupe','Robe','Foulard / écharpe','Cravate','Ceinture','Chaussures','Porte-badge',
+  'Parapluie','Autre accessoire'];
 const INV_GENDERS = ['Mixte / unisexe','Coupe femme','Coupe homme'];
-const INV_COLORS = ['Noir','Blanc','Bleu marine','Bleu','Bleu ciel','Gris','Anthracite','Bordeaux',
-  'Rouge','Vert','Beige','Taupe'];
+const INV_COLORS = ['Noir','Blanc','Écru','Bleu marine','Bleu marine rayé','Bleu','Bleu ciel',
+  'Gris','Anthracite','Bordeaux','Rouge','Rose','Vert','Kaki','Camel','Beige','Taupe','Marron'];
 /* Gammes de tailles réelles du vêtement professionnel en France.
    « centrales » = tailles les plus demandées : leur rupture déclenche une alerte
    renforcée (une gamme sans ses tailles centrales est dite « cassée »). */
 const SIZE_SETS = {
-  alpha:     { label:'Tailles alpha (XS à 4XL)',      sizes:['XS','S','M','L','XL','2XL','3XL','4XL'], mid:['M','L','XL'] },
-  femme:     { label:'Tailles femme (34 à 52)',       sizes:['34','36','38','40','42','44','46','48','50','52'], mid:['38','40','42'] },
+  alpha:     { label:'Tailles alpha (XS à XXXL)',     sizes:['XS','S','M','L','XL','XXL','XXXL','4XL'], mid:['M','L','XL'] },
+  combi:     { label:'Tailles combinées (S/M, L/XL…)', sizes:['S/M','M/L','L/XL','XL/XXL'], mid:['S/M','L/XL'] },
+  femme:     { label:'Tailles femme (34 à 56)',       sizes:['34','36','38','40','42','44','46','48','50','52','54','56'], mid:['38','40','42'] },
   homme:     { label:'Tailles homme (38 à 60)',       sizes:['38','40','42','44','46','48','50','52','54','56','58','60'], mid:['42','44','46'] },
   doublet:   { label:'Tailles homme par doublets',    sizes:['38/40','42/44','46/48','50/52','54/56','58/60'], mid:['42/44','46/48'] },
   blouse:    { label:'Blouse / tunique (0 à 6)',      sizes:['0','1','2','3','4','5','6'], mid:['1','2'] },
@@ -2059,8 +2110,71 @@ function skuOf(article, size){
     g, String(size).toUpperCase()].join('-');
 }
 
-/* ---------- rendu de la page Stock ---------- */
-let invFilter = 'Tout';
+/* ---------- rendu de la page Stock ----------
+   Deux onglets : « Stock » (l'état, directement modifiable) et
+   « Entrées · sorties » (le journal). Le stock n'est jamais écrasé : même une
+   saisie directe est convertie en mouvement d'ajustement, donc traçable. */
+let invFilter = 'Tout', invTab = 'stock', movFilter = 'Tout';
+let qtyEdit = false, qtyDraft = {};
+function setInvTab(t){
+  if(qtyEdit && t!=='stock') cancelQtyEdit(true);
+  invTab = t;
+  document.querySelectorAll('#invTabs button').forEach((b,i)=>
+    b.classList.toggle('sel', (i===0)===(t==='stock')));
+  document.getElementById('invPaneStock').style.display = t==='stock' ? '' : 'none';
+  document.getElementById('invPaneMouv').style.display = t==='mouv' ? '' : 'none';
+  renderStock();
+}
+function setMovFilter(f){ movFilter = f; renderStock(); }
+
+/* --- saisie directe des quantités --- */
+function toggleQtyEdit(){
+  if(qtyEdit){ saveQtyEdits(); return; }
+  if(!activeArticles().length){ toast('Ajoutez d\'abord un article'); return; }
+  qtyEdit = true; qtyDraft = {}; renderStock();
+}
+function cancelQtyEdit(silent){
+  qtyEdit = false; qtyDraft = {};
+  if(!silent) renderStock();
+}
+function onQtyInput(vid, el){
+  if(el.value === ''){ delete qtyDraft[vid]; }
+  else {
+    const n = parseInt(el.value, 10);
+    qtyDraft[vid] = Math.max(0, Math.min(9999, Number.isFinite(n) ? n : 0));
+  }
+  renderQtyBar();
+}
+function qtyChanges(){
+  const stock = stockMap();
+  return Object.keys(qtyDraft).filter(vid => qtyDraft[vid] !== (stock[vid]||0));
+}
+function renderQtyBar(){
+  const bar = document.getElementById('invEditBar');
+  if(!qtyEdit){ bar.innerHTML = ''; return; }
+  const n = qtyChanges().length;
+  bar.innerHTML = '<div class="editbar"><div class="grow"><b>Saisie directe</b>'+
+    '<div class="mutd">Tapez la quantité réelle de chaque taille. '+
+    (n ? n+' modification'+(n>1?'s':'')+' en attente.' : 'Aucune modification pour l\'instant.')+'</div></div>'+
+    '<button class="btn neutral" onclick="cancelQtyEdit()">Annuler</button>'+
+    '<button class="btn primary" onclick="saveQtyEdits()">Enregistrer</button></div>';
+}
+function saveQtyEdits(){
+  const stock = stockMap();
+  const changes = qtyChanges();
+  if(!changes.length){ cancelQtyEdit(); toast('Aucune quantité modifiée'); return; }
+  const at = new Date().toISOString();
+  changes.forEach(vid=>{
+    const mv = { id:uid(), variantId:vid, delta:qtyDraft[vid]-(stock[vid]||0),
+      reason:'Ajustement d\'inventaire', note:'Saisie directe du stock',
+      hostId:null, by:evaluator||'', at };
+    invData().moves.push(mv);
+    push('invMove', mv);
+  });
+  save(); cancelQtyEdit();
+  toast(changes.length+' taille'+(changes.length>1?'s':'')+' mise'+(changes.length>1?'s':'')+' à jour');
+}
+
 function renderStock(){
   const box = document.getElementById('invList');
   const stock = stockMap();
@@ -2089,7 +2203,8 @@ function renderStock(){
   const q = (document.getElementById('invSearch').value||'').trim().toLowerCase();
   let list = arts;
   if(invFilter!=='Tout') list = list.filter(a=>a.category===invFilter);
-  if(q) list = list.filter(a=>(a.name+' '+a.color+' '+a.category+' '+a.gender).toLowerCase().includes(q));
+  if(q) list = list.filter(a=>(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
+    .toLowerCase().includes(q));
 
   // alertes en tête
   const alertRows = [];
@@ -2105,7 +2220,9 @@ function renderStock(){
     const outMid = articleVariants(a.id).filter(v=>mid.includes(v.size) && (stock[v.id]||0)<=0);
     if(outMid.length) broken.push({a, sizes:outMid.map(v=>v.size)});
   });
-  document.getElementById('invAlerts').innerHTML = (broken.length
+  renderQtyBar();
+  document.getElementById('invActions').style.display = qtyEdit ? 'none' : '';
+  document.getElementById('invAlerts').innerHTML = qtyEdit ? '' : (broken.length
     ? '<div class="card" style="border-left:3px solid var(--bad)"><h3>Tailles courantes en rupture</h3>'+
       broken.map(b=>'<div class="movline"><span class="grow">'+esc(b.a.name)+
       ' <span class="mutd">'+esc(b.a.color||'')+'</span></span><b class="stat-ko">'+
@@ -2128,25 +2245,47 @@ function renderStock(){
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       return '<div class="artcard">'+
         '<div class="arthead"><div class="grow">'+
-          '<div class="artname">'+esc(a.name)+'</div>'+
+          '<div class="artname">'+esc(a.name)+(a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</div>'+
           '<div class="artmeta">'+[a.category, a.gender, a.color].filter(Boolean).map(esc).join(' · ')+'</div>'+
         '</div>'+
         '<div style="text-align:right"><div class="arttotal">'+tot+'</div>'+
-        '<button class="link" style="font-size:12.5px;padding:2px" onclick="openArticleModal(\''+a.id+'\')">Modifier</button></div>'+
+        (qtyEdit ? '' : '<button class="link" style="font-size:12.5px;padding:2px" onclick="openArticleModal('+jsq(a.id)+')">Modifier</button>')+'</div>'+
         '</div>'+
         '<div class="sizegrid">'+vars.map(v=>{
           const qy = stock[v.id]||0;
+          if(qtyEdit){
+            const val = qtyDraft[v.id]!==undefined ? qtyDraft[v.id] : qy;
+            return '<label class="sizecell edit"><span class="sz">'+esc(v.size)+'</span>'+
+              '<input type="number" min="0" max="9999" inputmode="numeric" value="'+val+'" '+
+              'onfocus="this.select()" oninput="onQtyInput('+jsq(v.id)+',this)"></label>';
+          }
           const cls = qy<=0 ? 'out' : (qy <= (a.minStock||0) ? 'low' : '');
-          return '<button class="sizecell '+cls+'" onclick="openMoveModal(\''+v.id+'\')">'+
+          return '<button class="sizecell '+cls+'" onclick="openMoveModal('+jsq(v.id)+')">'+
             '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
         }).join('')+'</div>'+
       '</div>';
     }).join('');
   }
 
-  // historique
-  const hist = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).slice(0,40);
-  document.getElementById('invHistory').innerHTML = hist.length ? hist.map(m=>{
+  // ---- onglet Entrées · sorties ----
+  const moves = invData().moves;
+  const month = todayISO().slice(0,7);
+  let inQty = 0, outQty = 0;
+  moves.forEach(m=>{ if(String(m.at||'').slice(0,7)===month){
+    if((m.delta||0)>0) inQty += m.delta; else outQty -= m.delta; } });
+  document.getElementById('movKpi').innerHTML =
+    '<div class="tile"><span>Entrées ce mois</span><b class="stat-ok">+'+inQty+'</b></div>'+
+    '<div class="tile"><span>Sorties ce mois</span><b class="stat-ko">-'+outQty+'</b></div>'+
+    '<div class="tile"><span>Solde du mois</span><b>'+(inQty-outQty>0?'+':'')+(inQty-outQty)+'</b></div>'+
+    '<div class="tile"><span>Mouvements</span><b>'+moves.length+'</b><span class="mutd">depuis le début</span></div>';
+  document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
+    '<button class="'+(movFilter===f?'sel':'')+'" onclick="setMovFilter('+jsq(f)+')">'+f+'</button>').join('');
+
+  let hist = [...moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
+  if(movFilter==='Entrées') hist = hist.filter(m=>(m.delta||0)>0);
+  if(movFilter==='Sorties') hist = hist.filter(m=>(m.delta||0)<0);
+  const shown = hist.slice(0,150);
+  document.getElementById('invHistory').innerHTML = shown.length ? shown.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
     const who = m.hostId ? (hostById(m.hostId) ? ' · '+esc(hostName(hostById(m.hostId))) : '') : '';
     return '<div class="movline">'+
@@ -2155,7 +2294,10 @@ function renderStock(){
       '<br><span class="mutd">'+esc(m.reason||'')+who+(m.note?' · '+esc(m.note):'')+'</span></span>'+
       '<span class="mutd" style="white-space:nowrap">'+frDate(String(m.at||'').slice(0,10))+(m.by?'<br>'+esc(m.by):'')+'</span>'+
     '</div>';
-  }).join('') : '<p class="mutd">Aucun mouvement enregistré.</p>';
+  }).join('') + (hist.length>shown.length
+      ? '<p class="mutd" style="margin-top:8px">Les '+shown.length+' mouvements les plus récents sont affichés '+
+        '('+hist.length+' au total). L\'export Excel contient tout l\'historique.</p>' : '')
+    : '<p class="mutd">Aucun mouvement '+(movFilter==='Tout'?'enregistré':'de ce type')+'.</p>';
 }
 function setInvFilter(c){ invFilter = c; renderStock(); }
 
@@ -2168,27 +2310,55 @@ function fillSelect(id, values, current){
     return '<option value="'+esc(val)+'"'+(val===current?' selected':'')+'>'+esc(lab)+'</option>';
   }).join('');
 }
+/* Chaîne sûre à injecter dans un onclick="…" */
+function jsq(s){ return "'"+String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'"; }
+/* La gamme n'est qu'une proposition : un article peut mélanger des tailles de
+   plusieurs gammes (ex. un col roulé en S/M, L, L/XL et XXXL) ou porter une
+   taille libre (« Inconnue »). L'ordre d'affichage suit la gamme, les tailles
+   ajoutées à la main viennent ensuite. */
+function sizeOrder(type, sz){
+  const i = (SIZE_SETS[type]||SIZE_SETS.alpha).sizes.indexOf(sz);
+  return i >= 0 ? i : 900;
+}
 function renderSizePick(){
   const type = document.getElementById('aSizeType').value;
   const set = SIZE_SETS[type] || SIZE_SETS.alpha;
-  if(!pickedSizes.length || !pickedSizes.every(x=>set.sizes.includes(x))) pickedSizes = set.sizes.slice();
-  document.getElementById('aSizes').innerHTML = set.sizes.map(sz=>
-    '<button class="'+(pickedSizes.includes(sz)?'sel':'')+'" onclick="toggleSize(\''+sz+'\')">'+sz+'</button>').join('');
+  if(!pickedSizes.length) pickedSizes = set.sizes.slice();
+  const extra = pickedSizes.filter(s=>!set.sizes.includes(s));
+  document.getElementById('aSizes').innerHTML = [...set.sizes, ...extra].map(sz=>
+    '<button class="'+(pickedSizes.includes(sz)?'sel':'')+(set.sizes.includes(sz)?'':' free')+
+    '" onclick="toggleSize('+jsq(sz)+')">'+esc(sz)+'</button>').join('');
 }
 function toggleSize(sz){
   pickedSizes = pickedSizes.includes(sz) ? pickedSizes.filter(x=>x!==sz) : [...pickedSizes, sz];
   renderSizePick();
+}
+function onSizeTypeChange(){
+  const set = SIZE_SETS[document.getElementById('aSizeType').value] || SIZE_SETS.alpha;
+  // on garde les tailles libres déjà saisies, on repart de la nouvelle gamme
+  pickedSizes = [...set.sizes, ...pickedSizes.filter(s=>!Object.values(SIZE_SETS)
+    .some(x=>x.sizes.includes(s)))];
+  renderSizePick();
+}
+function addCustomSize(){
+  const el = document.getElementById('aCustomSize');
+  const v = el.value.trim().slice(0,12);
+  if(!v) return;
+  if(!pickedSizes.includes(v)) pickedSizes.push(v);
+  el.value = ''; renderSizePick();
 }
 function openArticleModal(id){
   modalArticleId = id;
   const a = id ? articleById(id) : null;
   document.getElementById('artTitle').textContent = a ? 'Modifier l\'article' : 'Nouvel article';
   fillSelect('aCat', INV_CATEGORIES, a ? a.category : INV_CATEGORIES[0]);
-  fillSelect('aGender', INV_GENDERS, a ? a.gender : 'Mixte');
+  fillSelect('aGender', INV_GENDERS, a ? a.gender : INV_GENDERS[0]);
   fillSelect('aSizeType', Object.keys(SIZE_SETS).map(k=>({v:k, label:SIZE_SETS[k].label})),
     a ? a.sizeType : 'alpha');
   document.getElementById('aName').value = a ? a.name : '';
   document.getElementById('aColor').value = a ? (a.color||'') : '';
+  document.getElementById('aBrand').value = a ? (a.brand||'') : '';
+  document.getElementById('aCustomSize').value = '';
   document.getElementById('aMin').value = a ? (a.minStock||0) : 2;
   pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : [];
   renderSizePick();
@@ -2204,13 +2374,13 @@ function saveArticleModal(){
   if(!name){ toast('La désignation est obligatoire'); return; }
   if(!pickedSizes.length){ toast('Sélectionnez au moins une taille'); return; }
   const type = document.getElementById('aSizeType').value;
-  const order = (SIZE_SETS[type]||SIZE_SETS.alpha).sizes;
   const art = {
     id: modalArticleId || uid(),
     name,
     category: document.getElementById('aCat').value,
     gender: document.getElementById('aGender').value,
     color: document.getElementById('aColor').value.trim(),
+    brand: document.getElementById('aBrand').value.trim(),
     sizeType: type,
     minStock: Math.max(0, parseInt(document.getElementById('aMin').value,10)||0),
     createdAt: modalArticleId ? (articleById(modalArticleId).createdAt) : new Date().toISOString(),
@@ -2228,7 +2398,7 @@ function saveArticleModal(){
   pickedSizes.forEach(sz=>{
     if(!existing.some(v=>v.size===sz)){
       const v = { id:uid(), articleId:art.id, size:sz, sku:skuOf(art, sz),
-        position: Math.max(0, order.indexOf(sz)) };
+        position: sizeOrder(type, sz) };
       inv.variants.push(v); added.push(v);
     }
   });
@@ -2255,14 +2425,42 @@ function archiveArticle(id){
 
 /* ---------- mouvement de stock ---------- */
 let moveVariantId = null, moveQty = 1;
-function openMoveModal(variantId){
+function allVariantOptions(){
+  const out = [];
+  activeArticles().forEach(a=>articleVariants(a.id).forEach(v=>out.push({
+    id: v.id,
+    label: a.name+(a.brand?' '+a.brand:'')+(a.color?' · '+a.color:'')+' · taille '+v.size
+  })));
+  return out;
+}
+function openMovePicker(){
+  const opts = allVariantOptions();
+  if(!opts.length){ toast('Ajoutez d\'abord un article'); return; }
+  openMoveModal(opts[0].id, true);
+}
+function refreshMoveHead(){
+  const v = variantById(moveVariantId); const a = v ? articleById(v.articleId) : null;
+  if(!v || !a) return;
+  document.getElementById('moveTitle').textContent = a.name;
+  document.getElementById('moveSub').innerHTML =
+    [a.brand, a.color, a.gender].filter(Boolean).map(esc).join(' · ')+
+    ' · <b>taille '+esc(v.size)+'</b> · en stock : <b>'+(stockMap()[v.id]||0)+'</b>';
+}
+function onMoveVariantChange(){
+  moveVariantId = document.getElementById('moveVariant').value;
+  refreshMoveHead();
+}
+function openMoveModal(variantId, withPicker){
   moveVariantId = variantId; moveQty = 1;
   const v = variantById(variantId); const a = v ? articleById(v.articleId) : null;
   if(!v || !a) return;
-  const cur = stockMap()[v.id]||0;
-  document.getElementById('moveTitle').textContent = a.name;
-  document.getElementById('moveSub').innerHTML = [a.color, a.gender].filter(Boolean).map(esc).join(' · ')+
-    ' · <b>taille '+esc(v.size)+'</b> · en stock : <b>'+cur+'</b>';
+  const wrap = document.getElementById('moveVariantWrap');
+  wrap.style.display = withPicker ? 'block' : 'none';
+  if(withPicker){
+    document.getElementById('moveVariant').innerHTML = allVariantOptions().map(o=>
+      '<option value="'+esc(o.id)+'"'+(o.id===variantId?' selected':'')+'>'+esc(o.label)+'</option>').join('');
+  }
+  refreshMoveHead();
   fillSelect('moveReason', MOVE_REASONS.map(r=>r.v), 'Réception fournisseur');
   const hosts = activeHosts();
   document.getElementById('moveHost').innerHTML = '<option value="">Non précisé</option>'+
@@ -2320,10 +2518,10 @@ function saveMove(){
 function exportStockCSV(){
   const sep=';'; const stock = stockMap();
   const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines = ['Référence'+sep+'Article'+sep+'Catégorie'+sep+'Pour'+sep+'Couleur'+sep+'Taille'+sep+'Stock'+sep+'Seuil'+sep+'Statut'];
+  const lines = ['Référence'+sep+'Article'+sep+'Marque'+sep+'Catégorie'+sep+'Pour'+sep+'Couleur'+sep+'Taille'+sep+'Stock'+sep+'Seuil'+sep+'Statut'];
   activeArticles().forEach(a=>articleVariants(a.id).forEach(v=>{
     const qy = stock[v.id]||0;
-    lines.push([q(v.sku), q(a.name), q(a.category), q(a.gender), q(a.color), q(v.size), qy,
+    lines.push([q(v.sku), q(a.name), q(a.brand||''), q(a.category), q(a.gender), q(a.color), q(v.size), qy,
       a.minStock||0, qy<=0?'Rupture':(qy<=(a.minStock||0)?'Alerte':'OK')].join(sep));
   }));
   if(lines.length===1){ toast('Aucun article à exporter'); return; }
@@ -2337,6 +2535,23 @@ function exportStockCSV(){
   });
   download(String.fromCharCode(65279)+lines.join('\r\n'), 'stock-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
   toast('Stock exporté');
+}
+function exportMovesCSV(){
+  const sep=';';
+  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const moves = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
+  if(!moves.length){ toast('Aucun mouvement à exporter'); return; }
+  const lines = ['Date'+sep+'Sens'+sep+'Quantité'+sep+'Article'+sep+'Marque'+sep+'Couleur'+sep+
+    'Taille'+sep+'Motif'+sep+'Personne'+sep+'Commentaire'+sep+'Saisi par'];
+  moves.forEach(m=>{
+    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
+    const h = m.hostId ? hostById(m.hostId) : null;
+    lines.push([frDate(String(m.at||'').slice(0,10)), (m.delta>0?'Entrée':'Sortie'),
+      (m.delta>0?'+':'')+m.delta, q(a?a.name:''), q(a?(a.brand||''):''), q(a?a.color:''),
+      q(v?v.size:''), q(m.reason), q(h?hostName(h):''), q(m.note), q(m.by)].join(sep));
+  });
+  download(String.fromCharCode(65279)+lines.join('\r\n'), 'mouvements-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  toast('Mouvements exportés');
 }
 
 /* ---------- RAPPORT ---------- */
