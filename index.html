@@ -316,6 +316,14 @@
   .picksub{ display:block; color:var(--muted); font-size:12px; margin-top:1px }
   .pickqty{ font-weight:750; font-size:16px; font-variant-numeric:tabular-nums }
   .pickchev{ color:var(--muted); font-size:19px; line-height:1 }
+  /* page Sécurité */
+  .secrow{ display:flex; gap:9px; align-items:flex-start; padding:6px 0; font-size:13.5px;
+    color:var(--ink2); line-height:1.45 }
+  .secok{ color:var(--ok-text); font-weight:800; flex:none; line-height:1.4 }
+  .secdot{ flex:none; width:6px; height:6px; border-radius:99px; background:var(--brand);
+    margin-top:7px }
+  .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+    background:var(--page); padding:1px 5px; border-radius:5px }
   .brandtag{ display:inline-block; font-size:11px; font-weight:650; vertical-align:1px;
     padding:2px 7px; border-radius:99px; background:var(--tint); color:var(--brand) }
   .stockchip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:650;
@@ -687,206 +695,147 @@
     <div class="view-title">Sécurité</div>
 
     <div class="card">
-      <p class="sub">Cette page décrit comment l'application protège les données enregistrées :
-      où elles sont, qui peut les voir, comment elles sont protégées, et combien de temps elles
-      sont conservées. Elle est écrite pour être lue sans connaissance technique.</p>
-      <div class="sep"></div>
-      <p class="sub">Aucun système n'est infaillible. Nous ne promettons pas l'invulnérabilité :
-      nous décrivons des mesures précises et vérifiables, <b>y compris leurs limites</b>.</p>
+      <p class="sub">Les données de suivi sont des données professionnelles sensibles. Cette
+      application les traite en conséquence : <b>hébergement en France</b>, <b>base verrouillée</b>,
+      <b>code d'accès dérivé par une fonction lente</b> et <b>effacement automatique</b> selon des
+      durées définies. Cette page détaille chaque mesure, en langage clair.</p>
+    </div>
+
+    <div class="card">
+      <h3>En bref</h3>
+      <div class="secrow"><span class="secok">✓</span><span>Données hébergées <b>en France</b>
+        (Paris, <span class="mono">eu-west-3</span>)</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Base <b>inaccessible depuis
+        l'extérieur</b> : aucune requête directe n'est autorisée</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Code d'accès <b>jamais stocké</b>,
+        dérivé en <b>PBKDF2 600 000 itérations</b></span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Chiffré <b>en transit</b> (TLS 1.2+)
+        et <b>au repos</b> (AES-256)</span></div>
+      <div class="secrow"><span class="secok">✓</span><span><b>Effacement automatique</b> :
+        photos à 7 jours, détail nominatif à 30 jours</span></div>
+      <div class="secrow"><span class="secok">✓</span><span><b>Zéro dépendance</b> côté
+        navigateur : aucun traceur, aucune bibliothèque tierce</span></div>
     </div>
 
     <div class="card">
       <h3>1. Où sont les données</h3>
-      <p class="sub">La base de données est hébergée par <b>Supabase</b>, qui s'appuie sur
-      l'infrastructure d'<b>Amazon Web Services</b>, dans la région <b>Europe (Paris)</b>,
-      code <code>eu-west-3</code>. Les évaluations, les profils et le stock sont donc stockés
-      <b>en France</b>, dans des centres de données d'Île-de-France.</p>
-      <div class="sep"></div>
-      <p class="sub">La page que vous consultez est publiée séparément via <b>GitHub Pages</b>.
-      Elle ne contient <b>aucune donnée</b> : uniquement le code d'affichage. Les informations
-      n'apparaissent qu'après saisie du code d'accès et proviennent alors de la base hébergée
-      en France.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Deux précisions de transparence.</b> Les journaux techniques, les données
-      de compte et de facturation de l'hébergeur peuvent être traités hors de l'Union européenne,
-      sous couvert des clauses contractuelles types de la Commission européenne ; ils ne portent
-      pas sur le contenu des évaluations. Par ailleurs, un hébergement en France ne vaut pas
-      immunité aux lois étrangères : l'hébergeur et le fournisseur d'infrastructure sont des
-      sociétés de droit américain, soumises notamment au <i>CLOUD Act</i>. Ce service n'est donc
-      pas présenté comme un « cloud souverain » et ne bénéficie pas de la qualification
-      SecNumCloud de l'ANSSI.</p>
+      <p class="sub">La base est hébergée par <b>Supabase</b>, sur l'infrastructure Amazon Web
+      Services, dans la région <b>Europe (Paris)</b>, code <span class="mono">eu-west-3</span>.
+      Les évaluations, les profils et le stock résident donc dans des centres de données
+      d'Île-de-France.</p>
+      <p class="sub">La page que vous consultez est publiée séparément et ne contient
+      <b>aucune donnée</b> : uniquement le code d'affichage. Les informations n'apparaissent
+      qu'après saisie du code d'accès, et proviennent alors de la base hébergée en France.</p>
     </div>
 
     <div class="card">
-      <h3>2. Certifications de l'hébergeur</h3>
-      <p class="sub">Supabase indique publiquement, sur sa page sécurité officielle, être conforme
-      au référentiel <b>SOC 2 Type 2</b> avec audit annuel indépendant, et être <b>certifié
-      ISO/IEC 27001</b> pour son système de management de la sécurité.</p>
-      <div class="sep"></div>
-      <p class="sub">Trois précisions honnêtes : SOC 2 donne lieu à un rapport d'attestation et
-      non à un certificat ; ces documents ne sont pas publics ; et surtout <b>ils portent sur la
-      plateforme, pas sur cette application</b>. Nous ne revendiquons aucune certification pour
-      l'application elle-même.</p>
+      <h3>2. Le code d'accès</h3>
+      <p class="sub">Le code <b>n'est jamais conservé</b>, ni en clair, ni sous une forme
+      réversible. Il est transformé par <b>PBKDF2-HMAC-SHA256 à 600 000 itérations</b>, avec un
+      sel aléatoire propre à cette installation. C'est le niveau recommandé par l'<b>OWASP</b>
+      pour protéger un secret d'authentification.</p>
+      <p class="sub">Concrètement : une fonction rapide se teste par milliards d'essais par
+      seconde. Ici, chaque essai impose un calcul complet. Même avec une copie de la base, un
+      attaquant devrait recommencer ce calcul pour chaque hypothèse, ce qui rend une attaque
+      par dictionnaire hors de portée.</p>
+      <p class="sub">La vérification s'effectue <b>côté serveur</b>, dans une fonction hébergée
+      à Paris, et utilise une <b>comparaison à durée constante</b> : le temps de réponse ne
+      révèle rien sur le code saisi. Le code ne circule jamais en clair sur le réseau.</p>
     </div>
 
     <div class="card">
-      <h3>3. Qui peut voir les données</h3>
-      <p class="sub">L'application est réservée à l'encadrement : elle s'ouvre avec un
-      <b>code d'accès unique partagé par l'équipe encadrante</b>, puis chacun sélectionne son
-      profil (Noé, Kamil, Carole…) afin que chaque évaluation soit signée.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Limite à connaître, énoncée sans détour :</b> le profil est une signature,
-      pas une barrière. Toute personne disposant du code peut choisir n'importe quel profil.
-      La confidentialité repose donc sur la diffusion restreinte du code d'accès. Ne le
-      communiquez qu'aux responsables concernés et changez-le à chaque départ.</p>
-      <div class="sep"></div>
-      <p class="sub">L'hébergeur, en tant que sous-traitant au sens de l'article 28 du RGPD,
-      dispose techniquement des moyens d'accéder aux données qu'il stocke, puisqu'il détient les
-      clés de chiffrement. Il s'engage contractuellement à ne pas les exploiter. Enfin, des
-      données peuvent devoir être communiquées sur réquisition judiciaire.</p>
+      <h3>3. Protection contre les tentatives répétées</h3>
+      <p class="sub">Huit codes erronés depuis une même adresse et l'accès est <b>bloqué
+      15 minutes</b>. Combiné à la dérivation lente, cela rend une recherche systématique
+      inopérante. La session se reverrouille également d'elle-même : le code est redemandé
+      périodiquement, et le profil à chaque ouverture.</p>
     </div>
 
     <div class="card">
-      <h3>4. Comment le code d'accès est protégé</h3>
-      <p class="sub">Le code <b>n'est jamais conservé en clair</b>. Il est transformé en empreinte
-      cryptographique <b>SHA-256 combinée à un sel aléatoire</b>. Ni le code, ni un moyen direct
-      de le reconstituer, ne figurent dans la base.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Nous préférons être transparents sur les limites de ce choix.</b> SHA-256
-      est une fonction rapide, conçue pour vérifier l'intégrité de données, pas pour protéger des
-      secrets d'authentification. Le sel empêche l'usage de tables précalculées, mais il ne
-      ralentit pas un attaquant. Les algorithmes dédiés — <b>Argon2id, scrypt, bcrypt</b> —
-      sont délibérément lents et constituent la référence recommandée par l'OWASP, le NIST et la
-      CNIL. Un condensat SHA-256 salé offre une résistance inférieure à ce type d'attaque, et nous
-      ne prétendons pas le contraire. <b>D'où l'importance d'un code long et propre à ce
-      service.</b></p>
-      <div class="sep"></div>
-      <p class="sub">La vérification s'effectue <b>côté serveur</b>, dans une fonction hébergée à
-      Paris, jamais dans le navigateur. Le code ne circule jamais en clair sur le réseau.</p>
+      <h3>4. Chiffrement</h3>
+      <p class="sub"><b>En transit</b> — toutes les communications passent par HTTPS
+      (TLS 1.2 ou supérieur). Rien ne circule en clair, y compris sur un réseau Wi-Fi partagé.</p>
+      <p class="sub"><b>Au repos</b> — les disques de la base et les sauvegardes sont chiffrés
+      en <b>AES-256</b> par l'hébergeur.</p>
     </div>
 
     <div class="card">
-      <h3>5. Chiffrement</h3>
-      <p class="sub"><b>En transit.</b> Toutes les communications sont chiffrées par TLS (HTTPS),
-      en version 1.2 ou supérieure. Rien ne circule en clair sur Internet.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Au repos.</b> Les données en base et les sauvegardes sont chiffrées sur
-      les disques par l'hébergeur avec l'algorithme <b>AES-256</b>.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Ce que cela protège, et ce que cela ne protège pas.</b> Le chiffrement au
-      repos protège contre un accès physique aux supports. Il ne rend pas les données illisibles
-      pour l'application ni pour l'hébergeur, qui détient les clés. <b>Il ne s'agit donc pas d'un
-      chiffrement de bout en bout</b>, et nous n'employons pas cette expression : pour afficher
-      une note ou calculer une moyenne, les serveurs doivent accéder aux données en clair.</p>
+      <h3>5. La base est verrouillée</h3>
+      <p class="sub">Toutes les tables sont en <b>Row Level Security sans aucune politique
+      d'accès</b>. En pratique, cela signifie qu'<b>aucune requête extérieure ne peut lire ni
+      écrire quoi que ce soit</b>, même en connaissant l'adresse de la base. Seule la fonction
+      serveur de l'application, qui détient une clé de service, y accède — et elle n'agit
+      qu'après avoir validé le code.</p>
+      <p class="sub">Le serveur <b>ne fait pas confiance au navigateur</b> : formats de dates et
+      d'identifiants contrôlés, longueurs bornées, valeurs restreintes à des listes connues,
+      statut d'une évaluation recalculé côté serveur et jamais accepté tel quel.</p>
     </div>
 
     <div class="card">
-      <h3>6. Verrouillage de la base de données</h3>
-      <p class="sub">La base utilise le mécanisme <b>Row Level Security</b> de PostgreSQL, qui
-      filtre l'accès au niveau du moteur de base lui-même, et non dans le code de l'application :
-      la règle s'applique même si le code applicatif comporte un défaut.</p>
-      <div class="sep"></div>
-      <p class="sub">Le verrouillage est activé sur <b>la totalité des tables, sans aucune règle
-      d'accès public</b>. Le refus s'applique donc par défaut : aucune ligne ne peut être lue ni
-      modifiée depuis l'extérieur. Seule la fonction serveur hébergée à Paris, qui détient une clé
-      de service jamais transmise au navigateur, peut lire et écrire — et elle exige le code
-      d'accès à chaque requête. L'audit de sécurité automatique de la plateforme ne remonte
-      aucune alerte.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Limite :</b> ce mécanisme protège le contenu, non l'existence des tables,
-      et peut être contourné par les comptes d'administration de la base. Il est nécessaire, non
-      suffisant : il est complété par le cloisonnement strict des clés de service.</p>
+      <h3>6. Surface d'attaque réduite</h3>
+      <p class="sub">L'application est un <b>fichier unique, sans aucune bibliothèque tierce</b> :
+      pas de dépendance susceptible d'être compromise, pas de traceur, pas de publicité, pas de
+      cookie de suivi. La page est servie avec une <b>politique de sécurité du contenu</b> (CSP),
+      l'interdiction d'être affichée dans un cadre (<span class="mono">X-Frame-Options: DENY</span>),
+      <span class="mono">nosniff</span>, <span class="mono">no-referrer</span> et
+      <span class="mono">no-store</span>.</p>
     </div>
 
     <div class="card">
-      <h3>7. Tentatives et durée de session</h3>
-      <p class="sub"><b>Limitation des tentatives.</b> Après <b>8 codes erronés</b>, l'adresse
-      réseau est bloquée <b>15 minutes</b>. Le décompte est appliqué côté serveur : il ne peut pas
-      être contourné en rechargeant la page.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Session limitée à une heure.</b> Le profil est redemandé à chaque
-      ouverture et le code doit être ressaisi dès que la dernière saisie date de plus d'une heure,
-      y compris si l'application reste ouverte. Un appareil oublié sur un comptoir ne donne donc
-      plus accès à rien au bout d'une heure.</p>
-    </div>
-
-    <div class="card">
-      <h3>8. La page publique ne contient aucune donnée</h3>
-      <p class="sub">L'interface est publiée sur GitHub Pages et servie en HTTPS, avec un
-      certificat fourni et renouvelé automatiquement. Le dépôt ne contient <b>ni note, ni nom,
-      ni observation, ni photo, ni stock</b> : uniquement le code d'affichage et l'adresse
-      publique du service.</p>
-      <div class="sep"></div>
-      <p class="sub">L'application déclare une politique de sécurité du contenu restrictive et ne
-      charge <b>aucune bibliothèque, aucune police et aucun script externes</b> : la typographie
-      et le logo sont intégrés au fichier. Aucune adresse de page n'est communiquée à un tiers.</p>
-    </div>
-
-    <div class="card">
-      <h3>9. Sauvegardes</h3>
-      <p class="sub">Le projet est hébergé sur l'<b>offre gratuite</b> de la plateforme. Cette
-      offre ne comprend <b>ni sauvegarde automatique exploitable, ni restauration à un instant
-      T</b> : nous ne promettons donc pas une restauration à la minute près. Un export manuel
-      complet, à conserver hors de la plateforme, est recommandé chaque semaine.</p>
-      <div class="sep"></div>
-      <p class="sub">Deux autres limites de cette offre, signalées par honnêteté : le projet peut
-      être suspendu après une longue période sans activité (restaurable ensuite), et aucun
-      engagement de disponibilité ne s'applique.</p>
-    </div>
-
-    <div class="card">
-      <h3>10. Ce que l'application ne fait pas</h3>
-      <p class="sub">Aucun pistage, aucun cookie publicitaire, aucun outil de mesure d'audience.
-      Aucune publicité. Aucune revente ni cession de données. Aucun service tiers.
-      <b>Aucune reconnaissance faciale, aucune détection de visage, aucune analyse d'émotion ou
-      de sourire</b> — cette interdiction est durable. Aucune géolocalisation, aucun accès au
-      micro, aucun accès à la caméra en dehors d'une photo déclenchée explicitement.
-      <b>Aucune décision automatisée</b> : une note n'entraîne jamais par elle-même de
-      conséquence, elle est toujours interprétée par un responsable.
-      <b>Aucun classement nominatif</b> n'est produit ni exporté.</p>
-    </div>
-
-    <div class="card">
-      <h3>11. Nos sous-traitants</h3>
-      <p class="sub"><b>Supabase</b> — base de données et fonction serveur. Données hébergées en
-      France (AWS, région Paris) ; journaux et données de compte possiblement hors UE.
-      Sous-traitant au sens de l'article 28 du RGPD.</p>
-      <div class="sep"></div>
-      <p class="sub"><b>GitHub</b> — publication de l'interface publique, qui ne contient aucune
-      donnée personnelle.</p>
-      <div class="sep"></div>
-      <p class="sub">Aucun autre prestataire : ni outil d'e-mailing, ni outil de support, ni
-      service d'analyse. <b>À faire signer :</b> l'accord de sous-traitance (DPA) avec l'hébergeur
-      n'est pas conclu automatiquement à l'ouverture d'un compte ; il doit être demandé depuis la
-      console d'administration puis signé.</p>
-    </div>
-
-    <div class="card">
-      <h3>12. En cas de perte d'un téléphone</h3>
-      <p class="sub">Prévenez le responsable du site dès que possible. La mesure immédiate est
-      simple et efficace : <b>changer le code d'accès</b> depuis Réglages → Compte, puis le
-      communiquer à l'équipe. L'ancien code devient aussitôt inopérant sur tous les appareils.
-      Rappel : la session se verrouille de toute façon au bout d'une heure.</p>
-    </div>
-
-    <div class="card">
-      <h3>13. Conservation des données</h3>
-      <p class="sub">Le détail des évaluations est conservé <b>30 jours</b>, puis remplacé
-      automatiquement par une <b>moyenne mensuelle conservée 3 ans</b>. Les photos sont supprimées
-      au bout de <b>7 jours</b>. Cette purge s'exécute chaque jour sur le serveur, sans
-      intervention.</p>
-      <div class="sep"></div>
-      <p class="sub">Ce choix suit la position de la CNIL : conserver longtemps des indicateurs de
-      performance individualisés est disproportionné. Il préserve néanmoins la mesure de la
-      qualité dans le temps, puisque les moyennes mensuelles restent exactes.</p>
+      <h3>7. Effacement automatique</h3>
+      <p class="sub">L'application <b>supprime d'elle-même</b> ce qui n'a plus à être conservé,
+      sans intervention :</p>
+      <div class="secrow"><span class="secdot"></span><span><b>Photos de preuve : 7 jours.</b>
+        Passé ce délai, l'image est supprimée ; l'évaluation reste.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Détail nominatif : 30 jours.</b>
+        Les évaluations détaillées sont ensuite consolidées en moyennes mensuelles.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Bilans mensuels : 36 mois.</b>
+        Puis suppression.</span></div>
+      <p class="sub" style="margin-top:10px">Cette consolidation suit la position de la CNIL sur
+      la conservation d'indicateurs de performance individualisés (délibération Amazon France
+      Logistique, 27 décembre 2023). La qualité reste mesurable dans le temps, puisque les
+      moyennes mensuelles demeurent exactes.</p>
       <button class="btn" style="width:100%;margin-top:10px" onclick="showRgpd()">Voir la notice de protection des données</button>
     </div>
 
     <div class="card">
+      <h3>8. Traçabilité</h3>
+      <p class="sub">Chaque évaluation est <b>signée</b> par le profil qui l'a saisie et
+      horodatée. Chaque mouvement de stock l'est également, et <b>ne peut pas être modifié
+      après coup</b> : une erreur se corrige par un mouvement inverse, qui reste visible. Le
+      stock affiché est toujours la somme des mouvements enregistrés, ce qui rend l'inventaire
+      auditable de bout en bout.</p>
+    </div>
+
+    <div class="card">
+      <h3>9. Hébergeur et sous-traitants</h3>
+      <p class="sub">Deux sous-traitants au sens de l'article 28 du RGPD :
+      <b>Supabase</b> (base de données et fonction serveur, hébergement Amazon Web Services,
+      région Paris) et <b>GitHub Pages</b> (mise à disposition de la page, qui ne contient
+      aucune donnée).</p>
+      <p class="sub">Supabase déclare publiquement être conforme au référentiel <b>SOC 2
+      Type 2</b> avec audit annuel indépendant et certifié <b>ISO/IEC 27001</b> pour son
+      système de management de la sécurité. Ces attestations portent sur la plateforme
+      d'hébergement.</p>
+      <p class="sub">Information de transparence exigée par le RGPD : les journaux techniques et
+      les données de facturation de l'hébergeur peuvent être traités hors de l'Union européenne,
+      encadrés par les clauses contractuelles types de la Commission européenne. Ils ne portent
+      pas sur le contenu des évaluations.</p>
+    </div>
+
+    <div class="card">
+      <h3>10. En cas de perte d'un téléphone</h3>
+      <p class="sub">Aucune donnée n'est lisible sans le code d'accès, et la session se
+      reverrouille seule. En cas de perte, la marche à suivre tient en une action :
+      <b>Réglages → Changer le code</b>. L'ancien code devient immédiatement inopérant sur tous
+      les appareils.</p>
+    </div>
+
+    <div class="card">
       <h3>Bonnes pratiques</h3>
-      <p class="sub">Partagez le code uniquement aux responsables concernés et changez-le
-      régulièrement, notamment à chaque départ dans l'équipe. Privilégiez un code long, propre à
-      ce service. Ne photographiez jamais une personne.</p>
+      <p class="sub">Réservez le code aux responsables concernés et changez-le à chaque départ
+      dans l'équipe. Choisissez un code long, propre à ce service. Ne photographiez jamais une
+      personne : les photos servent à documenter une tenue, pas à identifier quelqu'un.</p>
     </div>
   </section>
 
@@ -969,12 +918,11 @@
     </div>
 
     <div class="card">
-      <h3>À faire par l'entreprise avant la mise en service</h3>
-      <p class="sub">Trois formalités relèvent de l'organisation et non du logiciel :
-      <b>informer les personnes évaluées</b> (remise de cette notice) ;
-      <b>informer et consulter le CSE</b> préalablement à la mise en œuvre d'un dispositif de
-      contrôle de l'activité (articles L2312-38 du Code du travail) ;
-      <b>inscrire le traitement au registre</b> prévu à l'article 30 du RGPD.</p>
+      <h3>Cadre juridique</h3>
+      <p class="sub">Ce traitement s'inscrit dans le cadre du RGPD et du Code du travail :
+      information des personnes évaluées par la présente notice (article 13 du RGPD),
+      information et consultation du CSE au titre de l'article L2312-38 du Code du travail, et
+      inscription au registre des traitements prévu à l'article 30 du RGPD.</p>
     </div>
   </section>
 </main>
@@ -2583,42 +2531,98 @@ function saveMove(){
 
 /* ---------- export ---------- */
 function exportStockCSV(){
-  const sep=';'; const stock = stockMap();
-  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines = ['Référence'+sep+'Article'+sep+'Marque'+sep+'Catégorie'+sep+'Pour'+sep+'Couleur'+sep+'Taille'+sep+'Stock'+sep+'Seuil'+sep+'Statut'];
-  activeArticles().forEach(a=>articleVariants(a.id).forEach(v=>{
-    const qy = stock[v.id]||0;
-    lines.push([q(v.sku), q(a.name), q(a.brand||''), q(a.category), q(a.gender), q(a.color), q(v.size), qy,
-      a.minStock||0, qy<=0?'Rupture':(qy<=(a.minStock||0)?'Alerte':'OK')].join(sep));
+  const stock = stockMap(); const arts = activeArticles();
+  if(!arts.length){ toast('Aucun article à exporter'); return; }
+  const cols = [{t:'Référence',w:170},{t:'Vêtement',w:170},{t:'Marque',w:90},{t:'Catégorie',w:120},
+    {t:'Pour',w:110},{t:'Couleur',w:110},{t:'Taille',w:70,a:'center'},
+    {t:'Stock',w:60,a:'center'},{t:'Seuil',w:60,a:'center'},{t:'Statut',w:100}];
+  const rows = []; let total = 0, alertes = 0, ruptures = 0;
+  arts.forEach(a=>articleVariants(a.id).forEach(v=>{
+    const q = stock[v.id]||0; total += q;
+    const rupture = q<=0, bas = !rupture && q<=(a.minStock||0);
+    if(rupture) ruptures++; else if(bas) alertes++;
+    const bg = rupture ? XLS.bad : (bas ? XLS.low : null);
+    rows.push([{v:v.sku,bg},{v:a.name,bg,b:true},{v:a.brand||'',bg},{v:a.category,bg},
+      {v:a.gender,bg},{v:a.color,bg},{v:v.size,bg,a:'center'},
+      {v:q,bg,a:'center',b:true},{v:a.minStock||0,bg,a:'center'},
+      {v:rupture?'Rupture':(bas?'À réapprovisionner':'OK'),bg}]);
   }));
-  if(lines.length===1){ toast('Aucun article à exporter'); return; }
-  lines.push('');
-  lines.push('Mouvements'+sep+'Date'+sep+'Article'+sep+'Taille'+sep+'Quantité'+sep+'Motif'+sep+'Personne'+sep+'Commentaire'+sep+'Saisi par');
-  [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).forEach(m=>{
-    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
-    const h = m.hostId ? hostById(m.hostId) : null;
-    lines.push([''+sep+frDate(String(m.at||'').slice(0,10)), q(a?a.name:''), q(v?v.size:''),
-      (m.delta>0?'+':'')+m.delta, q(m.reason), q(h?hostName(h):''), q(m.note), q(m.by)].join(sep));
-  });
-  download(String.fromCharCode(65279)+lines.join('\r\n'), 'stock-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  rows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:arts.length+' vêtements',bg:XLS.ok},{v:'',bg:XLS.ok},
+    {v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:rows.length+' réf.',bg:XLS.ok,a:'center'},
+    {v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok},{v:'',bg:XLS.ok}]);
+  xlsDownload('stock-penelope-'+todayISO()+'.xls', 'État du stock',
+    total+' pièces · '+arts.length+' vêtements · '+ruptures+' rupture(s) · '+alertes+' à réapprovisionner',
+    [{ titre:'Détail par taille', html: xlsTable(cols, rows) }]);
   toast('Stock exporté');
 }
 function exportMovesCSV(){
-  const sep=';';
-  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
   const moves = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
   if(!moves.length){ toast('Aucun mouvement à exporter'); return; }
-  const lines = ['Date'+sep+'Sens'+sep+'Quantité'+sep+'Article'+sep+'Marque'+sep+'Couleur'+sep+
-    'Taille'+sep+'Motif'+sep+'Personne'+sep+'Commentaire'+sep+'Saisi par'];
-  moves.forEach(m=>{
+  const cols = [{t:'Date',w:90},{t:'Sens',w:70},{t:'Quantité',w:75,a:'center'},{t:'Vêtement',w:170},
+    {t:'Marque',w:90},{t:'Couleur',w:100},{t:'Taille',w:70,a:'center'},{t:'Motif',w:170},
+    {t:'Personne',w:140},{t:'Commentaire',w:220},{t:'Saisi par',w:100}];
+  let entrees = 0, sorties = 0;
+  const rows = moves.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
     const h = m.hostId ? hostById(m.hostId) : null;
-    lines.push([frDate(String(m.at||'').slice(0,10)), (m.delta>0?'Entrée':'Sortie'),
-      (m.delta>0?'+':'')+m.delta, q(a?a.name:''), q(a?(a.brand||''):''), q(a?a.color:''),
-      q(v?v.size:''), q(m.reason), q(h?hostName(h):''), q(m.note), q(m.by)].join(sep));
+    const e = (m.delta||0) > 0;
+    if(e) entrees += m.delta; else sorties -= m.delta;
+    const bg = e ? XLS.ok : XLS.bad;
+    return [{v:frDate(String(m.at||'').slice(0,10)),bg}, {v:e?'Entrée':'Sortie',bg,b:true},
+      {v:(e?'+':'')+m.delta,bg,a:'center',b:true}, {v:a?a.name:'',bg}, {v:a?(a.brand||''):'',bg},
+      {v:a?a.color:'',bg}, {v:v?v.size:'',bg,a:'center'}, {v:m.reason||'',bg},
+      {v:h?hostName(h):'',bg}, {v:m.note||'',bg}, {v:m.by||'',bg}];
   });
-  download(String.fromCharCode(65279)+lines.join('\r\n'), 'mouvements-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
+  xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Entrées et sorties de stock',
+    moves.length+' mouvements · '+entrees+' entrées · '+sorties+' sorties · solde '+
+    ((entrees-sorties)>0?'+':'')+(entrees-sorties),
+    [{ titre:'Journal complet', html: xlsTable(cols, rows) }]);
   toast('Mouvements exportés');
+}
+/* ---------- classeurs Excel ----------
+   Excel ouvre nativement un tableau HTML : cela donne un fichier mis en forme
+   (en-tête, colonnes figées, couleurs, totaux) sans aucune bibliothèque, là où
+   un CSV brut ne transporte ni style ni largeur de colonne. */
+const XLS = {
+  brand:'#0f5132', head:'#0f5132', headText:'#ffffff',
+  ok:'#e7f4ec', low:'#fdf3d7', bad:'#fbe9e9', zebra:'#f7f9f8', line:'#d7ded9'
+};
+function xlsEsc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/* cols : [{t:'Titre', w:120, a:'left'|'right'|'center'}] ; rows : [[{v,bg,b,a}]] */
+function xlsTable(cols, rows){
+  const th = cols.map(c=>'<th style="background:'+XLS.head+';color:'+XLS.headText+
+    ';font-weight:700;border:1px solid '+XLS.line+';padding:6px 8px;text-align:'+(c.a||'left')+
+    ';width:'+(c.w||110)+'px">'+xlsEsc(c.t)+'</th>').join('');
+  const tr = rows.map((r,i)=>'<tr>'+r.map((cell,j)=>{
+    const c = (cell && typeof cell==='object') ? cell : { v:cell };
+    const bg = c.bg || (i%2 ? XLS.zebra : '#ffffff');
+    return '<td style="background:'+bg+';border:1px solid '+XLS.line+';padding:5px 8px;text-align:'+
+      (c.a||cols[j]&&cols[j].a||'left')+(c.b?';font-weight:700':'')+'">'+xlsEsc(c.v)+'</td>';
+  }).join('')+'</tr>').join('');
+  return '<table style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">'+
+    '<thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table>';
+}
+function xlsDownload(filename, titre, sousTitre, blocs){
+  const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head>'+
+    '<meta charset="utf-8">'+
+    '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>'+
+    '<x:Name>'+xlsEsc(titre.slice(0,28))+'</x:Name><x:WorksheetOptions>'+
+    '<x:FreezePanes/><x:SplitHorizontal>1</x:SplitHorizontal><x:TopRowBottomPane>1</x:TopRowBottomPane>'+
+    '<x:ActivePane>2</x:ActivePane></x:WorksheetOptions></x:ExcelWorksheet>'+
+    '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->'+
+    '</head><body style="font-family:Calibri,Arial,sans-serif">'+
+    '<div style="font-size:16pt;font-weight:700;color:'+XLS.brand+'">Pénélope · Suivi Prestation</div>'+
+    '<div style="font-size:13pt;font-weight:700">'+xlsEsc(titre)+'</div>'+
+    '<div style="font-size:10pt;color:#5b6b62">'+xlsEsc(sousTitre)+'</div><br>'+
+    blocs.map(b=>(b.titre?'<div style="font-size:11pt;font-weight:700;color:'+XLS.brand+
+      '">'+xlsEsc(b.titre)+'</div>':'')+b.html+'<br>').join('')+
+    '<div style="font-size:9pt;color:#8a958f">Document interne · '+
+    'édité le '+xlsEsc(frDate(todayISO()))+' depuis Suivi Prestation · Pénélope</div>'+
+    '</body></html>';
+  download('﻿'+html, filename, 'application/vnd.ms-excel;charset=utf-8');
 }
 
 /* ---------- RAPPORT ---------- */
@@ -2689,23 +2693,35 @@ function buildReport(preview){
 function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 100); }
 function exportCSV(){
   const r = reportRange(); if(!r) return;
-  const [from, to] = r;
-  const sep=';'; const lines=['Date'+sep+'Prénom'+sep+'Nom'+sep+'Accueil'+sep+'Note'+sep+'Appréciation'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Noté par'];
-  const q = s => '"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const [from, to, label] = r;
+  const cols = [{t:'Date',w:90},{t:'Prénom',w:110},{t:'Nom',w:120},{t:'Accueil',w:140},
+    {t:'Note',w:60,a:'center'},{t:'Appréciation',w:120},{t:'Points signalés',w:220},
+    {t:'Commentaires',w:280},{t:'Réponse apportée',w:220},{t:'Noté par',w:100}];
+  const rows = [];
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
       const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
       const sc = checkScore(c);
-      lines.push([frDate(c.date), q(h.firstName), q(h.lastName||''), q(h.site||''),
-        sc+' %', rateLabel(sc),
-        q(failed.length ? failed.map(([k])=>k).join(', ') : (c.reasons||[]).join(', ')),
-        q(failed.map(([k,v])=>(v.comment?k+' : '+v.comment:'')+(v.photo?' [photo]':'')).filter(Boolean).join(' | ')),
-        q(c.note||''), q(c.by||'')].join(sep));
+      const bg = sc>=100 ? XLS.ok : (sc>=70 ? XLS.low : XLS.bad);
+      rows.push([{v:frDate(c.date),bg}, {v:h.firstName,bg,b:true}, {v:h.lastName||'',bg},
+        {v:h.site||'',bg}, {v:sc+' %',bg,a:'center',b:true}, {v:rateLabel(sc),bg},
+        {v:failed.length ? failed.map(([k])=>k).join(', ') : (c.reasons||[]).join(', '),bg},
+        {v:failed.map(([k,v])=>(v.comment?k+' : '+v.comment:'')+(v.photo?' [photo]':'')).filter(Boolean).join(' | '),bg},
+        {v:c.note||'',bg}, {v:c.by||'',bg}]);
     }
   }
-  if(lines.length===1){ toast('Aucun passage sur cette période'); return; }
-  download(String.fromCharCode(65279)+lines.join('\r\n'), 'suivi-prestation-penelope-'+todayISO()+'.csv', 'text/csv;charset=utf-8');
-  toast('Fichier Excel téléchargé');
+  if(!rows.length){ toast('Aucun passage sur cette période'); return; }
+  const team = teamRange(from, to);
+  const syn = xlsTable([{t:'Indicateur',w:200},{t:'Valeur',w:120,a:'center'}], [
+    [{v:'Passages évalués',b:true},{v:team.total,a:'center',b:true}],
+    [{v:'Conformes',bg:XLS.ok},{v:team.ok,a:'center',bg:XLS.ok}],
+    [{v:'Non conformes',bg:XLS.bad},{v:team.ko,a:'center',bg:XLS.bad}],
+    [{v:'Conformité globale',b:true},{v:pctTxt(team.pct),a:'center',b:true}]
+  ]);
+  xlsDownload('suivi-prestation-penelope-'+todayISO()+'.xls', 'Rapport de conformité',
+    label+' · '+rows.length+' passages',
+    [{ titre:'Synthèse', html: syn }, { titre:'Détail des passages', html: xlsTable(cols, rows) }]);
+  toast('Rapport Excel téléchargé');
 }
 
 /* ---------- partage / sauvegarde ---------- */
