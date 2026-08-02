@@ -97,6 +97,14 @@
   .grow{ flex:1; min-width:0 }
   .btn{ min-height:44px; border:none; background:var(--tint); color:var(--brand);
     border-radius:12px; padding:12px 16px; font-weight:600; font-size:14.5px }
+  nav.tabs button[data-v="pointage"].on{ color:#0f5132 }
+  nav.tabs button[data-v="equipe"].on{ color:#2563a8 }
+  nav.tabs button[data-v="stats"].on{ color:#7a4a9e }
+  nav.tabs button[data-v="stock"].on{ color:#b1553f }
+  nav.tabs button[data-v="rapport"].on{ color:#8a6a09 }
+  nav.tabs button[data-v="reglages"].on{ color:#4a5a6a }
+  nav.tabs button.on .ic{ transform:translateY(-1px) scale(1.06) }
+  nav.tabs button .ic{ transition:transform .16s ease }
   .btn.primary{ background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.05));
     box-shadow:0 2px 8px rgba(15,81,50,.22); background:linear-gradient(180deg,#137158,#0c5044); color:#fff;
     box-shadow:0 1px 2px rgba(15,93,78,.35), inset 0 1px 0 rgba(255,255,255,.14) }
@@ -211,7 +219,9 @@
   .banner{ background:var(--tint); border-radius:14px; padding:13px 15px; margin-bottom:12px;
     font-size:13.5px }
   .banner .row{ margin-top:10px }
-  #syncStrip{ background:var(--bad-soft); border-radius:12px; padding:10px 14px;
+  #syncStrip{ position:fixed; left:12px; right:12px; bottom:78px; z-index:25;
+    box-shadow:0 6px 20px rgba(16,24,40,.16); text-align:center;
+    background:var(--bad-soft); border-radius:12px; padding:10px 14px;
     margin-bottom:12px; font-size:13px; color:var(--ink2) }
 
   /* ---------- listes gérables (critères / accueils) ---------- */
@@ -721,7 +731,7 @@
       <div class="no-print" style="margin-top:14px;text-align:center">
         <button class="link" onclick="openArticleModal(null)">+ Ajouter un vêtement</button>
         <span class="mutd" style="margin:0 8px">·</span>
-        <button class="link" onclick="exportStockCSV()">Exporter (Excel)</button>
+        <button class="link" onclick="show('rapport')">Rapports et exports</button>
       </div>
     </div>
 
@@ -787,7 +797,7 @@
       <div class="secrow"><span class="secok">✓</span><span>Chiffré <b>en transit</b> (TLS 1.2+)
         et <b>au repos</b> (AES-256)</span></div>
       <div class="secrow"><span class="secok">✓</span><span><b>Effacement automatique</b> :
-        photos à 7 jours, détail nominatif à 30 jours</span></div>
+        photos à 7 jours, détail nominatif à 1 an</span></div>
       <div class="secrow"><span class="secok">✓</span><span><b>Zéro dépendance</b> côté
         navigateur : aucun traceur, aucune bibliothèque tierce</span></div>
     </div>
@@ -862,7 +872,7 @@
       sans intervention :</p>
       <div class="secrow"><span class="secdot"></span><span><b>Photos de preuve : 7 jours.</b>
         Passé ce délai, l'image est supprimée ; l'évaluation reste.</span></div>
-      <div class="secrow"><span class="secdot"></span><span><b>Détail nominatif : 30 jours.</b>
+      <div class="secrow"><span class="secdot"></span><span><b>Détail nominatif : 1 an.</b>
         Les évaluations détaillées sont ensuite consolidées en moyennes mensuelles.</span></div>
       <div class="secrow"><span class="secdot"></span><span><b>Bilans mensuels : 36 mois.</b>
         Puis suppression.</span></div>
@@ -939,7 +949,7 @@
       personne ait à y penser :</p>
       <div class="secrow"><span class="secdot"></span><span><b>Photos : 7 jours.</b>
         L'image est supprimée, l'évaluation reste.</span></div>
-      <div class="secrow"><span class="secdot"></span><span><b>Évaluations détaillées : 30 jours.</b>
+      <div class="secrow"><span class="secdot"></span><span><b>Évaluations détaillées : 1 an.</b>
         Elles sont ensuite consolidées en moyennes mensuelles.</span></div>
       <div class="secrow"><span class="secdot"></span><span><b>Moyennes mensuelles : 3 ans.</b>
         Puis suppression.</span></div>
@@ -1272,7 +1282,7 @@ function rateColor(p){
   return 'var(--bad)';
 }
 function avgOf(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; }
-/* Bilans mensuels : le détail quotidien est purgé au bout de 30 jours (RGPD),
+/* Bilans mensuels : le détail quotidien est purgé au bout d'un an (RGPD),
    mais la mesure de la qualité reste exacte grâce à ces sommes conservées. */
 function monthlyAgg(hostId, month){
   return (state.monthly||[]).filter(m=>(!hostId||m.hostId===hostId) && (!month||m.month===month))
@@ -1360,14 +1370,16 @@ function teamDay(date){
 }
 function teamRange(from, to){
   const scores = []; const reasons = {};
+  let ok = 0, ko = 0;
   for(const h of state.hosts){
     for(const c of checksInRange(h.id, from, to)){
       scores.push(checkScore(c));
-      if(c.status==='not_ok') (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1);
+      if(c.status==='not_ok'){ ko++; (c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1); }
+      else ok++;
     }
   }
   const ag = (from===null && to===null) ? monthlyAgg(null, null) : { sum:0, n:0 };
-  return { total:scores.length+ag.n, pct: blendAvg(scores, ag), reasons };
+  return { total:scores.length+ag.n, pct: blendAvg(scores, ag), reasons, ok, ko };
 }
 
 /* ---------- navigation ---------- */
@@ -1948,7 +1960,7 @@ function exportHostData(id){
   L.push('Note moyenne'+sep+q(pctTxt(s.pct)));
   L.push('Nombre de passages conservés'+sep+s.total);
   L.push('');
-  L.push('EVALUATIONS DETAILLEES (conservées 30 jours)');
+  L.push('EVALUATIONS DETAILLEES (conservées 1 an)');
   L.push('Date'+sep+'Note'+sep+'Appréciation'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Évaluateur');
   s.list.slice().reverse().forEach(c=>{
     const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
@@ -2744,8 +2756,9 @@ function buildReport(preview){
     '<div class="row"><div class="grow"><h2 style="margin:0">Suivi Prestation</h2>'+
     '<span class="sub">Rapport de conformité · '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
     '<div class="spacer"></div>'+
-    '<p><b>'+team.total+'</b> passages · <b class="stat-ok">'+team.ok+' OK</b> · '+
-    '<b class="stat-ko">'+team.ko+' non conformes</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
+    '<p><b>'+team.total+'</b> passage'+(team.total>1?'s':'')+' · <b class="stat-ok">'+team.ok+
+    ' conforme'+(team.ok>1?'s':'')+'</b> · <b class="stat-ko">'+team.ko+
+    ' non conforme'+(team.ko>1?'s':'')+'</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
     (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Note période</th><th>Appréciation</th><th>Note globale</th><th>Points récurrents</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
@@ -2761,8 +2774,9 @@ function buildReport(preview){
       checkDetailHTML(c)+'</div>').join('')+'</div>' : '')+
     '<div class="card"><p class="sub"><b>Document confidentiel</b> — résultats d\'évaluation professionnelle '+
     '(art. L1222-3 du Code du travail). Diffusion interdite hors des personnes habilitées. '+
-    'Le détail des évaluations est conservé 30 jours, puis remplacé par une moyenne mensuelle conservée 3 ans.</p>'+
-    '<div class="spacer"></div><p>Visa responsable : ______________________</p></div>';
+    'Le détail des évaluations est conservé 1 an, puis remplacé par une moyenne mensuelle conservée 3 ans.</p>'+
+    '<div class="spacer"></div><p>Édité par <b>'+esc(evaluator||'—')+'</b> le '+frDate(todayISO())+
+    ' à '+heureDe(new Date().toISOString())+'.</p></div>';
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return {from, to, label};
 }
@@ -2790,12 +2804,12 @@ function exportCSV(){
   const team = teamRange(from, to);
   const syn = xlsTable([{t:'Indicateur',w:200},{t:'Valeur',w:120,a:'center'}], [
     [{v:'Passages évalués',b:true},{v:team.total,a:'center',b:true}],
-    [{v:'Conformes',bg:XLS.ok},{v:team.ok,a:'center',bg:XLS.ok}],
-    [{v:'Non conformes',bg:XLS.bad},{v:team.ko,a:'center',bg:XLS.bad}],
+    [{v:'Passages conformes',bg:XLS.ok},{v:team.ok,a:'center',bg:XLS.ok}],
+    [{v:'Passages non conformes',bg:XLS.bad},{v:team.ko,a:'center',bg:XLS.bad}],
     [{v:'Conformité globale',b:true},{v:pctTxt(team.pct),a:'center',b:true}]
   ]);
   xlsDownload('suivi-prestation-penelope-'+todayISO()+'.xls', 'Rapport de conformité',
-    label+' · '+rows.length+' passages',
+    label+' · '+rows.length+' passages · édité par '+(evaluator||'—'),
     [{ titre:'Synthèse', html: syn }, { titre:'Détail des passages', html: xlsTable(cols, rows) }]);
   toast('Rapport Excel téléchargé');
 }
