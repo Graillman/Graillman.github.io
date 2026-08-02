@@ -92,7 +92,7 @@
     padding:17px; margin-bottom:13px }
   .row{ display:flex; gap:10px; align-items:center }
   .grow{ flex:1; min-width:0 }
-  .btn{ border:none; background:var(--tint); color:var(--brand);
+  .btn{ min-height:44px; border:none; background:var(--tint); color:var(--brand);
     border-radius:12px; padding:12px 16px; font-weight:600; font-size:14.5px }
   .btn.primary{ background:linear-gradient(180deg,#137158,#0c5044); color:#fff;
     box-shadow:0 1px 2px rgba(15,93,78,.35), inset 0 1px 0 rgba(255,255,255,.14) }
@@ -118,7 +118,7 @@
   .hname{ font-weight:600; font-size:15px }
   .hsite{ color:var(--muted); font-size:12px; margin-top:1px }
   .seg{ display:flex; flex:none; background:#e9ebe9; border-radius:12px; padding:3px; gap:2px }
-  .seg button{ border:none; background:transparent; color:var(--ink2); border-radius:9px;
+  .seg button{ min-height:40px; border:none; background:transparent; color:var(--ink2); border-radius:9px;
     padding:8px 13px; font-weight:600; font-size:13px; min-width:60px }
   .seg button.ok.sel{ background:#fff; color:var(--ok-text);
     box-shadow:0 1px 3px rgba(16,24,40,.14) }
@@ -447,16 +447,16 @@
     <label class="f">Désignation *</label>
     <input id="aName" placeholder="Ex. : Veste tailleur">
     <label class="f">Catégorie</label>
-    <select id="aCat"></select>
+    <select id="aCat" aria-label="Catégorie du vêtement"></select>
     <label class="f">Pour</label>
-    <select id="aGender"></select>
+    <select id="aGender" aria-label="Coupe du vêtement"></select>
     <label class="f">Couleur</label>
     <input id="aColor" list="colorList" placeholder="Ex. : Bleu marine">
     <datalist id="colorList"></datalist>
     <label class="f">Marque / modèle (facultatif)</label>
     <input id="aBrand" maxlength="40" placeholder="Ex. : Hawaypant, Devred, Runner">
     <label class="f">Tailles disponibles</label>
-    <select id="aSizeType" onchange="onSizeTypeChange()"></select>
+    <select id="aSizeType" aria-label="Gamme de tailles" onchange="onSizeTypeChange()"></select>
     <div class="sizepick" id="aSizes"></div>
     <div class="row" style="gap:6px;margin-top:8px">
       <input id="aCustomSize" maxlength="12" placeholder="Autre taille (ex. 56, Inconnue)"
@@ -466,7 +466,7 @@
     <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée
     pour chacune. Vous pouvez mélanger les gammes (S/M et L, par exemple) ou ajouter une taille libre.</p>
     <label class="f">Seuil d'alerte par taille</label>
-    <input id="aMin" type="number" min="0" step="1" value="2">
+    <input id="aMin" aria-label="Seuil d'alerte par taille" type="number" min="0" step="1" value="2">
     <p class="mutd" style="margin-top:4px">En dessous de ce nombre, la taille passe en alerte.</p>
     <div class="spacer"></div><div class="spacer"></div>
     <button class="btn primary" style="width:100%" onclick="saveArticleModal()">Enregistrer</button>
@@ -499,14 +499,14 @@
       <button class="qtybtn" onclick="bumpMove(1)">+</button>
     </div>
     <label class="f">Motif</label>
-    <select id="moveReason" onchange="onMoveReason()"></select>
+    <select id="moveReason" aria-label="Motif du mouvement" onchange="onMoveReason()"></select>
     <div id="moveHostWrap" style="display:none">
       <label class="f">Personne concernée</label>
-      <select id="moveHost"></select>
+      <select id="moveHost" aria-label="Personne concernée"></select>
     </div>
     <div id="moveMotifWrap" style="display:none">
       <label class="f">Motif</label>
-      <select id="moveMotif"></select>
+      <select id="moveMotif" aria-label="Motif détaillé"></select>
     </div>
     <label class="f">Précision (facultatif)</label>
     <input id="moveNote" maxlength="200" placeholder="Fait observable uniquement">
@@ -527,9 +527,9 @@
     <label class="f">Nom</label>
     <input id="fLast" placeholder="Nom">
     <label class="f">Accueil</label>
-    <select id="fSite"></select>
+    <select id="fSite" aria-label="Accueil de rattachement"></select>
     <label class="f">Date d'arrivée</label>
-    <input id="fDate" type="date">
+    <input id="fDate" aria-label="Date d'arrivée" type="date">
     <label class="f">Commentaire sur le profil</label>
     <textarea id="fComment" placeholder="Ex. : excellent relationnel, à l'aise au standard, attention à la ponctualité…"></textarea>
     <div class="spacer"></div><div class="spacer"></div>
@@ -561,7 +561,7 @@
     <div class="card">
       <div class="datebar">
         <b style="flex:none;font-size:14px">Jour</b>
-        <input type="date" id="checkDate">
+        <input type="date" id="checkDate" aria-label="Date du passage">
       </div>
       <div class="sub" id="dayProgressText" style="margin-top:12px"></div>
       <div class="progress"><i id="dayProgressBar" style="width:0%"></i></div>
@@ -613,7 +613,7 @@
     <div class="card no-print">
       <p class="sub" style="margin-bottom:10px">Rapport de conformité à transmettre :
       aperçu à l'écran, impression / PDF, ou export Excel.</p>
-      <select id="repPeriod" onchange="onRepPeriod()" style="margin-bottom:8px">
+      <select id="repPeriod" aria-label="Période du rapport" onchange="onRepPeriod()" style="margin-bottom:8px">
         <option value="week">Cette semaine</option>
         <option value="month" selected>Ce mois-ci</option>
         <option value="30">30 derniers jours</option>
@@ -621,7 +621,7 @@
         <option value="custom">Période personnalisée…</option>
       </select>
       <div class="row" id="customDates" style="display:none; margin-bottom:8px">
-        <input type="date" id="repFrom"> <input type="date" id="repTo">
+        <input type="date" id="repFrom" aria-label="Date de début"> <input type="date" id="repTo" aria-label="Date de fin">
       </div>
       <div class="row">
         <button class="btn primary grow" onclick="buildReport(true)">Aperçu</button>
