@@ -280,7 +280,7 @@
   .sheet-head h2{ margin:0 }
 
   /* ---------- inventaire ---------- */
-  .artcard{ content-visibility:auto; contain-intrinsic-size:auto 190px;
+  .artcard{ content-visibility:auto; contain-intrinsic-size:auto 190px; transition:box-shadow .15s ease;
     background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
     padding:14px 15px; margin-bottom:10px }
   .arthead{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
@@ -288,7 +288,11 @@
   .arthead.open{ margin-bottom:10px }
   .artname{ display:block; font-weight:650; font-size:15px }
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
-  .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:10px; text-align:center }
+  .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:12px; text-align:center }
+  input:not([type=file]), textarea, select{ box-shadow:inset 0 1px 2px rgba(16,24,40,.05) }
+  input:focus-visible, textarea:focus-visible, select:focus-visible{
+    outline:2px solid var(--brand); outline-offset:1px }
+  .sheetbox input, .sheetbox textarea{ font-size:16px }
   .cattag{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
     border-radius:99px; margin-right:6px; letter-spacing:.01em }
   .artright{ text-align:right; flex:none }
@@ -303,15 +307,19 @@
   .arttotal{ font-weight:750; font-size:17px; font-variant-numeric:tabular-nums; white-space:nowrap }
   .sizegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px }
   .szrow{ display:flex; align-items:center; justify-content:space-between; gap:2px; margin-top:3px }
-  .szbtn{ width:34px; height:34px; border-radius:9px; border:none; background:var(--tint);
-    color:var(--brand); font-size:19px; font-weight:600; line-height:1; flex:none }
+  .szbtn{ width:36px; height:36px; border-radius:10px; border:none; background:var(--tint);
+    color:var(--brand); font-size:20px; font-weight:600; line-height:1; flex:none;
+    box-shadow:inset 0 -1px 0 rgba(16,24,40,.06) }
+  .szbtn:active{ transform:scale(.92) }
   .szrow .qt{ flex:1; border:none; background:transparent; font-size:19px; font-weight:750;
     font-variant-numeric:tabular-nums; color:var(--ink); padding:4px 0; min-height:34px }
   .grouptitle{ font-size:15px; font-weight:750; margin:20px 0 2px; letter-spacing:-.01em }
   .grouptitle:first-child{ margin-top:4px }
   .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
+    box-shadow:0 1px 2px rgba(16,24,40,.04);
     border-radius:10px; padding:6px 4px 5px; text-align:center; line-height:1.15 }
-  .sizecell .sz{ display:block; font-size:10.5px; color:var(--muted); font-weight:600;
+  .sizecell .sz{ display:block; font-size:11px; color:var(--muted); font-weight:700;
+    letter-spacing:.03em; text-transform:uppercase;
     text-transform:uppercase; letter-spacing:.3px }
   .sizecell .qt{ display:block; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums }
   .sizecell.low{ border-color:#e0a93a; background:rgba(224,169,58,.10) }
@@ -330,8 +338,9 @@
     background:var(--tint); border-radius:14px; padding:12px 14px; font-size:13px }
   .editbar .btn{ flex:none; padding:8px 14px; font-size:13px }
   /* choix guidé du vêtement puis de la taille */
-  .pickcat{ font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
-    color:var(--muted); margin:14px 0 6px }
+  .pickcat{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); margin:18px 2px 8px }
+  .pickcat:first-child{ margin-top:2px }
   .pickrow{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     border:1px solid var(--baseline); background:var(--surface); border-radius:12px;
     padding:12px 14px; margin-bottom:7px; min-height:56px }
@@ -360,7 +369,11 @@
   .movline{ display:flex; align-items:center; gap:10px; padding:9px 0;
     border-top:1px solid var(--hairline); font-size:13.5px }
   .movline:first-child{ border-top:none }
-  .movdelta{ font-weight:750; font-variant-numeric:tabular-nums; min-width:38px; text-align:right }
+  .movdelta{ font-weight:750; font-variant-numeric:tabular-nums; min-width:44px; text-align:center;
+    padding:3px 6px; border-radius:8px; font-size:13px }
+  .movdelta.up{ background:rgba(15,81,50,.09) } .movdelta.down{ background:var(--bad-soft) }
+  .movwhen{ text-align:right; white-space:nowrap; font-size:12.5px; font-weight:600 }
+  .movwhen .mutd{ display:block; font-weight:500; font-size:11.5px; margin-top:1px }
   .movdelta.up{ color:var(--ok-text) } .movdelta.down{ color:var(--bad) }
   .qtyrow{ display:flex; align-items:center; gap:12px; justify-content:center; margin:14px 0 }
   .qtybtn{ width:52px; height:52px; border-radius:16px; border:none; font-size:26px; font-weight:600;
@@ -373,7 +386,9 @@
     font-variant-numeric:tabular-nums; letter-spacing:-1px }
   .sizepick{ display:flex; flex-wrap:wrap; gap:7px; margin-top:4px }
   .sizepick button{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
-    border-radius:9px; padding:7px 11px; font-size:13px; font-weight:600; min-width:46px }
+    border-radius:10px; padding:9px 13px; font-size:13px; font-weight:600; min-width:48px;
+    box-shadow:0 1px 2px rgba(16,24,40,.05); transition:transform .12s ease, box-shadow .12s ease }
+  .sizepick button.sel{ box-shadow:0 2px 6px rgba(15,81,50,.28) }
   .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
   .sizepick button.free{ border-style:dashed }
   .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
@@ -694,7 +709,6 @@
     </div>
 
     <div id="invPaneMouv" style="display:none">
-      <div class="tiles" id="movKpi"></div>
       <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openMovePicker()">Enregistrer une entrée ou une sortie</button>
       <div class="filterrow no-print" id="movFilters"></div>
       <div class="card">
@@ -2090,7 +2104,7 @@ const INV_CATEGORIES = ['Polo','Chemise','Chemisier','T-shirt','Pull col rond','
   'Pull / maille','Gilet','Veste / blazer','Softshell','Parka / manteau','Tunique / blouse',
   'Pantalon','Jupe','Robe','Foulard / écharpe','Cravate','Ceinture','Chaussures','Porte-badge',
   'Parapluie','Autre accessoire'];
-const INV_GENDERS = ['Mixte / unisexe','Coupe femme','Coupe homme'];
+const INV_GENDERS = ['Coupe femme','Coupe homme'];
 const INV_COLORS = ['Noir','Blanc','Écru','Bleu marine','Bleu marine rayé','Bleu','Bleu ciel',
   'Gris','Anthracite','Bordeaux','Rouge','Rose','Vert','Kaki','Camel','Beige','Taupe','Marron'];
 /* Gammes de tailles réelles du vêtement professionnel en France.
@@ -2157,13 +2171,17 @@ const PARTIES = [
   ['Accessoires',/cravate|foulard|écharpe|echarpe|ceinture|badge|parapluie|gant|chapeau|casquette/i],
   ['Hauts',      /chemis|polo|t-?shirt|pull|col roul|gilet|veste|blazer|softshell|parka|manteau|tunique|blouse|sweat|maille|haut/i]
 ];
+const heureDe = iso => {
+  const d = new Date(iso||'');
+  return isNaN(d) ? '' : String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
+};
 function partieOf(a){
   const n = (a.name||'') + ' ' + (a.category||'');
   for(const [nom, re] of PARTIES) if(re.test(n)) return nom;
   return 'Autres';
 }
 const ORDRE_PARTIES = ['Hauts','Bas','Robes','Chaussures','Accessoires','Autres'];
-const ORDRE_POUR = ['Coupe femme','Coupe homme','Mixte / unisexe'];
+const ORDRE_POUR = ['Coupe femme','Coupe homme'];
 
 /* ---------- rendu de la page Stock ----------
    Deux onglets : « Stock » (l'état, directement modifiable) et
@@ -2201,6 +2219,28 @@ function openQuickQty(variantId){
   document.getElementById('qtyModal').classList.add('on');
   setTimeout(()=>document.getElementById('qtyVal').focus(), 60);
 }
+/* On met à jour les seuls chiffres concernés. Un rendu complet ferait sauter
+   la page sous le doigt à chaque appui. */
+function rafraichitChiffres(articleId){
+  const stock = stockMap();
+  const carte = document.querySelector('.artcard[data-aid="'+articleId+'"]');
+  if(carte){
+    carte.querySelectorAll('.sizecell').forEach(c=>{
+      const q = stock[c.dataset.vid]||0;
+      const b = c.querySelector('.qt');
+      if(b) b.textContent = q;
+      c.classList.toggle('out', q<=0);
+    });
+    const t = carte.querySelector('.arttotal');
+    if(t) t.textContent = articleVariants(articleId).reduce((n,v)=>n+(stock[v.id]||0),0);
+  }
+  const tot = activeArticles().reduce((n,a)=>
+    n + articleVariants(a.id).reduce((m,v)=>m+(stock[v.id]||0),0), 0);
+  const nb = activeArticles().length;
+  const sum = document.getElementById('invSummary');
+  if(sum) sum.innerHTML = '<b>'+tot+'</b> pièce'+(tot>1?'s':'')+' en stock <span class="mutd">·</span> '+
+    nb+' vêtement'+(nb>1?'s':'');
+}
 function ajusteQty(variantId, d){
   const v = variantById(variantId); if(!v) return;
   const avant = stockMap()[v.id]||0;
@@ -2209,7 +2249,7 @@ function ajusteQty(variantId, d){
     note:'', hostId:null, by:evaluator||'', at:new Date().toISOString() };
   invData().moves.push(mv);
   save(); push('invMove', mv);
-  renderStock();
+  rafraichitChiffres(v.articleId);
 }
 function closeQtyModal(){ document.getElementById('qtyModal').classList.remove('on'); qtyVariantId=null; }
 function bumpQty(d){
@@ -2226,7 +2266,7 @@ function saveQty(){
     note:'', hostId:null, by:evaluator||'', at:new Date().toISOString() };
   invData().moves.push(mv);
   save(); push('invMove', mv);
-  closeQtyModal(); renderStock();
+  closeQtyModal(); rafraichitChiffres(v.articleId);
   toast(v.size+' : '+avant+' → '+apres);
 }
 
@@ -2273,7 +2313,7 @@ function renderStock(){
       const vars = articleVariants(a.id);
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       const ouvert = openArt.has(a.id);
-      return '<div class="artcard">'+
+      return '<div class="artcard" data-aid="'+esc(a.id)+'">'+
         '<button class="arthead'+(ouvert?' open':'')+'" onclick="toggleArt('+jsq(a.id)+')">'+
           '<span class="grow"><span class="artname">'+esc(a.name)+
             (a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
@@ -2285,7 +2325,7 @@ function renderStock(){
         '</button>'+
         (ouvert ? '<div class="sizegrid">'+vars.map(v=>{
           const qy = stock[v.id]||0;
-          return '<div class="sizecell'+(qy<=0?' out':'')+'">'+
+          return '<div class="sizecell'+(qy<=0?' out':'')+'" data-vid="'+esc(v.id)+'">'+
             '<span class="sz">'+esc(v.size)+'</span>'+
             '<span class="szrow">'+
               '<button class="szbtn" onclick="ajusteQty('+jsq(v.id)+',-1)" aria-label="Retirer un">&minus;</button>'+
@@ -2296,7 +2336,7 @@ function renderStock(){
       '</div>';
     };
     // On choisit d'abord Femme ou Homme : tout afficher d'un coup, c'est un mur.
-    const dispo = ORDRE_POUR.filter(p=>list.some(a=>(a.gender||'Mixte / unisexe')===p));
+    const dispo = ORDRE_POUR.filter(p=>list.some(a=>pourOf(a)===p));
     if(!dispo.includes(pourFilter)) pourFilter = dispo[0] || null;
     document.getElementById('invPour').innerHTML = dispo.length > 1
       ? '<div class="seg wide">'+dispo.map(p=>'<button class="'+(p===pourFilter?'sel':'')+
@@ -2304,7 +2344,7 @@ function renderStock(){
       : '';
     let html = '';
     ORDRE_PARTIES.forEach(partie=>{
-      const dedans = list.filter(a=>(a.gender||'Mixte / unisexe')===pourFilter && partieOf(a)===partie);
+      const dedans = list.filter(a=>pourOf(a)===pourFilter && partieOf(a)===partie);
       if(!dedans.length) return;
       html += '<div class="pickcat">'+esc(partie)+'</div>' + dedans.map(carte).join('');
     });
@@ -2313,15 +2353,6 @@ function renderStock(){
 
   // ---- onglet Entrées · sorties ----
   const moves = invData().moves;
-  const month = todayISO().slice(0,7);
-  let inQty = 0, outQty = 0;
-  moves.forEach(m=>{ if(String(m.at||'').slice(0,7)===month){
-    if((m.delta||0)>0) inQty += m.delta; else outQty -= m.delta; } });
-  document.getElementById('movKpi').innerHTML =
-    '<div class="tile"><span>Entrées ce mois</span><b class="stat-ok">+'+inQty+'</b></div>'+
-    '<div class="tile"><span>Sorties ce mois</span><b class="stat-ko">-'+outQty+'</b></div>'+
-    '<div class="tile"><span>Solde du mois</span><b>'+(inQty-outQty>0?'+':'')+(inQty-outQty)+'</b></div>'+
-    '<div class="tile"><span>Mouvements</span><b>'+moves.length+'</b><span class="mutd">depuis le début</span></div>';
   document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
     '<button class="'+(movFilter===f?'sel':'')+'" onclick="setMovFilter('+jsq(f)+')">'+f+'</button>').join('');
 
@@ -2338,7 +2369,8 @@ function renderStock(){
       '<span class="movdelta '+(m.delta>0?'up':'down')+'">'+(m.delta>0?'+':'')+m.delta+'</span>'+
       '<span class="grow">'+(a?esc(a.name):'—')+(v?' <span class="mutd">'+esc(v.size)+'</span>':'')+
       (detail ? '<br><span class="mutd">'+esc(detail)+'</span>' : '')+'</span>'+
-      '<span class="mutd" style="white-space:nowrap">'+frDate(String(m.at||'').slice(0,10))+'</span>'+
+      '<span class="movwhen">'+frDate(String(m.at||'').slice(0,10))+
+        '<span class="mutd">'+heureDe(m.at)+(m.by?' · '+esc(m.by):'')+'</span></span>'+
     '</div>';
   }).join('') + (hist.length>shown.length
       ? '<p class="mutd" style="margin-top:8px">'+shown.length+' mouvements les plus récents sur '+
@@ -2368,7 +2400,9 @@ function sizeOrder(type, sz){
   return i >= 0 ? i : 900;
 }
 let sizeType = 'alpha', aPour = 'Coupe femme';
-const POUR_COURT = { 'Coupe femme':'Femme', 'Coupe homme':'Homme', 'Mixte / unisexe':'Mixte' };
+const POUR_COURT = { 'Coupe femme':'Femme', 'Coupe homme':'Homme' };
+// les vêtements enregistrés avant la suppression du mixte sont rattachés aux hommes
+const pourOf = a => (a.gender === 'Coupe femme') ? 'Coupe femme' : 'Coupe homme';
 function setPour(v){ aPour = v; renderPour(); }
 function renderPour(){
   document.getElementById('aPour').innerHTML = INV_GENDERS.map(g=>
@@ -2407,7 +2441,7 @@ function openArticleModal(id){
   document.getElementById('aName').value = a ? a.name : '';
   document.getElementById('aCustomSize').value = '';
   sizeType = a ? (a.sizeType || 'alpha') : 'alpha';
-  aPour = a ? (a.gender || INV_GENDERS[0]) : 'Coupe femme';
+  aPour = a ? pourOf(a) : 'Coupe femme';
   renderPour();
   pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : SIZE_SETS[sizeType].sizes.slice();
   renderSizePick();
