@@ -35,7 +35,10 @@
   html{ -webkit-text-size-adjust:100% }
   body{
     font-family:'Jakarta', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background:var(--page); color:var(--ink);
+    background:
+      radial-gradient(1100px 420px at 50% -180px, rgba(15,81,50,.07), transparent 70%),
+      var(--page);
+    background-attachment:fixed; color:var(--ink);
     min-height:100dvh; padding-bottom:88px;
     -webkit-font-smoothing:antialiased;
   }
@@ -94,7 +97,8 @@
   .grow{ flex:1; min-width:0 }
   .btn{ min-height:44px; border:none; background:var(--tint); color:var(--brand);
     border-radius:12px; padding:12px 16px; font-weight:600; font-size:14.5px }
-  .btn.primary{ background:linear-gradient(180deg,#137158,#0c5044); color:#fff;
+  .btn.primary{ background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.05));
+    box-shadow:0 2px 8px rgba(15,81,50,.22); background:linear-gradient(180deg,#137158,#0c5044); color:#fff;
     box-shadow:0 1px 2px rgba(15,93,78,.35), inset 0 1px 0 rgba(255,255,255,.14) }
   .btn.primary:active{ box-shadow:inset 0 2px 4px rgba(0,0,0,.18) }
   .btn.neutral{ background:var(--page); color:var(--ink2) }
@@ -281,12 +285,15 @@
 
   /* ---------- inventaire ---------- */
   .artcard{ content-visibility:auto; contain-intrinsic-size:auto 190px; transition:box-shadow .15s ease;
+    border-left:3px solid currentColor;
     background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
     padding:14px 15px; margin-bottom:10px }
   .arthead{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     background:transparent; border:none; padding:0; min-height:56px }
   .arthead.open{ margin-bottom:10px }
-  .artname{ display:block; font-weight:650; font-size:15px }
+  .artname{ display:block; font-weight:650; font-size:15px; color:var(--ink) }
+  .artcard .artmeta, .artcard .arttotal, .artcard .artunit{ color:var(--ink2) }
+  .artcard .arttotal{ color:var(--ink) }
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
   .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:12px; text-align:center }
   input:not([type=file]), textarea, select{ box-shadow:inset 0 1px 2px rgba(16,24,40,.05) }
@@ -314,6 +321,16 @@
   .szrow .qt{ flex:1; border:none; background:transparent; font-size:19px; font-weight:750;
     font-variant-numeric:tabular-nums; color:var(--ink); padding:4px 0; min-height:34px }
   .grouptitle{ font-size:15px; font-weight:750; margin:20px 0 2px; letter-spacing:-.01em }
+  /* une pastille de couleur par partie : le regard trie avant de lire */
+  .pickcat{ display:flex; align-items:center; gap:7px }
+  .pickcat::before{ content:''; width:8px; height:8px; border-radius:99px;
+    background:currentColor; opacity:.55; flex:none }
+  .pickcat.part-Hauts, .artcard.part-Hauts{ color:#2563a8 }
+  .pickcat.part-Bas, .artcard.part-Bas{ color:#4a5a6a }
+  .pickcat.part-Robes, .artcard.part-Robes{ color:#b1553f }
+  .pickcat.part-Chaussures, .artcard.part-Chaussures{ color:#7a5230 }
+  .pickcat.part-Accessoires, .artcard.part-Accessoires{ color:#8a6a09 }
+  .pickcat.part-Autres, .artcard.part-Autres{ color:#9aa3a0 }
   .grouptitle:first-child{ margin-top:4px }
   .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
     box-shadow:0 1px 2px rgba(16,24,40,.04);
@@ -903,84 +920,60 @@
     <div class="view-title">Protection des données</div>
 
     <div class="card">
-      <p class="sub">Cette notice décrit le traitement de données personnelles mis en œuvre par
-      l'application. <b>Elle doit être portée à la connaissance des hôtes et hôtesses évalués</b> :
-      c'est une obligation d'information prévue à l'article 13 du RGPD.</p>
+      <p class="sub">Les données saisies ici sont des données professionnelles. Cette page résume
+      comment elles sont protégées, combien de temps elles sont gardées, et ce que l'application
+      s'interdit de faire.</p>
     </div>
 
     <div class="card">
-      <h3>Responsable du traitement</h3>
-      <p class="sub">L'entreprise Pénélope, représentée par le responsable du site Evergreen.
-      Pour toute question ou pour exercer vos droits, adressez-vous à votre responsable de site
-      ou au référent protection des données de l'entreprise.</p>
+      <h3>Ce qui est enregistré</h3>
+      <p class="sub">Prénom, nom, accueil de rattachement et date d'arrivée des hôtes et hôtesses ;
+      les notes par critère et les observations factuelles de chaque passage ; le stock des tenues
+      et sa dotation. <b>Rien d'autre</b> : aucune donnée bancaire, aucune donnée de santé, aucune
+      donnée de visiteur ou de client.</p>
     </div>
 
     <div class="card">
-      <h3>Finalité</h3>
-      <p class="sub">Suivre et améliorer la qualité de la prestation d'accueil (tenue,
-      ponctualité, qualité de l'accueil), accompagner les équipes, et gérer le stock des tenues
-      professionnelles.</p>
+      <h3>Effacement automatique</h3>
+      <p class="sub">L'application supprime d'elle-même ce qui n'a plus à être conservé, sans que
+      personne ait à y penser :</p>
+      <div class="secrow"><span class="secdot"></span><span><b>Photos : 7 jours.</b>
+        L'image est supprimée, l'évaluation reste.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Évaluations détaillées : 30 jours.</b>
+        Elles sont ensuite consolidées en moyennes mensuelles.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Moyennes mensuelles : 3 ans.</b>
+        Puis suppression.</span></div>
+      <p class="sub" style="margin-top:10px">La qualité reste mesurable dans le temps, puisque les
+      moyennes mensuelles demeurent exactes une fois le détail effacé.</p>
     </div>
 
     <div class="card">
-      <h3>Base légale</h3>
-      <p class="sub"><b>Intérêt légitime de l'employeur</b> (article 6.1.f du RGPD) à s'assurer de
-      la qualité de la prestation qu'il fournit à son client.</p>
-      <div class="sep"></div>
-      <p class="sub">Le traitement <b>ne repose pas sur votre consentement</b> : dans une relation
-      de travail, le lien de subordination ne permet pas un consentement libre. C'est pourquoi
-      l'application ne comporte aucune case « j'accepte ». En contrepartie, vous disposez d'un
-      <b>droit d'opposition</b> pour des raisons tenant à votre situation particulière.</p>
-    </div>
-
-    <div class="card">
-      <h3>Données traitées</h3>
-      <p class="sub">Prénom, nom, accueil de rattachement, date d'arrivée ; notes par critère et
-      appréciations factuelles ; observations et réponses apportées ; identité de l'évaluateur ;
-      taille et dotation en tenues. <b>Aucune donnée bancaire, de santé, de visiteur ou de
-      client.</b></p>
-    </div>
-
-    <div class="card">
-      <h3>Durées de conservation</h3>
-      <p class="sub">Détail des évaluations et observations : <b>30 jours</b>.
-      Photos : <b>7 jours</b>. Moyennes mensuelles consolidées : <b>3 ans</b> (durée alignée sur
-      l'article L1332-5 du Code du travail). Dotation en tenues : durée de la mission, puis
-      3 mois. La suppression est automatique.</p>
-    </div>
-
-    <div class="card">
-      <h3>Destinataires</h3>
-      <p class="sub">Les seuls responsables habilités de l'équipe encadrante Pénélope, et
-      l'hébergeur en qualité de sous-traitant technique. <b>Aucune diffusion à des tiers.</b></p>
-    </div>
-
-    <div class="card">
-      <h3>Vos droits</h3>
-      <p class="sub">Vous disposez d'un droit d'accès, de rectification, d'effacement, de
-      limitation, de portabilité et d'opposition. Concrètement :</p>
-      <div class="sep"></div>
-      <p class="sub"><b>Accès et portabilité :</b> votre responsable édite en un clic, depuis
-      votre fiche, un dossier complet reprenant toutes les données vous concernant, y compris les
-      observations rédigées à votre sujet.<br>
-      <b>Rectification, opposition, effacement :</b> adressez votre demande à votre responsable.
-      Une réponse motivée vous est due <b>sous un mois</b>.<br>
-      <b>Réclamation :</b> vous pouvez à tout moment saisir la CNIL (www.cnil.fr).</p>
+      <h3>Qui y a accès</h3>
+      <p class="sub">Les seuls responsables disposant du code d'accès. La base est verrouillée :
+      aucune requête extérieure ne peut la lire, même en connaissant son adresse. Les données sont
+      hébergées <b>en France</b> et chiffrées en transit comme au repos.</p>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="showSecurity()">Voir le détail des protections</button>
     </div>
 
     <div class="card">
       <h3>Ce que l'application ne fait pas</h3>
-      <p class="sub">Aucun classement nominatif, aucune décision automatisée, aucune
-      reconnaissance faciale, aucune géolocalisation, aucune surveillance en continu. Les
-      évaluations résultent d'un passage ponctuel effectué par un responsable identifié.</p>
+      <div class="secrow"><span class="secok">✓</span><span>Aucun classement nominatif</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Aucune décision automatisée</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Aucune reconnaissance faciale</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Aucune géolocalisation</span></div>
+      <div class="secrow"><span class="secok">✓</span><span>Aucune surveillance en continu — les
+        évaluations résultent d'un passage ponctuel, effectué par un responsable identifié</span></div>
     </div>
 
     <div class="card">
-      <h3>Cadre juridique</h3>
-      <p class="sub">Ce traitement s'inscrit dans le cadre du RGPD et du Code du travail :
-      information des personnes évaluées par la présente notice (article 13 du RGPD),
-      information et consultation du CSE au titre de l'article L2312-38 du Code du travail, et
-      inscription au registre des traitements prévu à l'article 30 du RGPD.</p>
+      <h3>Répondre à une demande</h3>
+      <p class="sub">Si une personne demande à consulter ce qui la concerne, la fiche de chaque
+      hôte comporte un bouton <b>« Éditer le dossier personnel »</b> : il produit en un clic un
+      document reprenant l'ensemble de ses données, observations comprises. Une réponse est due
+      sous un mois.</p>
+      <p class="mutd" style="margin-top:8px">Ce traitement relève de l'intérêt légitime de
+      l'employeur (article 6.1.f du RGPD) : suivre la qualité de la prestation d'accueil qu'il
+      fournit à son client.</p>
     </div>
   </section>
 </main>
@@ -990,10 +983,10 @@
     <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.6 12.3 2.3 2.3 4.5-5"/></svg>Passage</button>
   <button data-v="equipe">
     <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.6 19c.7-3 2.8-4.6 5.4-4.6s4.7 1.6 5.4 4.6"/><circle cx="16.8" cy="9.5" r="2.6"/><path d="M15.7 14.7c2.2.3 4 1.7 4.7 4.3"/></svg>Équipe</button>
-  <button data-v="stock">
-    <svg class="ic" viewBox="0 0 24 24"><path d="M3.6 8.2 12 4l8.4 4.2v7.6L12 20l-8.4-4.2z"/><path d="M3.6 8.2 12 12.4l8.4-4.2M12 12.4V20"/></svg>Stock</button>
   <button data-v="stats">
     <svg class="ic" viewBox="0 0 24 24"><path d="M5 20v-6M11 20V5M17 20v-9"/><path d="M3 20h18"/></svg>Stats</button>
+  <button data-v="stock">
+    <svg class="ic" viewBox="0 0 24 24"><path d="M3.6 8.2 12 4l8.4 4.2v7.6L12 20l-8.4-4.2z"/><path d="M3.6 8.2 12 12.4l8.4-4.2M12 12.4V20"/></svg>Stock</button>
   <button data-v="rapport">
     <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Rapport</button>
   <button data-v="reglages">
@@ -2313,7 +2306,7 @@ function renderStock(){
       const vars = articleVariants(a.id);
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       const ouvert = openArt.has(a.id);
-      return '<div class="artcard" data-aid="'+esc(a.id)+'">'+
+      return '<div class="artcard part-'+partieOf(a)+'" data-aid="'+esc(a.id)+'">'+
         '<button class="arthead'+(ouvert?' open':'')+'" onclick="toggleArt('+jsq(a.id)+')">'+
           '<span class="grow"><span class="artname">'+esc(a.name)+
             (a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
@@ -2346,7 +2339,7 @@ function renderStock(){
     ORDRE_PARTIES.forEach(partie=>{
       const dedans = list.filter(a=>pourOf(a)===pourFilter && partieOf(a)===partie);
       if(!dedans.length) return;
-      html += '<div class="pickcat">'+esc(partie)+'</div>' + dedans.map(carte).join('');
+      html += '<div class="pickcat part-'+partie+'">'+esc(partie)+'</div>' + dedans.map(carte).join('');
     });
     box.innerHTML = html || '<div class="card"><p class="sub">Aucun vêtement dans cette catégorie.</p></div>';
   }
