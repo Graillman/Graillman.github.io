@@ -473,9 +473,6 @@
     </div>
     <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée
     pour chacune. Vous pouvez mélanger les gammes (S/M et L, par exemple) ou ajouter une taille libre.</p>
-    <label class="f">Seuil d'alerte par taille</label>
-    <input id="aMin" aria-label="Seuil d'alerte par taille" type="number" min="0" step="1" value="2">
-    <p class="mutd" style="margin-top:4px">En dessous de ce nombre, la taille passe en alerte.</p>
     <div class="spacer"></div><div class="spacer"></div>
     <button class="btn primary" style="width:100%" onclick="saveArticleModal()">Enregistrer</button>
     <div id="artDanger"></div>
@@ -2291,7 +2288,7 @@ function renderStock(){
           return '<button class="sizecell '+cls+'" onclick="openMoveModal('+jsq(v.id)+')">'+
             '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
         }).join('')+'</div>'+
-        (qtyEdit ? '' : '<div class="artfoot"><span class="mutd">Touchez une taille pour l'ajuster</span>'+
+        (qtyEdit ? '' : '<div class="artfoot"><span class="mutd">Touchez une taille pour l\'ajuster</span>'+
           '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Fiche</button></div>')
         : '')+
       '</div>';
@@ -2390,7 +2387,6 @@ function openArticleModal(id){
   document.getElementById('aColor').value = a ? (a.color||'') : '';
   document.getElementById('aBrand').value = a ? (a.brand||'') : '';
   document.getElementById('aCustomSize').value = '';
-  document.getElementById('aMin').value = a ? (a.minStock||0) : 2;
   pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : [];
   renderSizePick();
   document.getElementById('artDanger').innerHTML = a
@@ -2413,7 +2409,6 @@ function saveArticleModal(){
     color: document.getElementById('aColor').value.trim(),
     brand: document.getElementById('aBrand').value.trim(),
     sizeType: type,
-    minStock: Math.max(0, parseInt(document.getElementById('aMin').value,10)||0),
     createdAt: modalArticleId ? (articleById(modalArticleId).createdAt) : new Date().toISOString(),
     archivedAt: null
   };
@@ -2519,7 +2514,7 @@ function renderPick(){
   box.innerHTML = '<button class="link" style="padding:4px 0" onclick="pickBack()">‹ Changer de vêtement</button>'+
     '<div class="sizegrid" style="margin-top:6px">'+articleVariants(a.id).map(v=>{
       const qy = stock[v.id]||0;
-      const cls = qy<=0 ? 'out' : (qy <= (a.minStock||0) ? 'low' : '');
+      const cls = qy<=0 ? 'out' : '';
       return '<button class="sizecell '+cls+'" onclick="pickSize('+jsq(v.id)+')">'+
         '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
     }).join('')+'</div>'+
@@ -2598,23 +2593,21 @@ function exportStockCSV(){
   if(!arts.length){ toast('Aucun article à exporter'); return; }
   const cols = [{t:'Référence',w:170},{t:'Vêtement',w:170},{t:'Marque',w:90},{t:'Catégorie',w:120},
     {t:'Pour',w:110},{t:'Couleur',w:110},{t:'Taille',w:70,a:'center'},
-    {t:'Stock',w:60,a:'center'},{t:'Seuil',w:60,a:'center'},{t:'Statut',w:100}];
-  const rows = []; let total = 0, alertes = 0, ruptures = 0;
+    {t:'Stock',w:60,a:'center'},{t:'Statut',w:100}];
+  const rows = []; let total = 0, vides = 0;
   arts.forEach(a=>articleVariants(a.id).forEach(v=>{
     const q = stock[v.id]||0; total += q;
-    const rupture = q<=0, bas = !rupture && q<=(a.minStock||0);
-    if(rupture) ruptures++; else if(bas) alertes++;
-    const bg = rupture ? XLS.bad : (bas ? XLS.low : null);
+    const vide = q<=0; if(vide) vides++;
+    const bg = vide ? XLS.bad : null;
     rows.push([{v:v.sku,bg},{v:a.name,bg,b:true},{v:a.brand||'',bg},{v:a.category,bg},
       {v:a.gender,bg},{v:a.color,bg},{v:v.size,bg,a:'center'},
-      {v:q,bg,a:'center',b:true},{v:a.minStock||0,bg,a:'center'},
-      {v:rupture?'Rupture':(bas?'À réapprovisionner':'OK'),bg}]);
+      {v:q,bg,a:'center',b:true},{v:vide?'Vide':'En stock',bg}]);
   }));
   rows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:arts.length+' vêtements',bg:XLS.ok},{v:'',bg:XLS.ok},
     {v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:rows.length+' réf.',bg:XLS.ok,a:'center'},
-    {v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok},{v:'',bg:XLS.ok}]);
+    {v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok}]);
   xlsDownload('stock-penelope-'+todayISO()+'.xls', 'État du stock',
-    total+' pièces · '+arts.length+' vêtements · '+ruptures+' rupture(s) · '+alertes+' à réapprovisionner',
+    total+' pièces · '+arts.length+' vêtements · '+vides+' taille(s) à zéro',
     [{ titre:'Détail par taille', html: xlsTable(cols, rows) }]);
   toast('Stock exporté');
 }
