@@ -305,6 +305,17 @@
   .artcard .artmeta, .artcard .arttotal, .artcard .artunit{ color:var(--ink2) }
   .artcard .arttotal{ color:var(--ink) }
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
+  .pwwrap{ position:relative }
+  .pwwrap input{ padding-right:52px }
+  .pweye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:40px; height:40px;
+    border:none; background:transparent; font-size:18px; opacity:.55; line-height:1 }
+  #tourOverlay{ position:fixed; inset:0; z-index:60; display:none; align-items:flex-end;
+    justify-content:center; background:rgba(16,24,40,.45); padding:16px }
+  #tourOverlay.on{ display:flex }
+  .tourbox{ width:100%; max-width:460px; animation:selpop .22s ease-out }
+  .tdots{ display:flex; gap:6px; justify-content:center; margin-top:14px }
+  .tdot{ width:6px; height:6px; border-radius:99px; background:var(--baseline) }
+  .tdot.on{ background:var(--brand); width:18px }
   .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:12px; text-align:center }
   input:not([type=file]), textarea, select{ box-shadow:inset 0 1px 2px rgba(16,24,40,.05) }
   input:focus-visible, textarea:focus-visible, select:focus-visible{
@@ -499,14 +510,35 @@
 </head>
 <body>
 
+<div id="tourOverlay">
+  <div class="tourbox card">
+    <div class="mutd" id="tourStep"></div>
+    <h2 id="tourTitle" style="margin:4px 0 6px"></h2>
+    <p class="sub" id="tourText"></p>
+    <div class="tdots" id="tourDots"></div>
+    <div class="row" style="gap:8px;margin-top:14px">
+      <button class="btn grow" onclick="finVisite()">Passer</button>
+      <button class="btn primary grow" id="tourNext" onclick="visiteSuivante()">Suivant</button>
+    </div>
+  </div>
+</div>
+
 <div id="loginOverlay">
   <div id="loginBox" class="card">
-    <img class="brandimg" style="width:214px;max-width:82%;margin:22px auto 10px;display:block" alt="Pénélope Groupe">
-    <p class="sub">Suivi Prestation, équipe accueil</p>
-    <p class="mutd" style="margin-top:14px">Entrez le code d'accès de l'équipe</p>
-    <input id="loginCode" placeholder="Code d'accès" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <button class="btn primary" style="width:100%" onclick="doLogin()">Continuer</button>
+    <img class="brandimg" style="width:214px;max-width:82%;margin:22px auto 6px;display:block" alt="Pénélope Groupe">
+    <p class="sub" id="loginWho">Suivi Prestation, équipe accueil</p>
+    <p class="mutd" style="margin-top:14px">Votre mot de passe</p>
+    <div class="pwwrap">
+      <input id="loginCode" type="password" placeholder="Mot de passe" autocomplete="current-password"
+        autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="pweye" id="pwEye" onclick="togglePw('loginCode','pwEye')"
+        aria-label="Afficher le mot de passe">&#128065;</button>
+    </div>
+    <button class="btn primary" style="width:100%" onclick="doLogin()">Se connecter</button>
     <p class="mutd" id="loginErr" style="margin-top:10px"></p>
+    <div class="sep"></div>
+    <button class="link" onclick="motDePasseOublie()">Mot de passe oublié</button>
+    <button class="link" style="margin-left:10px" onclick="retourProfils()">Changer de profil</button>
   </div>
 </div>
 
@@ -763,9 +795,19 @@
       <p class="sub" style="margin-bottom:10px">Profil actif : <b id="currentProfile"></b></p>
       <div class="row" style="margin-bottom:8px">
         <button class="btn grow" onclick="showProfiles()">Changer de profil</button>
-        <button class="btn grow" onclick="changeCode()">Changer le code d'accès</button>
+        <button class="btn grow" onclick="changeCode()">Changer mon mot de passe</button>
       </div>
       <button class="btn neutral" onclick="logout()">Se déconnecter</button>
+    </div>
+
+    <div class="card">
+      <h2>Mots de passe de l'équipe</h2>
+      <p class="sub" style="margin-bottom:8px">Si un collègue a oublié le sien, vous pouvez lui en
+      redonner un depuis ici. Il devra le changer à sa prochaine connexion.</p>
+      <div id="pwList"></div>
+      <div class="sep"></div>
+      <button class="btn" style="width:100%" onclick="demandeEmail()">Enregistrer mon adresse e-mail</button>
+      <button class="btn neutral" style="width:100%;margin-top:8px" onclick="demarreVisite(false)">Revoir la visite guidée</button>
     </div>
     <div class="card">
       <h2>Zone dangereuse</h2>
@@ -814,9 +856,9 @@
     </div>
 
     <div class="card">
-      <h3>2. Le code d'accès</h3>
-      <p class="sub">Le code <b>n'est jamais conservé</b>, ni en clair, ni sous une forme
-      réversible. Il est transformé par <b>PBKDF2-HMAC-SHA256 à 600 000 itérations</b>, avec un
+      <h3>2. Les mots de passe</h3>
+      <p class="sub">Chaque responsable a <b>son propre mot de passe</b>, qui signe ses saisies.
+      Il <b>n'est jamais conservé</b>, ni en clair, ni sous une forme réversible. Il est transformé par <b>PBKDF2-HMAC-SHA256 à 600 000 itérations</b>, avec un
       sel aléatoire propre à cette installation. C'est le niveau recommandé par l'<b>OWASP</b>
       pour protéger un secret d'authentification.</p>
       <p class="sub">Concrètement : une fonction rapide se teste par milliards d'essais par
@@ -830,8 +872,9 @@
 
     <div class="card">
       <h3>3. Protection contre les tentatives répétées</h3>
-      <p class="sub">Huit codes erronés depuis une même adresse et l'accès est <b>bloqué
-      15 minutes</b>. Combiné à la dérivation lente, cela rend une recherche systématique
+      <p class="sub">Cinq mots de passe erronés sur un même profil et l'accès à ce profil est
+      <b>bloqué 15 minutes</b>. Le compteur est propre à chaque profil : un collègue qui se trompe
+      ne bloque personne d'autre. Combiné à la dérivation lente, cela rend une recherche systématique
       inopérante. La session se reverrouille également d'elle-même : le code est redemandé
       périodiquement, et le profil à chaque ouverture.</p>
     </div>
@@ -912,8 +955,8 @@
       <h3>10. En cas de perte d'un téléphone</h3>
       <p class="sub">Aucune donnée n'est lisible sans le code d'accès, et la session se
       reverrouille seule. En cas de perte, la marche à suivre tient en une action :
-      <b>Réglages → Changer le code</b>. L'ancien code devient immédiatement inopérant sur tous
-      les appareils.</p>
+      <b>Réglages → Changer mon mot de passe</b>. L'ancien devient immédiatement inopérant sur
+      tous les appareils.</p>
     </div>
 
     <div class="card">
@@ -1066,6 +1109,7 @@ function saveConfig(next){
 /* ---------- synchronisation ---------- */
 const SYNC_URL = 'https://ygmywdqdbsaxweykosev.supabase.co/functions/v1/app';
 const CODE_KEY = LS_KEY + '_code';
+const PROFIL_KEY = LS_KEY + '_profil';
 const Q_KEY = LS_KEY + '_queue';
 let accessCode = localStorage.getItem(CODE_KEY) || null;
 let queue = []; try{ queue = JSON.parse(localStorage.getItem(Q_KEY)||'[]'); }catch(e){}
@@ -1078,7 +1122,7 @@ async function api(action, payload){
   try{
     res = await fetch(SYNC_URL, { method:'POST',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ code: accessCode, action, payload }),
+      body: JSON.stringify({ profile: evaluator || pendingProfile || '', code: accessCode, action, payload }),
       signal: ctrl.signal });
   } finally { clearTimeout(timer); }
   const j = await res.json().catch(()=>({ ok:false, error:'bad_response' }));
@@ -1181,37 +1225,63 @@ function rerenderSoft(){
   else if(currentView==='stats') renderStats();
   else if(currentView==='fiche'){ if(hostById(ficheId)) openFiche(ficheId); else show('equipe'); }
 }
+function togglePw(champId, btnId){
+  const el = document.getElementById(champId), b = document.getElementById(btnId);
+  const vu = el.type === 'text';
+  el.type = vu ? 'password' : 'text';
+  b.style.opacity = vu ? '.55' : '1';
+  b.setAttribute('aria-label', vu ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+}
 function showLogin(bad){
   const ov = document.getElementById('loginOverlay');
+  document.getElementById('loginWho').textContent = pendingProfile
+    ? 'Bonjour ' + pendingProfile : 'Suivi Prestation, équipe accueil';
+  const c = document.getElementById('loginCode');
+  c.value = ''; c.type = 'password';
+  document.getElementById('pwEye').style.opacity = '.55';
   ov.classList.add('on');
-  document.getElementById('loginErr').textContent = bad ? 'Code incorrect, réessayez.' : '';
+  document.getElementById('loginErr').textContent = bad ? 'Mot de passe incorrect.' : '';
+  setTimeout(()=>c.focus(), 80);
+}
+function retourProfils(){
+  document.getElementById('loginOverlay').classList.remove('on');
+  pendingProfile = null;
+  showProfiles();
 }
 async function doLogin(){
-  const c = document.getElementById('loginCode').value.trim();
-  if(!c) return;
-  accessCode = c;
+  const c = document.getElementById('loginCode').value;
+  if(!c || !pendingProfile) return;
   const err = document.getElementById('loginErr');
   err.textContent = 'Connexion…';
+  const memo = accessCode;
+  accessCode = c;
   try{
-    await api('login');
+    const d = await api('login');
     localStorage.setItem(CODE_KEY, c);
-    lastCodeEntry = Date.now();
+    localStorage.setItem(PROFIL_KEY, pendingProfile);
+    evaluator = pendingProfile; pendingProfile = null;
+    setAuthTime(evaluator);
     document.getElementById('loginOverlay').classList.remove('on');
     err.textContent = '';
+    refreshProfileUI();
     flush(); await pullAll(); show(currentView);
-    if(pendingProfile){
-      evaluator = pendingProfile; pendingProfile = null;
-      setAuthTime(evaluator); refreshProfileUI(); toast('Bonjour '+evaluator);
-    } else if(!evaluator){
-      showProfiles();
-    } else {
-      setAuthTime(evaluator); toast('Session déverrouillée');
-    }
+    toast('Bonjour ' + evaluator);
+    if(d && !d.email) setTimeout(()=>demarreVisite(true), 700);
   }catch(e){
-    if(e.message!=='bad_code'){ accessCode = null;
-      err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.'; }
-    else accessCode = null;
+    accessCode = memo;
+    if(e.message === 'bad_code') err.textContent = 'Mot de passe incorrect.';
+    else if(e.message === 'locked') err.textContent = 'Trop de tentatives : réessayez dans 15 minutes.';
+    else err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.';
   }
+}
+async function motDePasseOublie(){
+  if(!pendingProfile){ toast('Choisissez d\'abord votre profil'); return; }
+  const memo = accessCode; accessCode = '';
+  try{ await api('askReset'); }catch(e){}
+  accessCode = memo;
+  document.getElementById('loginErr').innerHTML =
+    'Demande enregistrée. Un autre responsable peut vous redonner l\'accès depuis '+
+    '<b>Réglages → Mots de passe</b>.';
 }
 function checkAuthLock(){
   if(!evaluator) return;
@@ -1221,25 +1291,47 @@ function checkAuthLock(){
     refreshProfileUI();
     showLogin(false);
     document.getElementById('loginErr').textContent =
-      'Session expirée : entrez le code pour continuer.';
+      'Session expirée : entrez votre mot de passe.';
   }
 }
 function logout(){
   if(!confirm('Se déconnecter de cet appareil ? (les données restent sur le serveur)')) return;
   localStorage.removeItem(CODE_KEY); localStorage.removeItem(AUTH_KEY);
-  accessCode = null; evaluator = null; pendingProfile = null; lastCodeEntry = 0;
-  refreshProfileUI(); showLogin(false);
+  localStorage.removeItem(PROFIL_KEY);
+  accessCode = null; evaluator = null; pendingProfile = null;
+  refreshProfileUI(); showProfiles();
 }
 async function changeCode(){
-  const c = prompt("Nouveau code d'accès (8 caractères minimum, majuscules/minuscules comptent, à repartager à toute l'équipe) :");
+  const c = prompt('Votre nouveau mot de passe (8 caractères minimum) :');
   if(!c || !c.trim()) return;
   if(c.trim().length < 8){ toast('8 caractères minimum'); return; }
   try{
     await api('changeCode', { code: c.trim() });
     accessCode = c.trim();
     localStorage.setItem(CODE_KEY, accessCode);
-    toast('Nouveau code : ' + accessCode);
-  }catch(e){ toast('Impossible de changer le code'); }
+    setAuthTime(evaluator);
+    toast('Mot de passe modifié');
+  }catch(e){ toast('Impossible de changer le mot de passe'); }
+}
+async function reinitCollegue(nom){
+  const c = prompt('Nouveau mot de passe pour « '+nom+' » (8 caractères minimum) :');
+  if(!c || c.trim().length < 8){ if(c) toast('8 caractères minimum'); return; }
+  try{
+    await api('resetProfile', { profile: nom, code: c.trim() });
+    toast(nom+' : mot de passe réinitialisé');
+    renderMotsDePasse();
+  }catch(e){ toast('Réinitialisation impossible'); }
+}
+async function renderMotsDePasse(){
+  const box = document.getElementById('pwList'); if(!box) return;
+  let demandes = [];
+  try{ demandes = await api('resetsAsked') || []; }catch(e){}
+  const noms = new Set(demandes.map(d=>d.name));
+  box.innerHTML = cfg().evaluators.filter(n=>n!==evaluator).map(n=>
+    '<div class="movline"><span class="grow">'+esc(n)+
+    (noms.has(n) ? '<br><span class="stat-ko">a demandé un nouveau mot de passe</span>' : '')+
+    '</span><button class="link" onclick="reinitCollegue('+jsq(n)+')">Réinitialiser</button></div>'
+  ).join('') || '<p class="mutd">Aucun autre profil.</p>';
 }
 
 /* ---------- dates ---------- */
@@ -1399,6 +1491,7 @@ function show(v){
   if(v==='equipe'){ renderEquipe(); renderManagers(); }
   if(v==='stock') renderStock();
   if(v==='stats') renderStats();
+  if(v==='reglages') renderMotsDePasse();
 }
 function showRgpd(){
   currentView = 'rgpd';
@@ -1534,18 +1627,16 @@ function showProfiles(){
 function pickProfile(i){
   const name = cfg().evaluators[i];
   const t = authTimes()[name];
-  const fresh = (t && Date.now()-t < AUTH_TTL) || (Date.now()-lastCodeEntry < AUTH_TTL);
   document.getElementById('profileOverlay').classList.remove('on');
-  if(!accessCode || !fresh){
-    pendingProfile = name;
-    showLogin(false);
-    document.getElementById('loginErr').textContent = 'Profil '+name+' : entrez le code d\'accès.';
+  // le mot de passe n'est redemandé qu'une fois par heure et par profil
+  if(accessCode && localStorage.getItem(PROFIL_KEY) === name && t && Date.now()-t < AUTH_TTL){
+    evaluator = name; pendingProfile = null;
+    setAuthTime(name); refreshProfileUI(); toast('Bonjour '+name);
     return;
   }
-  evaluator = name;
-  setAuthTime(name);
-  refreshProfileUI();
-  toast('Bonjour '+evaluator);
+  pendingProfile = name;
+  evaluator = null;
+  showLogin(false);
 }
 function addProfile(){
   const name = prompt('Prénom du nouveau profil :');
@@ -2892,6 +2983,62 @@ function loadSeed(){
 }
 function dismissSeed(){ document.getElementById('seedBanner').style.display='none'; }
 
+/* ---------- visite guidée ----------
+   Montrée une fois, à la première connexion d'un profil, puis rappelable
+   depuis les Réglages. Chaque étape ouvre la page concernée et l'explique. */
+const VISITE_KEY = LS_KEY + '_visite';
+const VISITE = [
+  { vue:'pointage', titre:'Passage',
+    txt:'Chaque jour, vous notez le passage de chaque hôte. Parfait en un geste, ou Évaluer pour détailler critère par critère et laisser un commentaire.' },
+  { vue:'equipe', titre:'Équipe',
+    txt:'Les hôtes et hôtesses, regroupés par accueil. Touchez une fiche pour voir ses statistiques, son historique et éditer son dossier personnel.' },
+  { vue:'stats', titre:'Stats',
+    txt:'La conformité du jour, sur 7 et 30 jours, avec l\'écart par rapport à la période précédente. De quoi voir si ça progresse.' },
+  { vue:'stock', titre:'Stock',
+    txt:'Les tenues, rangées par coupe puis par type. Touchez un vêtement pour voir ses tailles, puis le moins ou le plus pour corriger une quantité.' },
+  { vue:'rapport', titre:'Rapport',
+    txt:'Les documents à transmettre : rapport de conformité, rapport de stock, en PDF ou en Excel, sur la période de votre choix.' },
+  { vue:'reglages', titre:'Réglages',
+    txt:'Vos critères, vos accueils, votre mot de passe, et le détail des protections mises en place sur les données.' }
+];
+let visiteIdx = 0, visiteFin = null;
+function demarreVisite(auto){
+  if(auto){
+    let vues = {}; try{ vues = JSON.parse(localStorage.getItem(VISITE_KEY)||'{}'); }catch(e){}
+    if(vues[evaluator]) return;
+  }
+  visiteIdx = 0; visiteFin = auto ? 'email' : null;
+  etapeVisite();
+}
+function etapeVisite(){
+  const e = VISITE[visiteIdx];
+  if(!e){ finVisite(); return; }
+  show(e.vue);
+  const ov = document.getElementById('tourOverlay');
+  document.getElementById('tourStep').textContent = 'Étape '+(visiteIdx+1)+' sur '+VISITE.length;
+  document.getElementById('tourTitle').textContent = e.titre;
+  document.getElementById('tourText').textContent = e.txt;
+  document.getElementById('tourNext').textContent = visiteIdx === VISITE.length-1 ? 'Terminer' : 'Suivant';
+  document.getElementById('tourDots').innerHTML = VISITE.map((_,i)=>
+    '<span class="tdot'+(i===visiteIdx?' on':'')+'"></span>').join('');
+  ov.classList.add('on');
+}
+function visiteSuivante(){ visiteIdx++; etapeVisite(); }
+function finVisite(){
+  let vues = {}; try{ vues = JSON.parse(localStorage.getItem(VISITE_KEY)||'{}'); }catch(e){}
+  vues[evaluator] = Date.now();
+  try{ localStorage.setItem(VISITE_KEY, JSON.stringify(vues)); }catch(e){}
+  document.getElementById('tourOverlay').classList.remove('on');
+  show('pointage');
+  if(visiteFin === 'email') setTimeout(demandeEmail, 400);
+}
+async function demandeEmail(){
+  const m = prompt('Votre adresse e-mail (elle servira à vous redonner accès si vous oubliez votre mot de passe) :');
+  if(m === null) return;
+  try{ await api('setEmail', { email: m.trim() }); if(m.trim()) toast('Adresse enregistrée'); }
+  catch(e){ toast('Adresse non enregistrée'); }
+}
+
 /* ---------- sensations tactiles : onde + vibration ---------- */
 document.addEventListener('pointerdown', e=>{
   const el = e.target.closest('.btn, .seg button, .hostcard, nav.tabs button, .ptile');
@@ -2942,8 +3089,9 @@ function ensureToday(){
   show('pointage');
   syncUI();
   refreshProfileUI();
-  if(!accessCode) showLogin(false);
-  else { flush(); pullAll(); showProfiles(); }
+  // on arrive toujours sur le choix des profils, façon Netflix
+  if(accessCode) { flush(); pullAll(); }
+  showProfiles();
   /* Cache d'application : ouverture instantanée et fonctionnement hors réseau.
      Absent en local (file://) ou sur un navigateur ancien : sans conséquence. */
   if('serviceWorker' in navigator){
