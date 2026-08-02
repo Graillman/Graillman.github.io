@@ -684,7 +684,7 @@
       <div class="card no-print" id="invSearchWrap" style="padding:4px 12px;border-radius:12px;margin-bottom:10px">
         <input id="invSearch" placeholder="Rechercher un vêtement…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderStock)">
       </div>
-      <div class="filterrow no-print" id="invFilters"></div>
+      <div class="no-print" id="invPour" style="margin-bottom:14px"></div>
       <div id="invList"></div>
       <div class="no-print" style="margin-top:14px;text-align:center">
         <button class="link" onclick="openArticleModal(null)">+ Ajouter un vêtement</button>
@@ -2107,26 +2107,6 @@ const SIZE_SETS = {
   chaussure: { court:'Pointures', label:'Pointures (35 à 48)',           sizes:['35','36','37','38','39','40','41','42','43','44','45','46','47','48'], mid:['38','39','40','41','42','43'] },
   unique:    { court:'Taille unique', label:'Taille unique',                 sizes:['TU'], mid:[] }
 };
-/* Types de mouvement standards de la gestion de stock textile.
-   sign : +1 entrée, -1 sortie, 0 signe libre. */
-const MOVE_REASONS = [
-  { v:'Réception fournisseur',    sign:1,  host:false, motif:false },
-  { v:'Remise à un collaborateur',sign:-1, host:true,  motif:false },
-  { v:'Restitution en stock',     sign:1,  host:true,  motif:false },
-  { v:'Perte / non retrouvé',     sign:-1, host:true,  motif:true  },
-  { v:'Mise au rebut',            sign:-1, host:false, motif:true  },
-  { v:'Ajustement d\'inventaire', sign:0,  host:false, motif:true  },
-  { v:'Envoi en blanchisserie',   sign:-1, host:false, motif:false },
-  { v:'Retour de blanchisserie',  sign:1,  host:false, motif:false },
-  { v:'Retour fournisseur',       sign:-1, host:false, motif:true  }
-];
-/* Motifs pré-définis : jamais de champ libre pour la cause d'un écart. */
-const MOVE_MOTIFS = {
-  'Perte / non retrouvé':      ['Égaré, non retrouvé','Non restitué au départ','Vol présumé'],
-  'Mise au rebut':             ['Usure normale','Déchiré / troué','Tache indélébile'],
-  'Ajustement d\'inventaire':  ['Écart constaté au comptage','Trouvé en plus','Erreur de saisie','Solde initial de mise en service'],
-  'Retour fournisseur':        ['Défaut fabricant','Taille inadaptée','Déchiré / troué']
-};
 
 function invData(){
   if(!state.inv) state.inv = { articles:[], variants:[], moves:[] };
@@ -2189,7 +2169,7 @@ const ORDRE_POUR = ['Coupe femme','Coupe homme','Mixte / unisexe'];
    Deux onglets : « Stock » (l'état, directement modifiable) et
    « Entrées · sorties » (le journal). Le stock n'est jamais écrasé : même une
    saisie directe est convertie en mouvement d'ajustement, donc traçable. */
-let invFilter = 'Tout', invTab = 'stock', movFilter = 'Tout';
+let invFilter = 'Tout', invTab = 'stock', movFilter = 'Tout', pourFilter = null;
 /* Le stock affiche d'abord les vêtements ; les tailles n'apparaissent qu'au
    toucher. Une page de 25 articles x 8 tailles est illisible dépliée. */
 const openArt = new Set();
@@ -2269,8 +2249,6 @@ function renderStock(){
   const cats = ['Tout', ...new Set(arts.map(a=>a.category).filter(Boolean))];
   // sous 8 vêtements on parcourt la liste plus vite qu'on ne filtre
   document.getElementById('invSearchWrap').style.display = arts.length > 7 ? '' : 'none';
-  document.getElementById('invFilters').innerHTML = (arts.length > 7 && cats.length > 2) ? cats.map(c=>
-    '<button class="'+(invFilter===c?'sel':'')+'" onclick="setInvFilter(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('') : '';
 
   // liste
   const q = (document.getElementById('invSearch').value||'').trim().toLowerCase();
@@ -2317,18 +2295,20 @@ function renderStock(){
         }).join('')+'</div>' : '')+
       '</div>';
     };
+    // On choisit d'abord Femme ou Homme : tout afficher d'un coup, c'est un mur.
+    const dispo = ORDRE_POUR.filter(p=>list.some(a=>(a.gender||'Mixte / unisexe')===p));
+    if(!dispo.includes(pourFilter)) pourFilter = dispo[0] || null;
+    document.getElementById('invPour').innerHTML = dispo.length > 1
+      ? '<div class="seg wide">'+dispo.map(p=>'<button class="'+(p===pourFilter?'sel':'')+
+          '" onclick="setPourFilter('+jsq(p)+')">'+esc(POUR_COURT[p]||p)+'</button>').join('')+'</div>'
+      : '';
     let html = '';
-    ORDRE_POUR.forEach(pour=>{
-      const dansPour = list.filter(a=>(a.gender||'Mixte / unisexe')===pour);
-      if(!dansPour.length) return;
-      html += '<div class="grouptitle">'+esc(POUR_COURT[pour]||pour)+'</div>';
-      ORDRE_PARTIES.forEach(partie=>{
-        const dedans = dansPour.filter(a=>partieOf(a)===partie);
-        if(!dedans.length) return;
-        html += '<div class="pickcat">'+esc(partie)+'</div>' + dedans.map(carte).join('');
-      });
+    ORDRE_PARTIES.forEach(partie=>{
+      const dedans = list.filter(a=>(a.gender||'Mixte / unisexe')===pourFilter && partieOf(a)===partie);
+      if(!dedans.length) return;
+      html += '<div class="pickcat">'+esc(partie)+'</div>' + dedans.map(carte).join('');
     });
-    box.innerHTML = html;
+    box.innerHTML = html || '<div class="card"><p class="sub">Aucun vêtement dans cette catégorie.</p></div>';
   }
 
   // ---- onglet Entrées · sorties ----
@@ -2353,7 +2333,7 @@ function renderStock(){
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
     const h = m.hostId ? hostById(m.hostId) : null;
     // le motif n'est rappelé que s'il apprend quelque chose
-    const detail = h ? hostName(h) : (/Ajustement/.test(m.reason||'') ? '' : (m.reason||''));
+    const detail = m.note || (h ? hostName(h) : '');
     return '<div class="movline">'+
       '<span class="movdelta '+(m.delta>0?'up':'down')+'">'+(m.delta>0?'+':'')+m.delta+'</span>'+
       '<span class="grow">'+(a?esc(a.name):'—')+(v?' <span class="mutd">'+esc(v.size)+'</span>':'')+
@@ -2366,6 +2346,7 @@ function renderStock(){
     : '<p class="mutd">Aucun mouvement '+(movFilter==='Tout'?'enregistré':'de ce type')+'.</p>';
 }
 function setInvFilter(c){ invFilter = c; renderStock(); }
+function setPourFilter(p){ pourFilter = p; openArt.clear(); renderStock(); }
 
 /* ---------- création / modification d'un article ---------- */
 let modalArticleId = null;
@@ -2627,8 +2608,8 @@ function exportMovesCSV(){
   const moves = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
   if(!moves.length){ toast('Aucun mouvement à exporter'); return; }
   const cols = [{t:'Date',w:90},{t:'Sens',w:70},{t:'Quantité',w:75,a:'center'},{t:'Vêtement',w:170},
-    {t:'Marque',w:90},{t:'Couleur',w:100},{t:'Taille',w:70,a:'center'},{t:'Motif',w:170},
-    {t:'Personne',w:140},{t:'Commentaire',w:220},{t:'Saisi par',w:100}];
+    {t:'Marque',w:90},{t:'Couleur',w:100},{t:'Taille',w:70,a:'center'},
+    {t:'Commentaire',w:300},{t:'Saisi par',w:100}];
   let entrees = 0, sorties = 0;
   const rows = moves.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
@@ -2638,8 +2619,8 @@ function exportMovesCSV(){
     const bg = e ? XLS.ok : XLS.bad;
     return [{v:frDate(String(m.at||'').slice(0,10)),bg}, {v:e?'Entrée':'Sortie',bg,b:true},
       {v:(e?'+':'')+m.delta,bg,a:'center',b:true}, {v:a?a.name:'',bg}, {v:a?(a.brand||''):'',bg},
-      {v:a?a.color:'',bg}, {v:v?v.size:'',bg,a:'center'}, {v:m.reason||'',bg},
-      {v:h?hostName(h):'',bg}, {v:m.note||'',bg}, {v:m.by||'',bg}];
+      {v:a?a.color:'',bg}, {v:v?v.size:'',bg,a:'center'},
+      {v:m.note||(h?hostName(h):''),bg}, {v:m.by||'',bg}];
   });
   xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Entrées et sorties de stock',
     moves.length+' mouvements · '+entrees+' entrées · '+sorties+' sorties · solde '+
