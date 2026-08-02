@@ -51,6 +51,12 @@
   label.f{ display:block; font-size:12.5px; font-weight:600; color:var(--ink2);
     margin:12px 0 5px }
   h1{ font-size:16px; font-weight:600; letter-spacing:.1px }
+  #view-pointage .view-title{ color:#0f5132 }
+  #view-equipe .view-title{ color:#2563a8 }
+  #view-stats .view-title{ color:#7a4a9e }
+  #view-stock .view-title{ color:#b1553f }
+  #view-rapport .view-title{ color:#8a6a09 }
+  #view-reglages .view-title{ color:#4a5a6a }
   .view-title{ font-size:27px; font-weight:750; letter-spacing:-.5px; margin:8px 2px 16px }
   h2{ font-size:16.5px; font-weight:650; margin-bottom:10px }
   h3{ font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase;
@@ -97,12 +103,21 @@
   .grow{ flex:1; min-width:0 }
   .btn{ min-height:44px; border:none; background:var(--tint); color:var(--brand);
     border-radius:12px; padding:12px 16px; font-weight:600; font-size:14.5px }
-  nav.tabs button[data-v="pointage"].on{ color:#0f5132 }
-  nav.tabs button[data-v="equipe"].on{ color:#2563a8 }
-  nav.tabs button[data-v="stats"].on{ color:#7a4a9e }
-  nav.tabs button[data-v="stock"].on{ color:#b1553f }
-  nav.tabs button[data-v="rapport"].on{ color:#8a6a09 }
-  nav.tabs button[data-v="reglages"].on{ color:#4a5a6a }
+  /* Chaque section garde sa teinte, atténuée au repos, pleine une fois choisie :
+     on reconnaît l'onglet à sa couleur avant même de lire son nom. */
+  nav.tabs button{ position:relative }
+  nav.tabs button[data-v="pointage"]{ --t:#0f5132 }
+  nav.tabs button[data-v="equipe"]{ --t:#2563a8 }
+  nav.tabs button[data-v="stats"]{ --t:#7a4a9e }
+  nav.tabs button[data-v="stock"]{ --t:#b1553f }
+  nav.tabs button[data-v="rapport"]{ --t:#8a6a09 }
+  nav.tabs button[data-v="reglages"]{ --t:#4a5a6a }
+  nav.tabs button .ic{ color:var(--t); opacity:.45 }
+  nav.tabs button.on{ color:var(--t) }
+  nav.tabs button.on .ic{ opacity:1 }
+  nav.tabs button.on::before{ content:''; position:absolute; top:0; left:50%;
+    transform:translateX(-50%); width:26px; height:3px; border-radius:0 0 3px 3px;
+    background:var(--t) }
   nav.tabs button.on .ic{ transform:translateY(-1px) scale(1.06) }
   nav.tabs button .ic{ transition:transform .16s ease }
   .btn.primary{ background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.05));
@@ -471,12 +486,33 @@
     *, *::before, *::after{ animation:none !important; transition:none !important }
   }
 
+  /* ---------- mise en forme des documents ---------- */
+  .rephead{ border-top:4px solid var(--brand) }
+  .reptitre{ font-size:21px; font-weight:750; letter-spacing:-.02em; color:var(--brand) }
+  .repsous{ color:var(--muted); font-size:13px; margin-top:2px }
+  .repref{ text-align:right; font-size:11.5px; font-weight:700; color:var(--muted);
+    letter-spacing:.05em; text-transform:uppercase; flex:none }
+  .repref span{ font-weight:500; letter-spacing:0; text-transform:none }
+  .repsum{ width:100%; border-collapse:collapse; table-layout:fixed }
+  .repsum td{ text-align:center; padding:4px 6px; border-left:1px solid var(--hairline) }
+  .repsum td:first-child{ border-left:none }
+  .repsum span{ display:block; font-size:11px; color:var(--muted); font-weight:600;
+    text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
+  .repsum b{ font-size:22px; font-weight:750; letter-spacing:-.02em }
+  .reppied{ border-left:3px solid var(--baseline) }
+
   /* ---------- tablette et ordinateur ---------- */
   @media (min-width:760px){
     main{ max-width:820px; margin:0 auto; padding-left:20px; padding-right:20px }
     header.app > *{ max-width:820px; margin-left:auto; margin-right:auto }
     nav.tabs{ padding-left:calc(50% - 410px); padding-right:calc(50% - 410px) }
-    .view-title{ font-size:30px }
+    #view-pointage .view-title{ color:#0f5132 }
+  #view-equipe .view-title{ color:#2563a8 }
+  #view-stats .view-title{ color:#7a4a9e }
+  #view-stock .view-title{ color:#b1553f }
+  #view-rapport .view-title{ color:#8a6a09 }
+  #view-reglages .view-title{ color:#4a5a6a }
+  .view-title{ font-size:30px }
     .sizegrid{ grid-template-columns:repeat(auto-fill,minmax(120px,1fr)) }
     .tiles{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)) }
     .sheetbox{ max-width:560px; margin:0 auto; border-radius:20px }
@@ -725,8 +761,8 @@
       l'aperçu à l'écran, l'impression / PDF ou l'export Excel.</p>
       <div class="seg wide" id="repType" style="margin-bottom:10px">
         <button class="sel" onclick="setRepKind('conformite')">Conformité</button>
-        <button onclick="setRepKind('qualite')">Qualité par hôte</button>
         <button onclick="setRepKind('stock')">Stock</button>
+        <button onclick="setRepKind('mouvements')">Entrées · sorties</button>
       </div>
       <select id="repPeriod" aria-label="Période du rapport" onchange="onRepPeriod()" style="margin-bottom:8px">
         <option value="week">Cette semaine</option>
@@ -2831,26 +2867,29 @@ let repKind = 'conformite';
 function setRepKind(k){
   repKind = k;
   document.querySelectorAll('#repType button').forEach((b,i)=>
-    b.classList.toggle('sel', ['conformite','qualite','stock'][i] === k));
+    b.classList.toggle('sel', ['conformite','stock','mouvements'][i] === k));
   document.getElementById('printzone').classList.remove('preview');
   document.getElementById('printzone').innerHTML = '';
 }
 /* En-tête commun aux trois documents : logo, titre, période, signataire. */
 function repEntete(titre, sous){
-  return '<div class="card">'+
-    '<img src="'+LOGO_URI+'" style="width:158px;display:block;margin-bottom:10px" alt="Pénélope Groupe">'+
-    '<h2 style="margin:0">Suivi Prestation</h2>'+
-    '<span class="sub">'+esc(titre)+' · '+esc(sous)+'</span></div>';
+  return '<div class="card rephead"><div class="row" style="align-items:flex-start">'+
+      '<div class="grow"><img src="'+LOGO_URI+'" style="width:150px;display:block;margin-bottom:12px" alt="Pénélope Groupe">'+
+      '<div class="reptitre">'+esc(titre)+'</div>'+
+      '<div class="repsous">'+esc(sous)+'</div></div>'+
+      '<div class="repref">Suivi Prestation<br><span>'+frDate(todayISO())+'</span></div>'+
+    '</div></div>';
 }
 function repPied(){
-  return '<div class="card"><p class="sub"><b>Document confidentiel</b> — diffusion interdite hors '+
-    'des personnes habilitées.</p><div class="spacer"></div><p>Édité par <b>'+esc(evaluator||'—')+
-    '</b> le '+frDate(todayISO())+' à '+heureDe(new Date().toISOString())+'.</p></div>';
+  return '<div class="card reppied"><p class="sub"><b>Document confidentiel</b> — diffusion interdite '+
+    'hors des personnes habilitées.</p>'+
+    '<p class="sub" style="margin-top:8px">Édité par <b>'+esc(evaluator||'—')+'</b> le '+
+    frDate(todayISO())+' à '+heureDe(new Date().toISOString())+' · Suivi Prestation · Pénélope</p></div>';
 }
 
 function buildReport(preview){
-  if(repKind === 'qualite') return rapportQualite(preview);
-  if(repKind === 'stock')   return rapportStock(preview);
+  if(repKind === 'stock')       return rapportStock(preview);
+  if(repKind === 'mouvements')  return rapportMouvements(preview);
   return rapportConformite(preview);
 }
 function rapportConformite(preview){
@@ -2873,14 +2912,14 @@ function rapportConformite(preview){
   incidents.sort((a,b)=>b.date.localeCompare(a.date));
 
   document.getElementById('printzone').innerHTML =
+    repEntete('Rapport de conformité', label)+
     '<div class="card">'+
-    '<img src="'+LOGO_URI+'" style="width:158px;display:block;margin-bottom:10px" alt="Pénélope Groupe">'+
-    '<div class="row"><div class="grow"><h2 style="margin:0">Suivi Prestation</h2>'+
-    '<span class="sub">Rapport de conformité · '+esc(label)+' · généré le '+frDate(todayISO())+'</span></div></div>'+
-    '<div class="spacer"></div>'+
-    '<p><b>'+team.total+'</b> passage'+(team.total>1?'s':'')+' · <b class="stat-ok">'+team.ok+
-    ' conforme'+(team.ok>1?'s':'')+'</b> · <b class="stat-ko">'+team.ko+
-    ' non conforme'+(team.ko>1?'s':'')+'</b> · conformité globale : <b>'+pctTxt(team.pct)+'</b></p></div>'+
+    '<table class="repsum"><tr>'+
+      '<td><span>Passages</span><b>'+team.total+'</b></td>'+
+      '<td><span>Conformes</span><b class="stat-ok">'+team.ok+'</b></td>'+
+      '<td><span>Non conformes</span><b class="stat-ko">'+team.ko+'</b></td>'+
+      '<td><span>Conformité</span><b>'+pctTxt(team.pct)+'</b></td>'+
+    '</tr></table></div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
     (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Note période</th><th>Appréciation</th><th>Note globale</th><th>Points récurrents</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
@@ -2894,61 +2933,49 @@ function rapportConformite(preview){
       incidents.map(c=>'<div class="histline"><b>'+esc(c.name)+'</b> · '+frDate(c.date)+
       (c.by ? ' <span class="mutd">· par '+esc(c.by)+'</span>' : '')+
       checkDetailHTML(c)+'</div>').join('')+'</div>' : '')+
-    '<div class="card"><p class="sub"><b>Document confidentiel</b> — résultats d\'évaluation professionnelle '+
-    '(art. L1222-3 du Code du travail). Diffusion interdite hors des personnes habilitées. '+
-    'Le détail des évaluations est conservé 1 an, puis remplacé par une moyenne mensuelle conservée 3 ans.</p>'+
-    '<div class="spacer"></div><p>Édité par <b>'+esc(evaluator||'—')+'</b> le '+frDate(todayISO())+
-    ' à '+heureDe(new Date().toISOString())+'.</p></div>';
+    '<div class="card reppied"><p class="sub">Résultats d'+String.fromCharCode(39)+'évaluation professionnelle (art. L1222-3 du Code du travail). Le détail est conservé '+
+    '1 an, puis remplacé par une moyenne mensuelle conservée 3 ans.</p></div>'+ repPied();
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return {from, to, label};
 }
 function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 100); }
 
-/* ---------- rapport qualité, hôte par hôte ---------- */
-function qualiteLignes(from, to){
-  return [...activeHosts(), ...archivedHosts()].map(h=>{
-    const l = checksInRange(h.id, from, to);
-    if(!l.length) return null;
-    const ko = l.filter(c=>c.status==='not_ok');
-    const motifs = {};
-    ko.forEach(c=>{
-      const rates = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false).map(([k])=>k)
-                            : (c.reasons||[]);
-      rates.forEach(r=>motifs[r]=(motifs[r]||0)+1);
-    });
-    const st = hostStats(h);
-    return { h, n:l.length, ok:l.length-ko.length, ko:ko.length,
-      pct: avgOf(l.map(checkScore)), global: st.pct,
-      motifs: Object.entries(motifs).sort((a,b)=>b[1]-a[1]), liste:l };
-  }).filter(Boolean).sort((a,b)=>b.pct-a.pct);
+/* Mouvements de la période, sens et auteur compris. */
+function mouvementsPeriode(from, to){
+  return invData().moves.filter(m=>{
+    const d = String(m.at||'').slice(0,10);
+    return (!from || d>=from) && (!to || d<=to);
+  }).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
 }
-function rapportQualite(preview){
+function rapportMouvements(preview){
   const r = reportRange(); if(!r) return null;
   const [from, to, label] = r;
-  const lignes = qualiteLignes(from, to);
-  if(!lignes.length){ toast('Aucun passage sur cette période'); return null; }
-  const moy = Math.round(lignes.reduce((n,x)=>n+x.pct,0)/lignes.length);
+  const mvts = mouvementsPeriode(from, to);
+  if(!mvts.length){ toast('Aucun mouvement sur cette période'); return null; }
+  const entrees = mvts.filter(m=>m.delta>0).reduce((n,m)=>n+m.delta,0);
+  const sorties = -mvts.filter(m=>m.delta<0).reduce((n,m)=>n+m.delta,0);
+  const jours = {};
+  mvts.forEach(m=>{ const d = String(m.at||'').slice(0,10); (jours[d] = jours[d] || []).push(m); });
+
   document.getElementById('printzone').innerHTML =
-    repEntete('Rapport qualité par hôte', label+' · généré le '+frDate(todayISO()))+
-    '<div class="card"><p><b>'+lignes.length+'</b> hôte'+(lignes.length>1?'s':'')+' évalué'+
-      (lignes.length>1?'s':'')+' · note moyenne <b>'+pctTxt(moy)+'</b></p></div>'+
-    lignes.map(x=>'<div class="card">'+
-      '<div class="row"><div class="grow"><h3 style="margin:0">'+esc(hostName(x.h))+
-        (x.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</h3>'+
-        '<span class="sub">'+esc(x.h.site||'—')+' · depuis le '+frDate(x.h.startedOn)+'</span></div>'+
-        '<div style="text-align:right"><div style="font-size:24px;font-weight:750;color:'+
-        rateColor(x.pct)+'">'+pctTxt(x.pct)+'</div>'+gradePill(x.pct)+'</div></div>'+
-      '<div class="sep"></div>'+
-      '<p class="sub"><b>'+x.n+'</b> passage'+(x.n>1?'s':'')+' sur la période · '+
-        '<span class="stat-ok">'+x.ok+' conforme'+(x.ok>1?'s':'')+'</span> · '+
-        '<span class="stat-ko">'+x.ko+' non conforme'+(x.ko>1?'s':'')+'</span> · '+
-        'note globale depuis la création : <b>'+pctTxt(x.global)+'</b></p>'+
-      (x.motifs.length
-        ? '<div class="sep"></div><p class="sub"><b>Points signalés</b></p>'+
-          x.motifs.map(([m,n])=>'<div class="movline"><span class="grow">'+esc(m)+
-          '</span><b>'+n+' fois</b></div>').join('')
-        : '<p class="sub">Aucun point signalé sur la période.</p>')+
-      '</div>').join('')+
+    repEntete('Journal des entrées et sorties', label)+
+    '<div class="card"><table class="repsum"><tr>'+
+      '<td><span>Mouvements</span><b>'+mvts.length+'</b></td>'+
+      '<td><span>Entrées</span><b class="stat-ok">+'+entrees+'</b></td>'+
+      '<td><span>Sorties</span><b class="stat-ko">-'+sorties+'</b></td>'+
+      '<td><span>Solde</span><b>'+((entrees-sorties)>0?'+':'')+(entrees-sorties)+'</b></td>'+
+    '</tr></table></div>'+
+    Object.keys(jours).sort().reverse().map(d=>'<div class="card">'+
+      '<h3 style="margin-top:0">'+frDate(d)+'</h3>'+
+      jours[d].map(m=>{
+        const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
+        return '<div class="movline"><span class="movdelta '+(m.delta>0?'up':'down')+'">'+
+          (m.delta>0?'+':'')+m.delta+'</span><span class="grow"><b>'+(a?esc(a.name):'—')+'</b>'+
+          (v?' <span class="mutd">taille '+esc(v.size)+'</span>':'')+
+          (m.note?'<br><span class="mutd">'+esc(m.note)+'</span>':'')+'</span>'+
+          '<span class="movwhen">'+heureDe(m.at)+'<span class="mutd">'+esc(m.by||'—')+
+          '</span></span></div>';
+      }).join('')+'</div>').join('')+
     repPied();
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return { from, to, label };
@@ -2977,13 +3004,6 @@ function rapportStock(preview){
   const total = lignes.reduce((n,x)=>n+x.tot,0);
   const refs = lignes.reduce((n,x)=>n+x.vars.length,0);
   const vides = lignes.reduce((n,x)=>n+x.vides,0);
-  const mvts = invData().moves.filter(m=>{
-    const d = String(m.at||'').slice(0,10);
-    return (!from || d>=from) && (!to || d<=to);
-  });
-  const entrees = mvts.filter(m=>m.delta>0).reduce((n,m)=>n+m.delta,0);
-  const sorties = -mvts.filter(m=>m.delta<0).reduce((n,m)=>n+m.delta,0);
-
   let corps = '', pourCourant = '', partieCourante = '';
   lignes.forEach(x=>{
     if(x.pour !== pourCourant){ pourCourant = x.pour; partieCourante = '';
@@ -2996,60 +3016,56 @@ function rapportStock(preview){
   });
 
   document.getElementById('printzone').innerHTML =
-    repEntete('Rapport de stock', 'État au '+frDate(todayISO())+' · mouvements : '+label)+
-    '<div class="card"><p><b>'+total+'</b> pièce'+(total>1?'s':'')+' en stock · <b>'+
-      lignes.length+'</b> vêtement'+(lignes.length>1?'s':'')+' · <b>'+refs+'</b> taille'+
-      (refs>1?'s':'')+' suivie'+(refs>1?'s':'')+
-      (vides ? ' · <span class="stat-ko">'+vides+' taille'+(vides>1?'s':'')+' à zéro</span>' : '')+
-      '</p><p class="sub">Sur la période : <span class="stat-ok">+'+entrees+' entrée'+
-      (entrees>1?'s':'')+'</span> · <span class="stat-ko">-'+sorties+' sortie'+(sorties>1?'s':'')+
-      '</span> · solde '+((entrees-sorties)>0?'+':'')+(entrees-sorties)+'</p></div>'+
+    repEntete('Rapport de stock', 'État au '+frDate(todayISO()))+
+    '<div class="card"><table class="repsum"><tr>'+
+      '<td><span>Pièces en stock</span><b>'+total+'</b></td>'+
+      '<td><span>Vêtements</span><b>'+lignes.length+'</b></td>'+
+      '<td><span>Tailles suivies</span><b>'+refs+'</b></td>'+
+      '<td><span>Tailles à zéro</span><b class="'+(vides?'stat-ko':'')+'">'+vides+'</b></td>'+
+    '</tr></table></div>'+
     '<div class="card"><h3 style="margin-top:0">Détail par vêtement</h3>'+corps+'</div>'+
-    (mvts.length ? '<div class="card"><h3>Mouvements de la période</h3>'+
-      [...mvts].sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,120).map(m=>{
-        const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
-        return '<div class="movline"><span class="movdelta '+(m.delta>0?'up':'down')+'">'+
-          (m.delta>0?'+':'')+m.delta+'</span><span class="grow">'+(a?esc(a.name):'—')+
-          (v?' <span class="mutd">'+esc(v.size)+'</span>':'')+(m.note?'<br><span class="mutd">'+
-          esc(m.note)+'</span>':'')+'</span><span class="mutd">'+frDate(String(m.at||'').slice(0,10))+
-          ' · '+esc(m.by||'—')+'</span></div>';
-      }).join('')+'</div>' : '')+
     repPied();
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return { from, to, label };
 }
 function exportCSV(){
-  if(repKind === 'qualite') return excelQualite();
-  if(repKind === 'stock')   return excelStock();
+  if(repKind === 'stock')       return excelStock();
+  if(repKind === 'mouvements')  return excelMouvements();
   return excelConformite();
 }
 
-/* Classeur qualité : une ligne par hôte, plus le détail des points signalés. */
-function excelQualite(){
+/* Classeur des mouvements de la période. */
+function excelMouvements(){
   const r = reportRange(); if(!r) return;
   const [from, to, label] = r;
-  const lignes = qualiteLignes(from, to);
-  if(!lignes.length){ toast('Aucun passage sur cette période'); return; }
-  const cols = [{t:'Hôte',w:170},{t:'Accueil',w:140},{t:'Depuis le',w:95},
-    {t:'Passages',w:80,a:'center'},{t:'Conformes',w:90,a:'center'},
-    {t:'Non conformes',w:110,a:'center'},{t:'Note période',w:100,a:'center'},
-    {t:'Appréciation',w:120},{t:'Note globale',w:100,a:'center'},{t:'Points signalés',w:300}];
-  const rows = lignes.map(x=>{
-    const bg = x.pct>=100 ? XLS.ok : (x.pct>=70 ? XLS.low : XLS.bad);
-    return [{v:hostName(x.h)+(x.h.archivedAt?' (archivé)':''),bg,b:true}, {v:x.h.site||'',bg},
-      {v:frDate(x.h.startedOn),bg}, {v:x.n,bg,a:'center'}, {v:x.ok,bg,a:'center'},
-      {v:x.ko,bg,a:'center'}, {v:pctTxt(x.pct),bg,a:'center',b:true}, {v:rateLabel(x.pct),bg},
-      {v:pctTxt(x.global),bg,a:'center'},
-      {v:x.motifs.map(([m,n])=>m+' ('+n+')').join(', '),bg}];
+  const mvts = mouvementsPeriode(from, to);
+  if(!mvts.length){ toast('Aucun mouvement sur cette période'); return; }
+  const entrees = mvts.filter(m=>m.delta>0).reduce((n,m)=>n+m.delta,0);
+  const sorties = -mvts.filter(m=>m.delta<0).reduce((n,m)=>n+m.delta,0);
+  const cols = [{t:'Date',w:95},{t:'Heure',w:70,a:'center'},{t:'Sens',w:80},
+    {t:'Quantité',w:85,a:'center'},{t:'Vêtement',w:200},{t:'Pour',w:80},
+    {t:'Taille',w:75,a:'center'},{t:'Commentaire',w:300},{t:'Saisi par',w:110}];
+  const rows = mvts.map(m=>{
+    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
+    const e = (m.delta||0) > 0; const bg = e ? XLS.ok : XLS.bad;
+    return [{v:frDate(String(m.at||'').slice(0,10)),bg},{v:heureDe(m.at),bg,a:'center'},
+      {v:e?'Entrée':'Sortie',bg,b:true},{v:(e?'+':'')+m.delta,bg,a:'center',b:true},
+      {v:a?a.name:'',bg},{v:a?(POUR_COURT[pourOf(a)]||''):'',bg},{v:v?v.size:'',bg,a:'center'},
+      {v:m.note||'',bg},{v:m.by||'',bg}];
   });
-  const moy = Math.round(lignes.reduce((n,x)=>n+x.pct,0)/lignes.length);
-  xlsDownload('qualite-hotes-penelope-'+todayISO()+'.xls', 'Rapport qualité par hôte',
-    label+' · '+lignes.length+' hôtes · note moyenne '+pctTxt(moy)+' · édité par '+(evaluator||'—'),
-    [{ titre:'Synthèse par hôte', html: xlsTable(cols, rows) }]);
-  toast('Rapport qualité téléchargé');
+  const syn = xlsTable([{t:'Indicateur',w:200},{t:'Valeur',w:120,a:'center'}], [
+    [{v:'Mouvements',b:true},{v:mvts.length,a:'center',b:true}],
+    [{v:'Entrées',bg:XLS.ok},{v:'+'+entrees,a:'center',bg:XLS.ok}],
+    [{v:'Sorties',bg:XLS.bad},{v:'-'+sorties,a:'center',bg:XLS.bad}],
+    [{v:'Solde',b:true},{v:((entrees-sorties)>0?'+':'')+(entrees-sorties),a:'center',b:true}]
+  ]);
+  xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Journal des entrées et sorties',
+    label+' · '+mvts.length+' mouvements · édité par '+(evaluator||'—'),
+    [{ titre:'Synthèse', html: syn }, { titre:'Détail chronologique', html: xlsTable(cols, rows) }]);
+  toast('Journal téléchargé');
 }
 
-/* Classeur stock : l'état taille par taille, puis les mouvements de la période. */
+/* Classeur stock : l'état taille par taille. */
 function excelStock(){
   const r = reportRange(); if(!r) return;
   const [from, to, label] = r;
@@ -3068,27 +3084,9 @@ function excelStock(){
   rows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:'',bg:XLS.ok},{v:lignes.length+' vêtements',bg:XLS.ok},
     {v:rows.length+' réf.',bg:XLS.ok,a:'center'},{v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok}]);
 
-  const mvts = invData().moves.filter(m=>{
-    const d = String(m.at||'').slice(0,10);
-    return (!from || d>=from) && (!to || d<=to);
-  }).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
-  const mcols = [{t:'Date',w:95},{t:'Heure',w:70,a:'center'},{t:'Sens',w:75},
-    {t:'Quantité',w:80,a:'center'},{t:'Vêtement',w:190},{t:'Taille',w:75,a:'center'},
-    {t:'Commentaire',w:280},{t:'Par',w:100}];
-  const mrows = mvts.map(m=>{
-    const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
-    const e = (m.delta||0) > 0; const bg = e ? XLS.ok : XLS.bad;
-    return [{v:frDate(String(m.at||'').slice(0,10)),bg},{v:heureDe(m.at),bg,a:'center'},
-      {v:e?'Entrée':'Sortie',bg,b:true},{v:(e?'+':'')+m.delta,bg,a:'center',b:true},
-      {v:a?a.name:'',bg},{v:v?v.size:'',bg,a:'center'},{v:m.note||'',bg},{v:m.by||'',bg}];
-  });
-
-  const blocs = [{ titre:'État du stock', html: xlsTable(cols, rows) }];
-  if(mrows.length) blocs.push({ titre:'Mouvements de la période ('+label+')',
-    html: xlsTable(mcols, mrows) });
   xlsDownload('stock-penelope-'+todayISO()+'.xls', 'Rapport de stock',
     total+' pièces · '+lignes.length+' vêtements · '+vides+' taille(s) à zéro · édité par '+(evaluator||'—'),
-    blocs);
+    [{ titre:'État du stock', html: xlsTable(cols, rows) }]);
   toast('Rapport de stock téléchargé');
 }
 
