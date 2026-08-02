@@ -288,11 +288,13 @@
   .arthead.open{ margin-bottom:10px }
   .artname{ display:block; font-weight:650; font-size:15px }
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
-  .artstate{ display:block; margin-top:6px }
+  .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:10px; text-align:center }
+  .cattag{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+    border-radius:99px; margin-right:6px; letter-spacing:.01em }
   .artright{ text-align:right; flex:none }
   .artunit{ display:block; color:var(--muted); font-size:11px; margin-top:-2px }
   .artfoot{ display:flex; align-items:center; gap:10px; justify-content:space-between;
-    margin-top:10px; padding-top:9px; border-top:1px solid var(--hairline); font-size:12.5px }
+    margin-top:10px; padding-top:9px; border-top:1px solid var(--hairline); font-size:12px }
   .chip{ display:inline-block; font-size:11.5px; font-weight:650; padding:3px 9px;
     border-radius:99px }
   .chip.ok{ background:var(--ok-soft,#e7f4ec); color:var(--ok-text) }
@@ -650,20 +652,21 @@
     </div>
 
     <div id="invPaneStock">
-      <div class="tiles" id="invKpi"></div>
       <div id="invEditBar" class="no-print"></div>
       <div class="no-print" id="invActions" style="margin-bottom:12px">
-        <button class="btn primary" style="width:100%;margin-bottom:8px" onclick="toggleQtyEdit()">Modifier les quantités</button>
-        <button class="btn neutral" style="width:100%" onclick="openArticleModal(null)">Ajouter un article</button>
+        <div class="invsum" id="invSummary"></div>
+        <button class="btn primary" style="width:100%" onclick="toggleQtyEdit()">Modifier les quantités</button>
       </div>
-      <div class="card no-print" style="padding:6px 12px;border-radius:12px;margin-bottom:10px">
-        <input id="invSearch" placeholder="Rechercher un article, une couleur, une marque…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderStock)">
+      <div class="card no-print" id="invSearchWrap" style="padding:4px 12px;border-radius:12px;margin-bottom:10px">
+        <input id="invSearch" placeholder="Rechercher un vêtement…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderStock)">
       </div>
       <div class="filterrow no-print" id="invFilters"></div>
-      <div id="invAlerts"></div>
       <div id="invList"></div>
-      <div class="spacer"></div>
-      <button class="btn neutral no-print" style="width:100%" onclick="exportStockCSV()">Exporter le stock (Excel)</button>
+      <div class="no-print" style="margin-top:14px;text-align:center">
+        <button class="link" onclick="openArticleModal(null)">+ Ajouter un vêtement</button>
+        <span class="mutd" style="margin:0 8px">·</span>
+        <button class="link" onclick="exportStockCSV()">Exporter (Excel)</button>
+      </div>
     </div>
 
     <div id="invPaneMouv" style="display:none">
@@ -2131,6 +2134,19 @@ function skuOf(article, size){
     g, String(size).toUpperCase()].join('-');
 }
 
+/* Une couleur par famille de vêtement. Sur une liste longue, c'est ce qui
+   permet de retrouver « les chemises » sans lire chaque ligne. */
+const CAT_COULEURS = {
+  'Polo':'#2563a8', 'Chemise':'#2563a8', 'Chemisier':'#2563a8', 'T-shirt':'#2563a8',
+  'Pull col rond':'#7a4a9e', 'Col roulé':'#7a4a9e', 'Pull / maille':'#7a4a9e', 'Gilet':'#7a4a9e',
+  'Veste / blazer':'#0f5132', 'Softshell':'#0f5132', 'Parka / manteau':'#0f5132',
+  'Tunique / blouse':'#b1553f', 'Pantalon':'#4a5a6a', 'Jupe':'#4a5a6a', 'Robe':'#4a5a6a',
+  'Chaussures':'#7a5230',
+  'Foulard / écharpe':'#8a6a09', 'Cravate':'#8a6a09', 'Ceinture':'#8a6a09',
+  'Porte-badge':'#6b7280', 'Parapluie':'#6b7280', 'Autre accessoire':'#6b7280'
+};
+const catCouleur = c => CAT_COULEURS[c] || '#6b7280';
+
 /* ---------- rendu de la page Stock ----------
    Deux onglets : « Stock » (l'état, directement modifiable) et
    « Entrées · sorties » (le journal). Le stock n'est jamais écrasé : même une
@@ -2213,14 +2229,16 @@ function renderStock(){
   arts.forEach(a=>articleVariants(a.id).forEach(v=>{ totalQty += stock[v.id]||0; refs++; }));
   const today = todayISO();
   const todayMoves = invData().moves.filter(m=>(m.at||'').slice(0,10)===today).length;
-  document.getElementById('invKpi').innerHTML =
-    '<div class="tile"><span>Pièces en stock</span><b>'+totalQty+'</b></div>'+
-    '<div class="tile"><span>Vêtements suivis</span><b>'+arts.length+'</b><span class="mutd">'+
-      refs+' taille'+(refs>1?'s':'')+' au total</span></div>';
+  document.getElementById('invSummary').innerHTML = arts.length
+    ? '<b>'+totalQty+'</b> pièce'+(totalQty>1?'s':'')+' en stock <span class="mutd">·</span> '+
+      arts.length+' vêtement'+(arts.length>1?'s':'')
+    : '';
 
   // filtres par catégorie
   const cats = ['Tout', ...new Set(arts.map(a=>a.category).filter(Boolean))];
-  document.getElementById('invFilters').innerHTML = arts.length ? cats.map(c=>
+  // sous 8 vêtements on parcourt la liste plus vite qu'on ne filtre
+  document.getElementById('invSearchWrap').style.display = arts.length > 7 ? '' : 'none';
+  document.getElementById('invFilters').innerHTML = (arts.length > 7 && cats.length > 2) ? cats.map(c=>
     '<button class="'+(invFilter===c?'sel':'')+'" onclick="setInvFilter(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('') : '';
 
   // liste
@@ -2230,7 +2248,6 @@ function renderStock(){
   if(q) list = list.filter(a=>(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
     .toLowerCase().includes(q));
 
-  document.getElementById('invAlerts').innerHTML = '';
 
   if(!arts.length){
     box.innerHTML = '<div class="card" style="text-align:center;padding:26px 18px">'+
@@ -2248,17 +2265,18 @@ function renderStock(){
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       // en saisie directe, tout est déplié : on remplit d'une traite
       const ouvert = qtyEdit || openArt.has(a.id);
-      const etat = '<span class="chip">'+vars.length+' taille'+(vars.length>1?'s':'')+'</span>';
-      return '<div class="artcard">'+
+      const col = catCouleur(a.category);
+      return '<div class="artcard" style="border-left:4px solid '+col+'">'+
         '<button class="arthead'+(ouvert?' open':'')+'"'+
           (qtyEdit ? ' disabled' : ' onclick="toggleArt('+jsq(a.id)+')"')+'>'+
           '<span class="grow">'+
             '<span class="artname">'+esc(a.name)+(a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
-            '<span class="artmeta">'+[a.category, a.gender, a.color].filter(Boolean).map(esc).join(' · ')+'</span>'+
-            '<span class="artstate">'+etat+'</span>'+
+            '<span class="artmeta"><span class="cattag" style="color:'+col+
+              ';background:'+col+'14">'+esc(a.category||'Autre')+'</span>'+
+              (a.color?' '+esc(a.color):'')+'</span>'+
           '</span>'+
           '<span class="artright"><span class="arttotal">'+tot+'</span>'+
-          '<span class="artunit">pièce'+(tot>1?'s':'')+'</span></span>'+
+          '<span class="artunit">en stock</span></span>'+
           (qtyEdit ? '' : '<span class="pickchev">'+(ouvert?'⌄':'›')+'</span>')+
         '</button>'+
         (ouvert ? '<div class="sizegrid">'+vars.map(v=>{
@@ -2269,12 +2287,12 @@ function renderStock(){
               '<input type="number" min="0" max="9999" inputmode="numeric" value="'+val+'" '+
               'onfocus="this.select()" oninput="onQtyInput('+jsq(v.id)+',this)"></label>';
           }
-          const cls = qy<=0 ? 'out' : (qy <= (a.minStock||0) ? 'low' : '');
+          const cls = qy<=0 ? 'out' : '';
           return '<button class="sizecell '+cls+'" onclick="openMoveModal('+jsq(v.id)+')">'+
             '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
         }).join('')+'</div>'+
-        (qtyEdit ? '' : '<div class="artfoot"><button class="link" onclick="toggleQtyEdit()">Modifier les quantités</button>'+
-          '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Modifier la fiche</button></div>')
+        (qtyEdit ? '' : '<div class="artfoot"><span class="mutd">Touchez une taille pour l'ajuster</span>'+
+          '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Fiche</button></div>')
         : '')+
       '</div>';
     }).join('');
