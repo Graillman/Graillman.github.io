@@ -301,7 +301,14 @@
   .chip.low{ background:rgba(224,169,58,.14); color:#8a6a09 }
   .chip.bad{ background:var(--bad-soft); color:var(--bad) }
   .arttotal{ font-weight:750; font-size:17px; font-variant-numeric:tabular-nums; white-space:nowrap }
-  .sizegrid{ display:flex; flex-wrap:wrap; gap:7px }
+  .sizegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px }
+  .szrow{ display:flex; align-items:center; justify-content:space-between; gap:2px; margin-top:3px }
+  .szbtn{ width:34px; height:34px; border-radius:9px; border:none; background:var(--tint);
+    color:var(--brand); font-size:19px; font-weight:600; line-height:1; flex:none }
+  .szrow .qt{ flex:1; border:none; background:transparent; font-size:19px; font-weight:750;
+    font-variant-numeric:tabular-nums; color:var(--ink); padding:4px 0; min-height:34px }
+  .grouptitle{ font-size:15px; font-weight:750; margin:20px 0 2px; letter-spacing:-.01em }
+  .grouptitle:first-child{ margin-top:4px }
   .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
     border-radius:10px; padding:6px 4px 5px; text-align:center; line-height:1.15 }
   .sizecell .sz{ display:block; font-size:10.5px; color:var(--muted); font-weight:600;
@@ -311,6 +318,7 @@
   .sizecell.low .qt{ color:#8a6a09 }
   .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
   .sizecell.out .qt{ color:var(--bad) }
+  .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
   /* saisie directe : la cellule de taille devient un champ de quantité */
   .sizecell.edit{ border-color:var(--brand); background:var(--surface); padding:5px 6px 6px }
   .sizecell.edit input{ width:100%; border:none; box-shadow:none; background:transparent;
@@ -410,6 +418,26 @@
     *, *::before, *::after{ animation:none !important; transition:none !important }
   }
 
+  /* ---------- tablette et ordinateur ---------- */
+  @media (min-width:760px){
+    main{ max-width:820px; margin:0 auto; padding-left:20px; padding-right:20px }
+    header.app > *{ max-width:820px; margin-left:auto; margin-right:auto }
+    nav.tabs{ padding-left:calc(50% - 410px); padding-right:calc(50% - 410px) }
+    .view-title{ font-size:30px }
+    .sizegrid{ grid-template-columns:repeat(auto-fill,minmax(120px,1fr)) }
+    .tiles{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)) }
+    .sheetbox{ max-width:560px; margin:0 auto; border-radius:20px }
+  }
+  @media (min-width:1100px){
+    main{ max-width:960px }
+    nav.tabs{ padding-left:calc(50% - 480px); padding-right:calc(50% - 480px) }
+  }
+  /* le survol n'existe pas au doigt : réservé aux pointeurs fins */
+  @media (hover:hover) and (pointer:fine){
+    .btn:hover, .szbtn:hover, .pickrow:hover, .arthead:hover{ filter:brightness(.97) }
+    .sizecell:hover{ border-color:var(--brand) }
+  }
+
   /* ---------- impression ---------- */
   @media print{
     body{ padding:0; background:#fff; color:#000 }
@@ -457,7 +485,9 @@
       <button class="link" onclick="closeArticleModal()">Fermer</button>
     </div>
     <label class="f">Nom du vêtement</label>
-    <input id="aName" placeholder="Ex. : Chemise blanche homme">
+    <input id="aName" placeholder="Ex. : Chemise blanche">
+    <label class="f">Pour</label>
+    <div class="sizepick" id="aPour"></div>
     <label class="f">Tailles</label>
     <div class="sizepick" id="aGammes"></div>
     <div class="sizepick" id="aSizes" style="margin-top:10px"></div>
@@ -514,18 +544,8 @@
       <span class="qtyval" id="moveQty">+1</span>
       <button class="qtybtn" onclick="bumpMove(1)">+</button>
     </div>
-    <label class="f">Motif</label>
-    <select id="moveReason" aria-label="Motif du mouvement" onchange="onMoveReason()"></select>
-    <div id="moveHostWrap" style="display:none">
-      <label class="f">Personne concernée</label>
-      <select id="moveHost" aria-label="Personne concernée"></select>
-    </div>
-    <div id="moveMotifWrap" style="display:none">
-      <label class="f">Motif</label>
-      <select id="moveMotif" aria-label="Motif détaillé"></select>
-    </div>
-    <label class="f">Précision (facultatif)</label>
-    <input id="moveNote" maxlength="200" placeholder="Fait observable uniquement">
+    <label class="f">Commentaire (facultatif)</label>
+    <input id="moveNote" maxlength="200" placeholder="Ex. : remis à Emma, parti en blanchisserie…">
     <div class="spacer"></div><div class="spacer"></div>
     <button class="btn primary" style="width:100%" onclick="saveMove()">Valider le mouvement</button>
     <p class="mutd" style="margin-top:10px;text-align:center">Chaque mouvement est horodaté et signé. Il ne peut pas être modifié : une erreur se corrige par un mouvement inverse.</p>
@@ -2148,6 +2168,23 @@ const CAT_COULEURS = {
 };
 const catCouleur = c => CAT_COULEURS[c] || '#6b7280';
 
+/* La partie du corps se déduit du nom : la fiche ne demande que le nom, la
+   coupe et les tailles, on ne va pas imposer un champ de plus pour ranger. */
+const PARTIES = [
+  ['Chaussures', /chaussure|soulier|escarpin|mocassin|basket|derby|botte/i],
+  ['Bas',        /pantalon|jupe|short|bermuda|jean|corsaire/i],
+  ['Robes',      /robe/i],
+  ['Accessoires',/cravate|foulard|écharpe|echarpe|ceinture|badge|parapluie|gant|chapeau|casquette/i],
+  ['Hauts',      /chemis|polo|t-?shirt|pull|col roul|gilet|veste|blazer|softshell|parka|manteau|tunique|blouse|sweat|maille|haut/i]
+];
+function partieOf(a){
+  const n = (a.name||'') + ' ' + (a.category||'');
+  for(const [nom, re] of PARTIES) if(re.test(n)) return nom;
+  return 'Autres';
+}
+const ORDRE_PARTIES = ['Hauts','Bas','Robes','Chaussures','Accessoires','Autres'];
+const ORDRE_POUR = ['Coupe femme','Coupe homme','Mixte / unisexe'];
+
 /* ---------- rendu de la page Stock ----------
    Deux onglets : « Stock » (l'état, directement modifiable) et
    « Entrées · sorties » (le journal). Le stock n'est jamais écrasé : même une
@@ -2183,6 +2220,16 @@ function openQuickQty(variantId){
   document.getElementById('qtyVal').value = stockMap()[v.id]||0;
   document.getElementById('qtyModal').classList.add('on');
   setTimeout(()=>document.getElementById('qtyVal').focus(), 60);
+}
+function ajusteQty(variantId, d){
+  const v = variantById(variantId); if(!v) return;
+  const avant = stockMap()[v.id]||0;
+  if(d < 0 && avant <= 0) return;
+  const mv = { id:uid(), variantId:v.id, delta:d, reason:'Ajustement d\'inventaire',
+    note:'', hostId:null, by:evaluator||'', at:new Date().toISOString() };
+  invData().moves.push(mv);
+  save(); push('invMove', mv);
+  renderStock();
 }
 function closeQtyModal(){ document.getElementById('qtyModal').classList.remove('on'); qtyVariantId=null; }
 function bumpQty(d){
@@ -2244,22 +2291,15 @@ function renderStock(){
       '<p class="sub">Aucun vêtement ne correspond à « '+esc(q)+' ».</p>'+
       '<button class="link" onclick="document.getElementById(\'invSearch\').value=\'\';setInvFilter(\'Tout\')">Effacer la recherche</button></div>';
   } else {
-    box.innerHTML = list.map(a=>{
+    const carte = a => {
       const vars = articleVariants(a.id);
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
-      // en saisie directe, tout est déplié : on remplit d'une traite
       const ouvert = openArt.has(a.id);
-      const col = a.category ? catCouleur(a.category) : 'var(--baseline)';
-      return '<div class="artcard" style="border-left:4px solid '+col+'">'+
-        '<button class="arthead'+(ouvert?' open':'')+'"'+
-          ' onclick="toggleArt('+jsq(a.id)+')">'+
-          '<span class="grow">'+
-            '<span class="artname">'+esc(a.name)+(a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
-            (a.category || a.color
-              ? '<span class="artmeta">'+(a.category ? '<span class="cattag" style="color:'+col+
-                  ';background:'+col+'14">'+esc(a.category)+'</span>' : '')+
-                (a.color?' '+esc(a.color):'')+'</span>'
-              : '')+
+      return '<div class="artcard">'+
+        '<button class="arthead'+(ouvert?' open':'')+'" onclick="toggleArt('+jsq(a.id)+')">'+
+          '<span class="grow"><span class="artname">'+esc(a.name)+
+            (a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
+            (a.color ? '<span class="artmeta">'+esc(a.color)+'</span>' : '')+
           '</span>'+
           '<span class="artright"><span class="arttotal">'+tot+'</span>'+
           '<span class="artunit">en stock</span></span>'+
@@ -2267,14 +2307,28 @@ function renderStock(){
         '</button>'+
         (ouvert ? '<div class="sizegrid">'+vars.map(v=>{
           const qy = stock[v.id]||0;
-          return '<button class="sizecell '+(qy<=0?'out':'')+'" onclick="openQuickQty('+jsq(v.id)+')">'+
-            '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
-        }).join('')+'</div>'+
-        '<div class="artfoot"><span class="mutd">Touchez une taille pour la corriger</span>'+
-          '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Renommer</button></div>'
-        : '')+
+          return '<div class="sizecell'+(qy<=0?' out':'')+'">'+
+            '<span class="sz">'+esc(v.size)+'</span>'+
+            '<span class="szrow">'+
+              '<button class="szbtn" onclick="ajusteQty('+jsq(v.id)+',-1)" aria-label="Retirer un">&minus;</button>'+
+              '<button class="qt" onclick="openQuickQty('+jsq(v.id)+')" aria-label="Saisir la quantité">'+qy+'</button>'+
+              '<button class="szbtn" onclick="ajusteQty('+jsq(v.id)+',1)" aria-label="Ajouter un">+</button>'+
+            '</span></div>';
+        }).join('')+'</div>' : '')+
       '</div>';
-    }).join('');
+    };
+    let html = '';
+    ORDRE_POUR.forEach(pour=>{
+      const dansPour = list.filter(a=>(a.gender||'Mixte / unisexe')===pour);
+      if(!dansPour.length) return;
+      html += '<div class="grouptitle">'+esc(POUR_COURT[pour]||pour)+'</div>';
+      ORDRE_PARTIES.forEach(partie=>{
+        const dedans = dansPour.filter(a=>partieOf(a)===partie);
+        if(!dedans.length) return;
+        html += '<div class="pickcat">'+esc(partie)+'</div>' + dedans.map(carte).join('');
+      });
+    });
+    box.innerHTML = html;
   }
 
   // ---- onglet Entrées · sorties ----
@@ -2332,7 +2386,15 @@ function sizeOrder(type, sz){
   const i = (SIZE_SETS[type]||SIZE_SETS.alpha).sizes.indexOf(sz);
   return i >= 0 ? i : 900;
 }
-let sizeType = 'alpha';
+let sizeType = 'alpha', aPour = 'Coupe femme';
+const POUR_COURT = { 'Coupe femme':'Femme', 'Coupe homme':'Homme', 'Mixte / unisexe':'Mixte' };
+function setPour(v){ aPour = v; renderPour(); }
+function renderPour(){
+  document.getElementById('aPour').innerHTML = INV_GENDERS.map(g=>
+    '<button class="'+(g===aPour?'sel':'')+'" onclick="setPour('+jsq(g)+')">'+
+    esc(POUR_COURT[g]||g)+'</button>').join('');
+}
+let sizeTypeInutilise = null;
 function pickGamme(k){ sizeType = k; pickedSizes = SIZE_SETS[k].sizes.slice(); renderSizePick(); }
 function renderSizePick(){
   const type = sizeType;
@@ -2364,6 +2426,8 @@ function openArticleModal(id){
   document.getElementById('aName').value = a ? a.name : '';
   document.getElementById('aCustomSize').value = '';
   sizeType = a ? (a.sizeType || 'alpha') : 'alpha';
+  aPour = a ? (a.gender || INV_GENDERS[0]) : 'Coupe femme';
+  renderPour();
   pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : SIZE_SETS[sizeType].sizes.slice();
   renderSizePick();
   document.getElementById('artDanger').innerHTML = a
@@ -2383,7 +2447,7 @@ function saveArticleModal(){
     name,
     // conservés tels quels s'ils existent déjà : la fiche ne les demande plus
     category: ancien ? ancien.category : '',
-    gender: ancien ? ancien.gender : 'Mixte / unisexe',
+    gender: aPour,
     color: ancien ? ancien.color : '',
     brand: ancien ? ancien.brand : '',
     sizeType,
@@ -2507,34 +2571,13 @@ function openMoveModal(variantId){
   const v = variantById(variantId); const a = v ? articleById(v.articleId) : null;
   if(!v || !a) return;
   refreshMoveHead();
-  fillSelect('moveReason', MOVE_REASONS.map(r=>r.v), 'Réception fournisseur');
-  const hosts = activeHosts();
-  document.getElementById('moveHost').innerHTML = '<option value="">Non précisé</option>'+
-    hosts.map(h=>'<option value="'+h.id+'">'+esc(hostName(h))+'</option>').join('');
   document.getElementById('moveNote').value = '';
-  onMoveReason();
   document.getElementById('moveModal').classList.add('on');
 }
 function closeMoveModal(){ document.getElementById('moveModal').classList.remove('on'); moveVariantId=null; }
-function onMoveReason(){
-  const r = MOVE_REASONS.find(x=>x.v===document.getElementById('moveReason').value) || MOVE_REASONS[0];
-  document.getElementById('moveHostWrap').style.display = r.host ? 'block' : 'none';
-  const mw = document.getElementById('moveMotifWrap');
-  const motifs = MOVE_MOTIFS[r.v];
-  if(r.motif && motifs){
-    mw.style.display = 'block';
-    document.getElementById('moveMotif').innerHTML = motifs.map(m=>'<option>'+esc(m)+'</option>').join('');
-  } else mw.style.display = 'none';
-  if(r.sign>0 && moveQty<0) moveQty = Math.abs(moveQty);
-  if(r.sign<0 && moveQty>0) moveQty = -Math.abs(moveQty);
-  updateMoveQty();
-}
 function bumpMove(d){
-  const r = MOVE_REASONS.find(x=>x.v===document.getElementById('moveReason').value) || MOVE_REASONS[0];
   moveQty += d;
-  if(r.sign>0) moveQty = Math.max(1, moveQty);
-  if(r.sign<0) moveQty = Math.min(-1, moveQty);
-  if(r.sign===0 && moveQty===0) moveQty = d>0 ? 1 : -1;
+  if(moveQty === 0) moveQty = d > 0 ? 1 : -1;
   updateMoveQty();
 }
 function updateMoveQty(){
@@ -2544,20 +2587,16 @@ function updateMoveQty(){
 }
 function saveMove(){
   if(!moveVariantId || !moveQty) return;
-  const reason = document.getElementById('moveReason').value;
-  const r = MOVE_REASONS.find(x=>x.v===reason) || MOVE_REASONS[0];
   const mv = {
-    id: uid(), variantId: moveVariantId, delta: moveQty, reason,
-    note: [document.getElementById('moveMotifWrap').style.display!=='none'
-        ? document.getElementById('moveMotif').value : '',
-      document.getElementById('moveNote').value.trim()].filter(Boolean).join(' — '),
-    hostId: r.host ? (document.getElementById('moveHost').value||null) : null,
-    by: evaluator || '', at: new Date().toISOString()
+    id: uid(), variantId: moveVariantId, delta: moveQty,
+    reason: 'Ajustement d'+String.fromCharCode(39)+'inventaire',
+    note: document.getElementById('moveNote').value.trim(),
+    hostId: null, by: evaluator || '', at: new Date().toISOString()
   };
   invData().moves.push(mv);
   save(); push('invMove', mv);
   closeMoveModal(); renderStock();
-  toast((moveQty>0?'+':'')+moveQty+' · '+reason);
+  toast((moveQty>0?'Entrée de +':'Sortie de ')+moveQty);
 }
 
 /* ---------- export ---------- */
