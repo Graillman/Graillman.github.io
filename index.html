@@ -357,6 +357,10 @@
   .qtyrow{ display:flex; align-items:center; gap:12px; justify-content:center; margin:14px 0 }
   .qtybtn{ width:52px; height:52px; border-radius:16px; border:none; font-size:26px; font-weight:600;
     background:var(--tint); color:var(--brand); display:grid; place-items:center }
+  .qtybig{ font-size:38px; font-weight:750; width:120px; text-align:center; border:none;
+    box-shadow:none; background:transparent; padding:0; font-variant-numeric:tabular-nums;
+    -moz-appearance:textfield; color:var(--ink) }
+  .qtybig::-webkit-outer-spin-button,.qtybig::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
   .qtyval{ font-size:34px; font-weight:750; min-width:82px; text-align:center;
     font-variant-numeric:tabular-nums; letter-spacing:-1px }
   .sizepick{ display:flex; flex-wrap:wrap; gap:7px; margin-top:4px }
@@ -449,33 +453,40 @@
 <div id="artModal" class="sheetwrap">
   <div class="sheetbox">
     <div class="sheet-head">
-      <h2 id="artTitle">Nouvel article</h2>
+      <h2 id="artTitle">Nouveau vêtement</h2>
       <button class="link" onclick="closeArticleModal()">Fermer</button>
     </div>
-    <label class="f">Désignation *</label>
-    <input id="aName" placeholder="Ex. : Veste tailleur">
-    <label class="f">Catégorie</label>
-    <select id="aCat" aria-label="Catégorie du vêtement"></select>
-    <label class="f">Pour</label>
-    <select id="aGender" aria-label="Coupe du vêtement"></select>
-    <label class="f">Couleur</label>
-    <input id="aColor" list="colorList" placeholder="Ex. : Bleu marine">
-    <datalist id="colorList"></datalist>
-    <label class="f">Marque / modèle (facultatif)</label>
-    <input id="aBrand" maxlength="40" placeholder="Ex. : Hawaypant, Devred, Runner">
-    <label class="f">Tailles disponibles</label>
-    <select id="aSizeType" aria-label="Gamme de tailles" onchange="onSizeTypeChange()"></select>
-    <div class="sizepick" id="aSizes"></div>
+    <label class="f">Nom du vêtement</label>
+    <input id="aName" placeholder="Ex. : Chemise blanche homme">
+    <label class="f">Tailles</label>
+    <div class="sizepick" id="aGammes"></div>
+    <div class="sizepick" id="aSizes" style="margin-top:10px"></div>
     <div class="row" style="gap:6px;margin-top:8px">
-      <input id="aCustomSize" maxlength="12" placeholder="Autre taille (ex. 56, Inconnue)"
+      <input id="aCustomSize" maxlength="12" placeholder="Autre taille"
         style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomSize()}">
       <button class="btn neutral" style="flex:none" onclick="addCustomSize()">Ajouter</button>
     </div>
-    <p class="mutd" style="margin-top:6px">Touchez les tailles que vous gérez. Une ligne de stock est créée
-    pour chacune. Vous pouvez mélanger les gammes (S/M et L, par exemple) ou ajouter une taille libre.</p>
-    <div class="spacer"></div><div class="spacer"></div>
+    <div class="spacer"></div>
     <button class="btn primary" style="width:100%" onclick="saveArticleModal()">Enregistrer</button>
     <div id="artDanger"></div>
+  </div>
+</div>
+
+<div id="qtyModal" class="sheetwrap">
+  <div class="sheetbox">
+    <div class="sheet-head">
+      <h2 id="qtyTitle">Quantité</h2>
+      <button class="link" onclick="closeQtyModal()">Fermer</button>
+    </div>
+    <p class="sub" id="qtySub"></p>
+    <div class="qtyrow">
+      <button class="qtybtn" onclick="bumpQty(-1)" aria-label="Retirer un">&minus;</button>
+      <input class="qtybig" id="qtyVal" type="number" min="0" max="9999" inputmode="numeric"
+        aria-label="Quantité en stock" onfocus="this.select()">
+      <button class="qtybtn" onclick="bumpQty(1)" aria-label="Ajouter un">+</button>
+    </div>
+    <button class="btn primary" style="width:100%" onclick="saveQty()">Enregistrer</button>
+    <p class="mutd" style="margin-top:10px;text-align:center">L\'écart est enregistré dans le journal.</p>
   </div>
 </div>
 
@@ -649,11 +660,7 @@
     </div>
 
     <div id="invPaneStock">
-      <div id="invEditBar" class="no-print"></div>
-      <div class="no-print" id="invActions" style="margin-bottom:12px">
-        <div class="invsum" id="invSummary"></div>
-        <button class="btn primary" style="width:100%" onclick="toggleQtyEdit()">Modifier les quantités</button>
-      </div>
+      <div class="invsum no-print" id="invSummary"></div>
       <div class="card no-print" id="invSearchWrap" style="padding:4px 12px;border-radius:12px;margin-bottom:10px">
         <input id="invSearch" placeholder="Rechercher un vêtement…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderStock)">
       </div>
@@ -672,8 +679,6 @@
       <div class="filterrow no-print" id="movFilters"></div>
       <div class="card">
         <h3>Journal des mouvements</h3>
-        <p class="sub" style="margin-bottom:6px">Chaque ligne est horodatée et signée. Le stock affiché
-        dans l'onglet « Stock » est toujours la somme de ces mouvements.</p>
         <div id="invHistory"></div>
       </div>
       <div class="spacer"></div>
@@ -1133,7 +1138,6 @@ function rerenderSoft(){
     (a.tagName==='INPUT' && (a.type==='text'||a.type==='search'||a.type==='number')))) return;
   if(document.getElementById('hostModal').classList.contains('on')) return;
   // saisie directe des quantités en cours : ne pas re-rendre la grille sous les doigts
-  if(typeof qtyEdit !== 'undefined' && qtyEdit) return;
   if(currentView==='pointage') renderPointage();
   else if(currentView==='equipe'){ renderEquipe(); renderManagers(); }
   else if(currentView==='stock') renderStock();
@@ -2073,15 +2077,15 @@ const INV_COLORS = ['Noir','Blanc','Écru','Bleu marine','Bleu marine rayé','Bl
    « centrales » = tailles les plus demandées : leur rupture déclenche une alerte
    renforcée (une gamme sans ses tailles centrales est dite « cassée »). */
 const SIZE_SETS = {
-  alpha:     { label:'Tailles alpha (XS à XXXL)',     sizes:['XS','S','M','L','XL','XXL','XXXL','4XL'], mid:['M','L','XL'] },
-  combi:     { label:'Tailles combinées (S/M, L/XL…)', sizes:['S/M','M/L','L/XL','XL/XXL'], mid:['S/M','L/XL'] },
-  femme:     { label:'Tailles femme (34 à 56)',       sizes:['34','36','38','40','42','44','46','48','50','52','54','56'], mid:['38','40','42'] },
-  homme:     { label:'Tailles homme (38 à 60)',       sizes:['38','40','42','44','46','48','50','52','54','56','58','60'], mid:['42','44','46'] },
-  doublet:   { label:'Tailles homme par doublets',    sizes:['38/40','42/44','46/48','50/52','54/56','58/60'], mid:['42/44','46/48'] },
-  blouse:    { label:'Blouse / tunique (0 à 6)',      sizes:['0','1','2','3','4','5','6'], mid:['1','2'] },
-  chemise:   { label:'Chemise — tour de cou (36 à 45)', sizes:['36','37','38','39','40','41','42','43','44','45'], mid:['39','40','41'] },
-  chaussure: { label:'Pointures (35 à 48)',           sizes:['35','36','37','38','39','40','41','42','43','44','45','46','47','48'], mid:['38','39','40','41','42','43'] },
-  unique:    { label:'Taille unique',                 sizes:['TU'], mid:[] }
+  alpha:     { court:'S · M · L · XL', label:'Tailles alpha (XS à XXXL)',     sizes:['XS','S','M','L','XL','XXL','XXXL','4XL'], mid:['M','L','XL'] },
+  combi:     { court:'S/M · L/XL', label:'Tailles combinées (S/M, L/XL…)', sizes:['S/M','M/L','L/XL','XL/XXL'], mid:['S/M','L/XL'] },
+  femme:     { court:'34 → 56', label:'Tailles femme (34 à 56)',       sizes:['34','36','38','40','42','44','46','48','50','52','54','56'], mid:['38','40','42'] },
+  homme:     { court:'38 → 60', label:'Tailles homme (38 à 60)',       sizes:['38','40','42','44','46','48','50','52','54','56','58','60'], mid:['42','44','46'] },
+  doublet:   { court:'38/40 · 42/44', label:'Tailles homme par doublets',    sizes:['38/40','42/44','46/48','50/52','54/56','58/60'], mid:['42/44','46/48'] },
+  blouse:    { court:'Blouse 0 → 6', label:'Blouse / tunique (0 à 6)',      sizes:['0','1','2','3','4','5','6'], mid:['1','2'] },
+  chemise:   { court:'Tour de cou', label:'Chemise — tour de cou (36 à 45)', sizes:['36','37','38','39','40','41','42','43','44','45'], mid:['39','40','41'] },
+  chaussure: { court:'Pointures', label:'Pointures (35 à 48)',           sizes:['35','36','37','38','39','40','41','42','43','44','45','46','47','48'], mid:['38','39','40','41','42','43'] },
+  unique:    { court:'Taille unique', label:'Taille unique',                 sizes:['TU'], mid:[] }
 };
 /* Types de mouvement standards de la gestion de stock textile.
    sign : +1 entrée, -1 sortie, 0 signe libre. */
@@ -2149,7 +2153,6 @@ const catCouleur = c => CAT_COULEURS[c] || '#6b7280';
    « Entrées · sorties » (le journal). Le stock n'est jamais écrasé : même une
    saisie directe est convertie en mouvement d'ajustement, donc traçable. */
 let invFilter = 'Tout', invTab = 'stock', movFilter = 'Tout';
-let qtyEdit = false, qtyDraft = {};
 /* Le stock affiche d'abord les vêtements ; les tailles n'apparaissent qu'au
    toucher. Une page de 25 articles x 8 tailles est illisible dépliée. */
 const openArt = new Set();
@@ -2158,7 +2161,6 @@ function toggleArt(id){
   renderStock();
 }
 function setInvTab(t){
-  if(qtyEdit && t!=='stock') cancelQtyEdit(true);
   invTab = t;
   document.querySelectorAll('#invTabs button').forEach((b,i)=>
     b.classList.toggle('sel', (i===0)===(t==='stock')));
@@ -2168,52 +2170,37 @@ function setInvTab(t){
 }
 function setMovFilter(f){ movFilter = f; renderStock(); }
 
-/* --- saisie directe des quantités --- */
-function toggleQtyEdit(){
-  if(qtyEdit){ saveQtyEdits(); return; }
-  if(!activeArticles().length){ toast('Ajoutez d\'abord un article'); return; }
-  qtyEdit = true; qtyDraft = {}; renderStock();
+/* Une taille se corrige d'un geste : on touche, on ajuste, c'est enregistré.
+   Pas de mode « édition » à ouvrir puis à quitter. L'écart part au journal
+   comme un ajustement, donc le stock reste la somme des mouvements. */
+let qtyVariantId = null;
+function openQuickQty(variantId){
+  const v = variantById(variantId); const a = v ? articleById(v.articleId) : null;
+  if(!v || !a) return;
+  qtyVariantId = variantId;
+  document.getElementById('qtyTitle').textContent = a.name;
+  document.getElementById('qtySub').innerHTML = 'Taille <b>'+esc(v.size)+'</b>';
+  document.getElementById('qtyVal').value = stockMap()[v.id]||0;
+  document.getElementById('qtyModal').classList.add('on');
+  setTimeout(()=>document.getElementById('qtyVal').focus(), 60);
 }
-function cancelQtyEdit(silent){
-  qtyEdit = false; qtyDraft = {};
-  if(!silent) renderStock();
+function closeQtyModal(){ document.getElementById('qtyModal').classList.remove('on'); qtyVariantId=null; }
+function bumpQty(d){
+  const el = document.getElementById('qtyVal');
+  el.value = Math.max(0, Math.min(9999, (parseInt(el.value,10)||0) + d));
 }
-function onQtyInput(vid, el){
-  if(el.value === ''){ delete qtyDraft[vid]; }
-  else {
-    const n = parseInt(el.value, 10);
-    qtyDraft[vid] = Math.max(0, Math.min(9999, Number.isFinite(n) ? n : 0));
-  }
-  renderQtyBar();
-}
-function qtyChanges(){
-  const stock = stockMap();
-  return Object.keys(qtyDraft).filter(vid => qtyDraft[vid] !== (stock[vid]||0));
-}
-function renderQtyBar(){
-  const bar = document.getElementById('invEditBar');
-  if(!qtyEdit){ bar.innerHTML = ''; return; }
-  const n = qtyChanges().length;
-  bar.innerHTML = '<div class="editbar"><div class="grow"><b>Saisie directe</b>'+
-    '<div class="mutd">Tapez la quantité réelle de chaque taille. '+
-    (n ? n+' modification'+(n>1?'s':'')+' en attente.' : 'Aucune modification pour l\'instant.')+'</div></div>'+
-    '<button class="btn neutral" onclick="cancelQtyEdit()">Annuler</button>'+
-    '<button class="btn primary" onclick="saveQtyEdits()">Enregistrer</button></div>';
-}
-function saveQtyEdits(){
-  const stock = stockMap();
-  const changes = qtyChanges();
-  if(!changes.length){ cancelQtyEdit(); toast('Aucune quantité modifiée'); return; }
-  const at = new Date().toISOString();
-  changes.forEach(vid=>{
-    const mv = { id:uid(), variantId:vid, delta:qtyDraft[vid]-(stock[vid]||0),
-      reason:'Ajustement d\'inventaire', note:'Saisie directe du stock',
-      hostId:null, by:evaluator||'', at };
-    invData().moves.push(mv);
-    push('invMove', mv);
-  });
-  save(); cancelQtyEdit();
-  toast(changes.length+' taille'+(changes.length>1?'s':'')+' mise'+(changes.length>1?'s':'')+' à jour');
+function saveQty(){
+  const v = variantById(qtyVariantId); if(!v){ closeQtyModal(); return; }
+  const avant = stockMap()[v.id]||0;
+  const apres = Math.max(0, Math.min(9999, parseInt(document.getElementById('qtyVal').value,10)||0));
+  const delta = apres - avant;
+  if(!delta){ closeQtyModal(); return; }
+  const mv = { id:uid(), variantId:v.id, delta, reason:'Ajustement d\'inventaire',
+    note:'', hostId:null, by:evaluator||'', at:new Date().toISOString() };
+  invData().moves.push(mv);
+  save(); push('invMove', mv);
+  closeQtyModal(); renderStock();
+  toast(v.size+' : '+avant+' → '+apres);
 }
 
 function renderStock(){
@@ -2261,35 +2248,30 @@ function renderStock(){
       const vars = articleVariants(a.id);
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       // en saisie directe, tout est déplié : on remplit d'une traite
-      const ouvert = qtyEdit || openArt.has(a.id);
-      const col = catCouleur(a.category);
+      const ouvert = openArt.has(a.id);
+      const col = a.category ? catCouleur(a.category) : 'var(--baseline)';
       return '<div class="artcard" style="border-left:4px solid '+col+'">'+
         '<button class="arthead'+(ouvert?' open':'')+'"'+
-          (qtyEdit ? ' disabled' : ' onclick="toggleArt('+jsq(a.id)+')"')+'>'+
+          ' onclick="toggleArt('+jsq(a.id)+')">'+
           '<span class="grow">'+
             '<span class="artname">'+esc(a.name)+(a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
-            '<span class="artmeta"><span class="cattag" style="color:'+col+
-              ';background:'+col+'14">'+esc(a.category||'Autre')+'</span>'+
-              (a.color?' '+esc(a.color):'')+'</span>'+
+            (a.category || a.color
+              ? '<span class="artmeta">'+(a.category ? '<span class="cattag" style="color:'+col+
+                  ';background:'+col+'14">'+esc(a.category)+'</span>' : '')+
+                (a.color?' '+esc(a.color):'')+'</span>'
+              : '')+
           '</span>'+
           '<span class="artright"><span class="arttotal">'+tot+'</span>'+
           '<span class="artunit">en stock</span></span>'+
-          (qtyEdit ? '' : '<span class="pickchev">'+(ouvert?'⌄':'›')+'</span>')+
+          '<span class="pickchev">'+(ouvert?'⌄':'›')+'</span>'+
         '</button>'+
         (ouvert ? '<div class="sizegrid">'+vars.map(v=>{
           const qy = stock[v.id]||0;
-          if(qtyEdit){
-            const val = qtyDraft[v.id]!==undefined ? qtyDraft[v.id] : qy;
-            return '<label class="sizecell edit"><span class="sz">'+esc(v.size)+'</span>'+
-              '<input type="number" min="0" max="9999" inputmode="numeric" value="'+val+'" '+
-              'onfocus="this.select()" oninput="onQtyInput('+jsq(v.id)+',this)"></label>';
-          }
-          const cls = qy<=0 ? 'out' : '';
-          return '<button class="sizecell '+cls+'" onclick="openMoveModal('+jsq(v.id)+')">'+
+          return '<button class="sizecell '+(qy<=0?'out':'')+'" onclick="openQuickQty('+jsq(v.id)+')">'+
             '<span class="sz">'+esc(v.size)+'</span><span class="qt">'+qy+'</span></button>';
         }).join('')+'</div>'+
-        (qtyEdit ? '' : '<div class="artfoot"><span class="mutd">Touchez une taille pour l\'ajuster</span>'+
-          '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Fiche</button></div>')
+        '<div class="artfoot"><span class="mutd">Touchez une taille pour la corriger</span>'+
+          '<button class="link" onclick="openArticleModal('+jsq(a.id)+')">Renommer</button></div>'
         : '')+
       '</div>';
     }).join('');
@@ -2315,16 +2297,18 @@ function renderStock(){
   const shown = hist.slice(0,150);
   document.getElementById('invHistory').innerHTML = shown.length ? shown.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
-    const who = m.hostId ? (hostById(m.hostId) ? ' · '+esc(hostName(hostById(m.hostId))) : '') : '';
+    const h = m.hostId ? hostById(m.hostId) : null;
+    // le motif n'est rappelé que s'il apprend quelque chose
+    const detail = h ? hostName(h) : (/Ajustement/.test(m.reason||'') ? '' : (m.reason||''));
     return '<div class="movline">'+
       '<span class="movdelta '+(m.delta>0?'up':'down')+'">'+(m.delta>0?'+':'')+m.delta+'</span>'+
-      '<span class="grow">'+(a?esc(a.name):'—')+' <span class="mutd">'+(v?'taille '+esc(v.size):'')+'</span>'+
-      '<br><span class="mutd">'+esc(m.reason||'')+who+(m.note?' · '+esc(m.note):'')+'</span></span>'+
-      '<span class="mutd" style="white-space:nowrap">'+frDate(String(m.at||'').slice(0,10))+(m.by?'<br>'+esc(m.by):'')+'</span>'+
+      '<span class="grow">'+(a?esc(a.name):'—')+(v?' <span class="mutd">'+esc(v.size)+'</span>':'')+
+      (detail ? '<br><span class="mutd">'+esc(detail)+'</span>' : '')+'</span>'+
+      '<span class="mutd" style="white-space:nowrap">'+frDate(String(m.at||'').slice(0,10))+'</span>'+
     '</div>';
   }).join('') + (hist.length>shown.length
-      ? '<p class="mutd" style="margin-top:8px">Les '+shown.length+' mouvements les plus récents sont affichés '+
-        '('+hist.length+' au total). L\'export Excel contient tout l\'historique.</p>' : '')
+      ? '<p class="mutd" style="margin-top:8px">'+shown.length+' mouvements les plus récents sur '+
+        hist.length+'. L\'export Excel contient tout.</p>' : '')
     : '<p class="mutd">Aucun mouvement '+(movFilter==='Tout'?'enregistré':'de ce type')+'.</p>';
 }
 function setInvFilter(c){ invFilter = c; renderStock(); }
@@ -2348,9 +2332,14 @@ function sizeOrder(type, sz){
   const i = (SIZE_SETS[type]||SIZE_SETS.alpha).sizes.indexOf(sz);
   return i >= 0 ? i : 900;
 }
+let sizeType = 'alpha';
+function pickGamme(k){ sizeType = k; pickedSizes = SIZE_SETS[k].sizes.slice(); renderSizePick(); }
 function renderSizePick(){
-  const type = document.getElementById('aSizeType').value;
+  const type = sizeType;
   const set = SIZE_SETS[type] || SIZE_SETS.alpha;
+  document.getElementById('aGammes').innerHTML = Object.keys(SIZE_SETS).map(k=>
+    '<button class="'+(k===type?'sel':'')+'" onclick="pickGamme('+jsq(k)+')">'+
+    esc(SIZE_SETS[k].court)+'</button>').join('');
   if(!pickedSizes.length) pickedSizes = set.sizes.slice();
   const extra = pickedSizes.filter(s=>!set.sizes.includes(s));
   document.getElementById('aSizes').innerHTML = [...set.sizes, ...extra].map(sz=>
@@ -2359,13 +2348,6 @@ function renderSizePick(){
 }
 function toggleSize(sz){
   pickedSizes = pickedSizes.includes(sz) ? pickedSizes.filter(x=>x!==sz) : [...pickedSizes, sz];
-  renderSizePick();
-}
-function onSizeTypeChange(){
-  const set = SIZE_SETS[document.getElementById('aSizeType').value] || SIZE_SETS.alpha;
-  // on garde les tailles libres déjà saisies, on repart de la nouvelle gamme
-  pickedSizes = [...set.sizes, ...pickedSizes.filter(s=>!Object.values(SIZE_SETS)
-    .some(x=>x.sizes.includes(s)))];
   renderSizePick();
 }
 function addCustomSize(){
@@ -2378,19 +2360,14 @@ function addCustomSize(){
 function openArticleModal(id){
   modalArticleId = id;
   const a = id ? articleById(id) : null;
-  document.getElementById('artTitle').textContent = a ? 'Modifier l\'article' : 'Nouvel article';
-  fillSelect('aCat', INV_CATEGORIES, a ? a.category : INV_CATEGORIES[0]);
-  fillSelect('aGender', INV_GENDERS, a ? a.gender : INV_GENDERS[0]);
-  fillSelect('aSizeType', Object.keys(SIZE_SETS).map(k=>({v:k, label:SIZE_SETS[k].label})),
-    a ? a.sizeType : 'alpha');
+  document.getElementById('artTitle').textContent = a ? 'Modifier le vêtement' : 'Nouveau vêtement';
   document.getElementById('aName').value = a ? a.name : '';
-  document.getElementById('aColor').value = a ? (a.color||'') : '';
-  document.getElementById('aBrand').value = a ? (a.brand||'') : '';
   document.getElementById('aCustomSize').value = '';
-  pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : [];
+  sizeType = a ? (a.sizeType || 'alpha') : 'alpha';
+  pickedSizes = a ? articleVariants(a.id).map(v=>v.size) : SIZE_SETS[sizeType].sizes.slice();
   renderSizePick();
   document.getElementById('artDanger').innerHTML = a
-    ? '<div class="sep"></div><button class="btn danger" style="width:100%" onclick="archiveArticle(\''+a.id+'\')">Retirer cet article du stock</button>'
+    ? '<div class="sep"></div><button class="btn danger" style="width:100%" onclick="archiveArticle('+jsq(a.id)+')">Retirer ce vêtement</button>'
     : '';
   document.getElementById('artModal').classList.add('on');
   setTimeout(()=>document.getElementById('aName').focus(), 60);
@@ -2398,48 +2375,44 @@ function openArticleModal(id){
 function closeArticleModal(){ document.getElementById('artModal').classList.remove('on'); modalArticleId=null; }
 function saveArticleModal(){
   const name = document.getElementById('aName').value.trim();
-  if(!name){ toast('La désignation est obligatoire'); return; }
-  if(!pickedSizes.length){ toast('Sélectionnez au moins une taille'); return; }
-  const type = document.getElementById('aSizeType').value;
+  if(!name){ toast('Donnez un nom au vêtement'); return; }
+  if(!pickedSizes.length){ toast('Choisissez au moins une taille'); return; }
+  const ancien = modalArticleId ? articleById(modalArticleId) : null;
   const art = {
     id: modalArticleId || uid(),
     name,
-    category: document.getElementById('aCat').value,
-    gender: document.getElementById('aGender').value,
-    color: document.getElementById('aColor').value.trim(),
-    brand: document.getElementById('aBrand').value.trim(),
-    sizeType: type,
-    createdAt: modalArticleId ? (articleById(modalArticleId).createdAt) : new Date().toISOString(),
+    // conservés tels quels s'ils existent déjà : la fiche ne les demande plus
+    category: ancien ? ancien.category : '',
+    gender: ancien ? ancien.gender : 'Mixte / unisexe',
+    color: ancien ? ancien.color : '',
+    brand: ancien ? ancien.brand : '',
+    sizeType,
+    minStock: 0,
+    createdAt: ancien ? ancien.createdAt : new Date().toISOString(),
     archivedAt: null
   };
   const inv = invData();
-  if(modalArticleId){
-    inv.articles = inv.articles.map(a=>a.id===art.id ? art : a);
-  } else {
-    inv.articles.push(art);
-  }
-  // variantes : on ajoute les nouvelles tailles, on conserve celles qui ont un historique
+  if(modalArticleId) inv.articles = inv.articles.map(a=>a.id===art.id ? art : a);
+  else inv.articles.push(art);
+
   const existing = articleVariants(art.id);
-  const added = [];
   pickedSizes.forEach(sz=>{
-    if(!existing.some(v=>v.size===sz)){
-      const v = { id:uid(), articleId:art.id, size:sz, sku:skuOf(art, sz),
-        position: sizeOrder(type, sz) };
-      inv.variants.push(v); added.push(v);
-    }
+    if(!existing.some(v=>v.size===sz))
+      inv.variants.push({ id:uid(), articleId:art.id, size:sz, sku:skuOf(art, sz),
+        position: sizeOrder(sizeType, sz) });
   });
-  const removed = existing.filter(v=>!pickedSizes.includes(v.size));
   const stock = stockMap();
-  const reallyRemoved = removed.filter(v=>!(stock[v.id]||0) && !inv.moves.some(m=>m.variantId===v.id));
-  if(reallyRemoved.length){
-    const ids = new Set(reallyRemoved.map(v=>v.id));
+  const retirables = existing.filter(v=>!pickedSizes.includes(v.size))
+    .filter(v=>!(stock[v.id]||0) && !inv.moves.some(m=>m.variantId===v.id));
+  if(retirables.length){
+    const ids = new Set(retirables.map(v=>v.id));
     inv.variants = inv.variants.filter(v=>!ids.has(v.id));
   }
   save();
   push('invSaveArticle', { article:art, variants:articleVariants(art.id),
-    removedVariantIds: reallyRemoved.map(v=>v.id) });
+    removedVariantIds: retirables.map(v=>v.id) });
   closeArticleModal(); renderStock();
-  toast(modalArticleId ? 'Article mis à jour' : name+' ajouté avec '+pickedSizes.length+' taille'+(pickedSizes.length>1?'s':''));
+  toast(modalArticleId ? 'Vêtement mis à jour' : name+' ajouté');
 }
 function archiveArticle(id){
   const a = articleById(id); if(!a) return;
@@ -2905,7 +2878,6 @@ function ensureToday(){
     frDateLong(now).replace(/^./, c=>c.toUpperCase());
   document.getElementById('loginCode').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   document.querySelectorAll('img.brandimg').forEach(i=>{ i.src = LOGO_URI; });
-  document.getElementById('colorList').innerHTML = INV_COLORS.map(c=>'<option value="'+c+'">').join('');
   show('pointage');
   syncUI();
   refreshProfileUI();
