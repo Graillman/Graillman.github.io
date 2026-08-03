@@ -128,7 +128,10 @@
   .btn.danger{ background:var(--bad-soft); color:var(--bad) }
   .btn.small{ padding:8px 12px; font-size:13px; border-radius:10px }
   .btn:active,.chip:active,.seg button:active{ transform:scale(.97) }
-  .link{ background:none; border:none; color:var(--brand); font-weight:600; padding:4px; font-size:14px }
+  /* 32 px de haut au minimum : en dessous, la cible se rate au doigt sur
+     tablette. Le texte reste à sa taille, c'est la zone sensible qui grandit. */
+  .link{ background:none; border:none; color:var(--brand); font-weight:600; font-size:14px;
+    padding:4px 6px; min-height:32px; display:inline-flex; align-items:center }
   .mutd{ color:var(--muted); font-size:13px }
   .sub{ color:var(--ink2); font-size:13.5px; line-height:1.45 }
   .spacer{ height:8px }
@@ -162,6 +165,9 @@
   .critrow .cl{ flex:1; min-width:0; font-size:13.5px }
   .seg.mini button{ padding:6px 11px; min-width:42px; font-size:13px }
   .ccomment{ margin:0 0 4px; font-size:13px; padding:8px 11px }
+  .addcc{ background:none; border:none; color:var(--brand); font-size:12.5px; font-weight:650;
+    padding:6px 0 10px; text-align:left; opacity:.75; min-height:32px }
+  .addcc:active{ opacity:1 }
   .repzone{ margin-top:10px }
   .repzone label{ display:block; font-size:12px; font-weight:600; color:var(--ink2);
     margin-bottom:5px }
@@ -244,7 +250,7 @@
   .mrow:first-of-type{ border-top:none }
   .mrow span{ flex:1; font-size:14px }
   .mrow button{ background:none; border:none; color:var(--bad); font-size:13px; font-weight:600;
-    padding:4px 6px }
+    padding:4px 8px; min-height:32px }
   .addrow{ display:flex; gap:8px; margin-top:12px }
 
   /* ---------- sécurité ---------- */
@@ -322,6 +328,12 @@
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
   .pwwrap{ position:relative }
   .pwwrap input{ padding-right:52px }
+  /* Edge et Safari greffent leur propre bouton sur un champ mot de passe :
+     on les retire pour ne pas afficher deux yeux côte à côte. */
+  .pwwrap input::-ms-reveal, .pwwrap input::-ms-clear{ display:none }
+  .pwwrap input::-webkit-credentials-auto-fill-button,
+  .pwwrap input::-webkit-strong-password-auto-fill-button,
+  .pwwrap input::-webkit-textfield-decoration-container{ visibility:hidden; display:none !important }
   .pweye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:40px; height:40px;
     border:none; background:transparent; font-size:18px; opacity:.55; line-height:1 }
   #tourOverlay{ position:fixed; inset:0; z-index:60; display:none; align-items:flex-end;
@@ -331,6 +343,9 @@
   .tdots{ display:flex; gap:6px; justify-content:center; margin-top:14px }
   .tdot{ width:6px; height:6px; border-radius:99px; background:var(--baseline) }
   .tdot.on{ background:var(--brand); width:18px }
+  .applogo{ height:30px; width:auto; display:block }
+  @media (min-width:760px){ .applogo{ height:40px } }
+  @media (min-width:1100px){ .applogo{ height:46px } }
   .invsum{ font-size:13.5px; color:var(--ink2); margin-bottom:12px; text-align:center }
   input:not([type=file]), textarea, select{ box-shadow:inset 0 1px 2px rgba(16,24,40,.05) }
   input:focus-visible, textarea:focus-visible, select:focus-visible{
@@ -444,6 +459,11 @@
   .sizepick button.sel{ box-shadow:0 2px 6px rgba(15,81,50,.28) }
   .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
   .sizepick button.free{ border-style:dashed }
+  /* Le choix de la coupe doit sauter aux yeux : fond plein, pas un simple liseré. */
+  .pourbtn{ flex:1; min-width:96px; padding:13px 14px !important; font-size:14.5px !important;
+    border-width:2px !important }
+  .pourbtn.sel{ background:var(--ink) !important; border-color:var(--ink) !important;
+    color:#fff !important; box-shadow:0 3px 10px rgba(16,24,40,.28) !important }
   .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
   .filterrow button{ flex:none; border:1px solid var(--baseline); background:var(--surface);
     color:var(--ink2); border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:600 }
@@ -500,6 +520,23 @@
     text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
   .repsum b{ font-size:22px; font-weight:750; letter-spacing:-.02em }
   .reppied{ border-left:3px solid var(--baseline) }
+  .bilcell{ display:flex; align-items:center; gap:10px; font-size:12.5px; font-weight:650 }
+  .bilsolde{ min-width:38px; text-align:right; font-size:15px; font-variant-numeric:tabular-nums }
+  .reptab{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px }
+  .xlsprev{ overflow-x:auto; -webkit-overflow-scrolling:touch }
+  .xlsprev table{ min-width:100%; font-size:11.5px !important }
+  .reptab th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); font-weight:700; padding:6px 8px; border-bottom:2px solid var(--baseline) }
+  .reptab td{ padding:7px 8px; border-bottom:1px solid var(--hairline); vertical-align:top }
+  .reptab .c{ text-align:center; white-space:nowrap }
+  .reptab tr.grp td{ background:var(--tint); color:var(--brand); font-weight:750; font-size:12px;
+    text-transform:uppercase; letter-spacing:.05em; padding:7px 8px }
+  .reptab tr.sgrp td{ color:var(--muted); font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:.05em; padding:6px 8px; background:var(--page) }
+  .tq{ display:inline-block; border:1px solid var(--baseline); border-radius:7px;
+    padding:2px 7px; margin:0 4px 4px 0; font-size:11.5px; white-space:nowrap }
+  .tq b{ font-variant-numeric:tabular-nums }
+  .tq.z{ border-color:var(--bad); color:var(--bad); background:var(--bad-soft) }
 
   /* ---------- tablette et ordinateur ---------- */
   @media (min-width:760px){
@@ -541,7 +578,12 @@
     .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid }
   }
   #printzone{ display:none }
-  @media screen{ #printzone.preview{ display:block } }
+  /* À l'écran, un tableau de rapport plus large que le téléphone doit défiler
+     dans son propre cadre : sinon c'est la page entière qui part de travers.
+     À l'impression la règle ne s'applique pas, la feuille est assez large. */
+  @media screen{
+    #printzone.preview{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch }
+  }
 </style>
 </head>
 <body>
@@ -561,7 +603,7 @@
 
 <div id="loginOverlay">
   <div id="loginBox" class="card">
-    <img class="brandimg" style="width:214px;max-width:82%;margin:22px auto 6px;display:block" alt="Pénélope Groupe">
+    <img class="brandimg" style="width:250px;max-width:88%;margin:22px auto 6px;display:block" alt="Pénélope Groupe">
     <p class="sub" id="loginWho">Suivi Prestation, équipe accueil</p>
     <p class="mutd" style="margin-top:14px">Votre mot de passe</p>
     <div class="pwwrap">
@@ -580,7 +622,7 @@
 
 <div id="profileOverlay">
   <div>
-    <img class="brandimg" style="width:180px;margin:0 auto 26px;display:block" alt="Pénélope Groupe">
+    <img class="brandimg" style="width:220px;max-width:80%;margin:0 auto 26px;display:block" alt="Pénélope Groupe">
     <div class="ptitle" style="margin-bottom:6px">Bienvenue</div>
     <p class="sub" style="margin-bottom:26px">Sélectionnez votre profil pour continuer</p>
     <div class="pgrid" id="profileGrid"></div>
@@ -685,7 +727,7 @@
 
 <header class="app">
   <div class="head-t">
-    <img class="brandimg" style="height:23px;display:block;width:auto" alt="Pénélope">
+    <img class="brandimg applogo" alt="Pénélope">
     <small id="todayLabel"></small>
   </div>
   <span id="savedTag">Enregistré</span>
@@ -771,12 +813,16 @@
         <option value="all">Depuis le début</option>
         <option value="custom">Période personnalisée…</option>
       </select>
+      <!-- flex:1 et min-width:0 : sans cela un champ « date » garde sa largeur
+           naturelle et fait déborder la page sur un téléphone. -->
       <div class="row" id="customDates" style="display:none; margin-bottom:8px">
-        <input type="date" id="repFrom" aria-label="Date de début"> <input type="date" id="repTo" aria-label="Date de fin">
+        <input type="date" id="repFrom" aria-label="Date de début" style="flex:1;min-width:0">
+        <input type="date" id="repTo" aria-label="Date de fin" style="flex:1;min-width:0">
       </div>
       <div class="row">
         <button class="btn primary grow" onclick="buildReport(true)">Aperçu</button>
         <button class="btn grow" onclick="printReport()">Imprimer / PDF</button>
+        <button class="btn grow" onclick="apercuExcel()">Aperçu Excel</button>
         <button class="btn grow" onclick="exportCSV()">Excel</button>
       </div>
       <p class="mutd" style="margin-top:10px">« Imprimer / PDF » ouvre la fenêtre d'impression :
@@ -810,6 +856,7 @@
 
     <div id="invPaneMouv" style="display:none">
       <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openMovePicker()">Enregistrer une entrée ou une sortie</button>
+      <div id="movBilan"></div>
       <div class="filterrow no-print" id="movFilters"></div>
       <div class="card">
         <h3>Journal des mouvements</h3>
@@ -913,7 +960,7 @@
 
     <div class="card">
       <h3>3. Protection contre les tentatives répétées</h3>
-      <p class="sub">Cinq mots de passe erronés sur un même profil et l'accès à ce profil est
+      <p class="sub">Six mots de passe erronés sur un même profil et l'accès à ce profil est
       <b>bloqué 15 minutes</b>. Le compteur est propre à chaque profil : un collègue qui se trompe
       ne bloque personne d'autre. Combiné à la dérivation lente, cela rend une recherche systématique
       inopérante. La session se reverrouille également d'elle-même : le code est redemandé
@@ -1153,6 +1200,15 @@ const CODE_KEY = LS_KEY + '_code';
 const PROFIL_KEY = LS_KEY + '_profil';
 const Q_KEY = LS_KEY + '_queue';
 let accessCode = localStorage.getItem(CODE_KEY) || null;
+/* Une session enregistrée avant les mots de passe par profil ne porte pas de
+   nom de profil : elle vaut l'ancien code partagé, qui n'existe plus. On la
+   jette, sinon l'appli s'ouvrirait sans rien demander avec un code périmé. */
+if(accessCode && !localStorage.getItem(PROFIL_KEY)){
+  accessCode = null;
+  // AUTH_KEY est déclaré plus bas : on réécrit la clé pour ne pas lire une
+  // constante encore dans sa zone morte, ce qui laisserait les horodatages.
+  try{ localStorage.removeItem(CODE_KEY); localStorage.removeItem(LS_KEY + '_auth'); }catch(e){}
+}
 let queue = []; try{ queue = JSON.parse(localStorage.getItem(Q_KEY)||'[]'); }catch(e){}
 let flushing = false, online = true;
 function saveQueue(){ try{ localStorage.setItem(Q_KEY, JSON.stringify(queue)); }catch(e){} }
@@ -1167,13 +1223,19 @@ async function api(action, payload){
       signal: ctrl.signal });
   } finally { clearTimeout(timer); }
   const j = await res.json().catch(()=>({ ok:false, error:'bad_response' }));
-  if(!j.ok && j.error==='locked'){
-    showLogin(false);
-    document.getElementById('loginErr').textContent =
-      'Trop de tentatives : accès bloqué environ 15 minutes.';
-    throw new Error('bad_code');
+  // On ne touche pas à l'écran ici : api() est aussi appelé en arrière-plan.
+  // C'est l'appelant qui sait quoi afficher, sinon le message se fait écraser.
+  if(!j.ok && (j.error==='locked' || j.error==='bad_code')){
+    const err = new Error(j.error);
+    err.restant = j.restant;
+    if(!document.getElementById('loginOverlay').classList.contains('on') && evaluator){
+      pendingProfile = evaluator; evaluator = null; refreshProfileUI(); showLogin(false);
+      document.getElementById('loginErr').textContent = j.error==='locked'
+        ? 'Trop de tentatives : réessayez dans 15 minutes.'
+        : 'Votre mot de passe a changé : saisissez le nouveau.';
+    }
+    throw err;
   }
-  if(!j.ok && j.error==='bad_code'){ showLogin(true); throw new Error('bad_code'); }
   if(!j.ok) throw new Error(j.error || 'server');
   return j.data;
 }
@@ -1235,7 +1297,7 @@ async function pullAll(){
     if(d.inv){
       state.inv = {
         articles: (d.inv.articles||[]).map(a=>({ id:a.id, name:a.name, category:a.category||'',
-          gender:a.gender||'Mixte / unisexe', color:a.color||'', brand:a.brand||'',
+          gender:a.gender||'Coupe homme', color:a.color||'', brand:a.brand||'',
           sizeType:a.size_type||'alpha', minStock:a.min_stock||0, note:a.note||'',
           createdAt:a.created_at, archivedAt:a.archived_at })),
         variants: (d.inv.variants||[]).map(v=>({ id:v.id, articleId:v.article_id, size:v.size,
@@ -1291,15 +1353,26 @@ function retourProfils(){
 }
 async function doLogin(){
   const c = document.getElementById('loginCode').value;
-  if(!c || !pendingProfile) return;
   const err = document.getElementById('loginErr');
+  // sans profil sélectionné il n'y a rien à vérifier : on le dit au lieu
+  // de rester muet, sinon le bouton semble mort
+  if(!pendingProfile){
+    err.textContent = 'Choisissez d\'abord votre profil.';
+    setTimeout(retourProfils, 900);
+    return;
+  }
+  if(!c){ err.textContent = 'Saisissez votre mot de passe.'; return; }
   err.textContent = 'Connexion…';
   const memo = accessCode;
   accessCode = c;
   try{
     const d = await api('login');
-    localStorage.setItem(CODE_KEY, c);
-    localStorage.setItem(PROFIL_KEY, pendingProfile);
+    // le stockage peut refuser d'écrire (navigation privée, quota) : la
+    // connexion reste valide pour cette session, on ne la fait pas échouer
+    try{
+      localStorage.setItem(CODE_KEY, c);
+      localStorage.setItem(PROFIL_KEY, pendingProfile);
+    }catch(e){}
     evaluator = pendingProfile; pendingProfile = null;
     setAuthTime(evaluator);
     document.getElementById('loginOverlay').classList.remove('on');
@@ -1307,10 +1380,17 @@ async function doLogin(){
     refreshProfileUI();
     flush(); await pullAll(); show(currentView);
     toast('Bonjour ' + evaluator);
+    // mot de passe redonné par un collègue : on tient la promesse affichée
+    // dans les Réglages, il est remplacé avant toute autre chose
+    if(d && d.mustChange){ setTimeout(imposeNouveauMdp, 500); return; }
     if(d && !d.email) setTimeout(()=>demarreVisite(true), 700);
   }catch(e){
     accessCode = memo;
-    if(e.message === 'bad_code') err.textContent = 'Mot de passe incorrect.';
+    if(e.message === 'bad_code'){
+      err.textContent = 'Mot de passe incorrect.' +
+        (typeof e.restant === 'number' && e.restant > 0
+          ? ' Il vous reste ' + e.restant + ' essai' + (e.restant>1?'s':'') + '.' : '');
+    }
     else if(e.message === 'locked') err.textContent = 'Trop de tentatives : réessayez dans 15 minutes.';
     else err.textContent = 'Connexion impossible. Vérifiez votre connexion internet.';
   }
@@ -1349,10 +1429,34 @@ async function changeCode(){
   try{
     await api('changeCode', { code: c.trim() });
     accessCode = c.trim();
-    localStorage.setItem(CODE_KEY, accessCode);
+    try{ localStorage.setItem(CODE_KEY, accessCode); }catch(e){}
     setAuthTime(evaluator);
     toast('Mot de passe modifié');
   }catch(e){ toast('Impossible de changer le mot de passe'); }
+}
+/* Après une réinitialisation par un collègue, le mot de passe provisoire est
+   connu de deux personnes : on refuse d'aller plus loin tant qu'il n'a pas été
+   remplacé, et on redemande jusqu'à ce que ce soit fait. */
+async function imposeNouveauMdp(){
+  alert('Votre mot de passe a été réinitialisé par un collègue.\n'+
+        'Choisissez-en un nouveau, connu de vous seul, pour continuer.');
+  for(;;){
+    const c = prompt('Votre nouveau mot de passe (8 caractères minimum) :');
+    if(c === null){                       // renoncement : on referme la session
+      localStorage.removeItem(CODE_KEY); localStorage.removeItem(PROFIL_KEY);
+      accessCode = null; evaluator = null; refreshProfileUI(); showProfiles();
+      return;
+    }
+    if(c.trim().length < 8){ toast('8 caractères minimum'); continue; }
+    try{
+      await api('changeCode', { code: c.trim() });
+      accessCode = c.trim();
+      try{ localStorage.setItem(CODE_KEY, accessCode); }catch(e){}
+      setAuthTime(evaluator);
+      toast('Mot de passe enregistré');
+      return;
+    }catch(e){ toast('Impossible pour l\'instant, réessayez'); return; }
+  }
 }
 async function reinitCollegue(nom){
   const c = prompt('Nouveau mot de passe pour « '+nom+' » (8 caractères minimum) :');
@@ -1584,15 +1688,23 @@ function renderPointage(){
               '<button class="ok'+(isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ok" data-h="'+h.id+'" data-d="'+date+'">&#10003;</button>'+
               '<button class="ko'+(!isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ko" data-h="'+h.id+'" data-d="'+date+'">&#10007;</button>'+
               '</div></div>'+
-              (!isOk ? '<input class="ccomment" placeholder="Commentaire (ex. : badge oublié ce matin)" '+
-                'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" maxlength="300" value="'+esc(it && it.comment || '')+'">'+
+              // un critère conforme peut aussi mériter une précision : le champ
+              // s'ouvre à la demande pour ne pas alourdir la grille
+              // Un critère conforme peut aussi mériter une précision : le champ
+              // s'ouvre à la demande pour ne pas alourdir la grille.
+              (isOk && !(it && it.comment)
+                ? '<button class="addcc" data-cc-open="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">+ Ajouter un commentaire</button>'
+                : '<input class="ccomment" placeholder="Commentaire (ex. : askip il regardait l\'heure)" '+
+                  'data-cc="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'" maxlength="300" value="'+esc(it && it.comment || '')+'">')+
+              // la photo ne se justifie que sur un écart constaté
+              (isOk ? '' :
                 '<div class="photorow">'+
                 (it && it.photo
                   ? '<img class="pthumb" src="'+it.photo+'">'+
                     '<button class="link" data-delphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">retirer la photo</button>'
                   : '<button class="btn small" data-addphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">Photo du poste</button>')+
                 '</div>'+
-                (it && it.photo ? '' : '<p class="mutd" style="margin:2px 0 4px">Photographiez le poste ou l\'élément concerné, jamais une personne.</p>') : '');
+                (it && it.photo ? '' : '<p class="mutd" style="margin:2px 0 4px">Photographiez le poste ou l\'élément concerné, jamais une personne.</p>'));
           }).join('')+
           (st==='not_ok' ? '<div class="repzone"><label>Ce que j\'ai répondu</label>'+
             '<p class="mutd" style="margin:-2px 0 6px">Décrivez un fait daté et vérifiable. N\'écrivez rien sur l\'apparence physique, la santé, la vie privée, l\'origine ou les convictions. Cette observation est communicable à la personne concernée si elle la demande.</p>'+
@@ -1670,7 +1782,8 @@ function pickProfile(i){
   const t = authTimes()[name];
   document.getElementById('profileOverlay').classList.remove('on');
   // le mot de passe n'est redemandé qu'une fois par heure et par profil
-  if(accessCode && localStorage.getItem(PROFIL_KEY) === name && t && Date.now()-t < AUTH_TTL){
+  // session courte : le mot de passe de CE profil a été validé il y a moins d'une heure
+  if(accessCode && localStorage.getItem(PROFIL_KEY) === name && t && (Date.now()-t) < AUTH_TTL){
     evaluator = name; pendingProfile = null;
     setAuthTime(name); refreshProfileUI(); toast('Bonjour '+name);
     return;
@@ -1775,6 +1888,21 @@ document.getElementById('pointageList').addEventListener('click', e=>{
     photoInput.click(); return; }
   const dp = e.target.closest('[data-delphoto]');
   if(dp){ setPhoto(dp.dataset.h, dp.dataset.d, dp.dataset.delphoto, ''); return; }
+  // « + Ajouter un commentaire » sur un critère conforme : on remplace le
+  // bouton par le champ, sans re-rendre toute la liste.
+  const oc = e.target.closest('[data-cc-open]');
+  if(oc){
+    const inp = document.createElement('input');
+    inp.className = 'ccomment';
+    inp.placeholder = "Commentaire (ex. : askip il regardait l'heure)";
+    inp.maxLength = 300;
+    inp.dataset.cc = oc.dataset.ccOpen;
+    inp.dataset.h = oc.dataset.h;
+    inp.dataset.d = oc.dataset.d;
+    oc.replaceWith(inp);
+    inp.focus();
+    return;
+  }
   const cl = e.target.closest('[data-clear]');
   if(cl){ openDetails.delete(cl.dataset.clear+'|'+cl.dataset.d);
     clearCheck(cl.dataset.clear, cl.dataset.d); renderPointage(); }
@@ -1786,10 +1914,12 @@ document.getElementById('pointageList').addEventListener('input', e=>{
   const val = inp.value;
   clearTimeout(ccTimer);
   ccTimer = setTimeout(()=>{
-    const c = hostChecks(h)[d]; if(!c) return;
+    // le passage peut ne pas encore exister : commenter un critère le crée,
+    // sinon la saisie serait perdue sans que rien ne l'indique
+    const c = hostChecks(h)[d] || {};
     const items = Object.assign({}, c.items||{});
-    if(!items[cc]) items[cc] = { ok:false, comment:'' };
-    items[cc] = { ok:items[cc].ok, comment: val };
+    if(!items[cc]) items[cc] = { ok:true, comment:'' };
+    items[cc] = { ok:items[cc].ok, comment: val, photo:items[cc].photo||'' };
     setCheck(h, d, { items });
   }, 450);
 });
@@ -2490,6 +2620,19 @@ function renderStock(){
 
   // ---- onglet Entrées · sorties ----
   const moves = invData().moves;
+  // le solde du mois par vêtement, avant le détail chronologique
+  const moisDebut = todayISO().slice(0,8)+'01';
+  const bilan = bilanArticles(moisDebut, todayISO());
+  const bx = document.getElementById('movBilan');
+  if(bx) bx.innerHTML = bilan.length
+    ? '<div class="card"><h3 style="margin-top:0">Ce mois-ci</h3>'+
+      bilan.map(x=>'<div class="movline"><span class="grow"><b>'+esc(x.a.name)+'</b> '+
+        '<span class="mutd">'+esc(POUR_COURT[pourOf(x.a)]||'')+'</span></span>'+
+        '<span class="bilcell"><span class="stat-ok">+'+x.entrees+'</span>'+
+        '<span class="stat-ko">-'+x.sorties+'</span>'+
+        '<b class="bilsolde">'+(x.solde>0?'+':'')+x.solde+'</b></span></div>').join('')+
+      '</div>'
+    : '';
   document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
     '<button class="'+(movFilter===f?'sel':'')+'" onclick="setMovFilter('+jsq(f)+')">'+f+'</button>').join('');
 
@@ -2543,7 +2686,7 @@ const pourOf = a => (a.gender === 'Coupe femme') ? 'Coupe femme' : 'Coupe homme'
 function setPour(v){ aPour = v; renderPour(); }
 function renderPour(){
   document.getElementById('aPour').innerHTML = INV_GENDERS.map(g=>
-    '<button class="'+(g===aPour?'sel':'')+'" onclick="setPour('+jsq(g)+')">'+
+    '<button class="pourbtn'+(g===aPour?' sel':'')+'" onclick="setPour('+jsq(g)+')">'+
     esc(POUR_COURT[g]||g)+'</button>').join('');
 }
 let sizeTypeInutilise = null;
@@ -2825,7 +2968,27 @@ function xlsTable(cols, rows){
   return '<table style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">'+
     '<thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table>';
 }
+/* Aperçu à l'écran du classeur qui sera téléchargé : mêmes tableaux, mêmes
+   couleurs. On évite l'aller-retour « télécharger, ouvrir, constater ». */
+let apercuBlocs = null;
+let apercuEnCours = false;
+function apercuExcel(){
+  apercuBlocs = null; apercuEnCours = true;
+  try{ exportCSV(); } finally { apercuEnCours = false; }                       // remplit apercuBlocs sans télécharger
+  if(!apercuBlocs){ return; }
+  const { titre, sousTitre, blocs } = apercuBlocs;
+  document.getElementById('printzone').innerHTML =
+    repEntete(titre, sousTitre)+
+    blocs.map(b=>'<div class="card">'+(b.titre?'<h3 style="margin-top:0">'+xlsEsc(b.titre)+'</h3>':'')+
+      '<div class="xlsprev">'+b.html+'</div></div>').join('')+
+    '<div class="card"><p class="sub">Ceci est l\'aperçu du fichier Excel. '+
+      'Utilisez « Excel » pour le télécharger.</p></div>';
+  document.getElementById('printzone').classList.add('preview');
+  toast('Aperçu du classeur ci-dessous');
+}
 function xlsDownload(filename, titre, sousTitre, blocs){
+  // en mode aperçu on retient le contenu au lieu de déclencher un téléchargement
+  if(apercuBlocs === null && apercuEnCours){ apercuBlocs = { titre, sousTitre, blocs }; return; }
   const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head>'+
     '<meta charset="utf-8">'+
     '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>'+
@@ -2847,8 +3010,16 @@ function xlsDownload(filename, titre, sousTitre, blocs){
 
 /* ---------- RAPPORT ---------- */
 function onRepPeriod(){
-  document.getElementById('customDates').style.display =
-    document.getElementById('repPeriod').value==='custom' ? 'flex':'none';
+  const perso = document.getElementById('repPeriod').value==='custom';
+  document.getElementById('customDates').style.display = perso ? 'flex':'none';
+  // on propose les 30 derniers jours : sans dates l'aperçu ne produit rien et
+  // l'écran paraît cassé alors qu'il attend seulement une saisie
+  if(perso){
+    const f = document.getElementById('repFrom'), t = document.getElementById('repTo');
+    if(!f.value) f.value = addDays(todayISO(), -29);
+    if(!t.value) t.value = todayISO();
+    f.max = todayISO(); t.max = todayISO();
+  }
 }
 function reportRange(){
   const v = document.getElementById('repPeriod').value;
@@ -2857,8 +3028,9 @@ function reportRange(){
   if(v==='month'){ return [t.slice(0,8)+'01', t, 'Mois en cours']; }
   if(v==='30'){ return [addDays(t,-29), t, '30 derniers jours']; }
   if(v==='custom'){
-    const f=document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
+    let f=document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
     if(!f||!to){ toast('Choisissez les deux dates'); return null; }
+    if(f > to){ const x=f; f=to; to=x; }   // dates saisies à l'envers : on les remet dans l'ordre
     return [f, to, 'Du '+frDate(f)+' au '+frDate(to)];
   }
   return [null, t, 'Depuis le début'];
@@ -2940,6 +3112,34 @@ function rapportConformite(preview){
 }
 function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 100); }
 
+/* Bilan par vêtement sur une période : entrées, sorties et solde.
+   C'est la question qu'on se pose vraiment - « ce mois-ci, combien de
+   chemises sont entrées et sorties ? » - et non le détail ligne à ligne. */
+function bilanArticles(from, to){
+  const par = new Map();
+  invData().moves.forEach(m=>{
+    const d = String(m.at||'').slice(0,10);
+    if((from && d<from) || (to && d>to)) return;
+    const v = variantById(m.variantId); if(!v) return;
+    const a = articleById(v.articleId); if(!a) return;
+    if(!par.has(a.id)) par.set(a.id, { a, entrees:0, sorties:0 });
+    const e = par.get(a.id);
+    if(m.delta > 0) e.entrees += m.delta; else e.sorties -= m.delta;
+  });
+  return [...par.values()].map(x=>({ ...x, solde: x.entrees - x.sorties }))
+    .sort((x,y)=>Math.abs(y.solde)-Math.abs(x.solde) || y.entrees+y.sorties-(x.entrees+x.sorties));
+}
+function bilanHTML(bilan){
+  if(!bilan.length) return '';
+  return '<table class="reptab"><thead><tr><th>Vêtement</th><th class="c">Entrées</th>'+
+    '<th class="c">Sorties</th><th class="c">Solde</th></tr></thead><tbody>'+
+    bilan.map(x=>'<tr><td><b>'+esc(x.a.name)+'</b> <span class="mutd">'+
+      esc(POUR_COURT[pourOf(x.a)]||'')+'</span></td>'+
+      '<td class="c stat-ok">+'+x.entrees+'</td><td class="c stat-ko">-'+x.sorties+'</td>'+
+      '<td class="c"><b>'+(x.solde>0?'+':'')+x.solde+'</b></td></tr>').join('')+
+    '</tbody></table>';
+}
+
 /* Mouvements de la période, sens et auteur compris. */
 function mouvementsPeriode(from, to){
   return invData().moves.filter(m=>{
@@ -2965,6 +3165,8 @@ function rapportMouvements(preview){
       '<td><span>Sorties</span><b class="stat-ko">-'+sorties+'</b></td>'+
       '<td><span>Solde</span><b>'+((entrees-sorties)>0?'+':'')+(entrees-sorties)+'</b></td>'+
     '</tr></table></div>'+
+    '<div class="card"><h3 style="margin-top:0">Bilan par vêtement</h3>'+
+      bilanHTML(bilanArticles(from, to))+'</div>'+
     Object.keys(jours).sort().reverse().map(d=>'<div class="card">'+
       '<h3 style="margin-top:0">'+frDate(d)+'</h3>'+
       jours[d].map(m=>{
@@ -3004,17 +3206,21 @@ function rapportStock(preview){
   const total = lignes.reduce((n,x)=>n+x.tot,0);
   const refs = lignes.reduce((n,x)=>n+x.vars.length,0);
   const vides = lignes.reduce((n,x)=>n+x.vides,0);
+  // un tableau se lit et s'imprime mieux qu'une suite de lignes libres
   let corps = '', pourCourant = '', partieCourante = '';
   lignes.forEach(x=>{
     if(x.pour !== pourCourant){ pourCourant = x.pour; partieCourante = '';
-      corps += '<h3 style="margin:16px 0 4px">'+esc(POUR_COURT[x.pour])+'</h3>'; }
+      corps += '<tr class="grp"><td colspan="4">'+esc(POUR_COURT[x.pour])+'</td></tr>'; }
     if(x.partie !== partieCourante){ partieCourante = x.partie;
-      corps += '<p class="mutd" style="margin:8px 0 2px">'+esc(x.partie)+'</p>'; }
-    corps += '<div class="movline"><span class="grow"><b>'+esc(x.a.name)+'</b><br>'+
-      '<span class="mutd">'+x.vars.map(v=>esc(v.size)+' : '+(stock[v.id]||0)).join(' · ')+
-      '</span></span><b>'+x.tot+'</b></div>';
+      corps += '<tr class="sgrp"><td colspan="4">'+esc(x.partie)+'</td></tr>'; }
+    corps += '<tr><td><b>'+esc(x.a.name)+'</b></td>'+
+      '<td>'+x.vars.map(v=>{
+        const q = stock[v.id]||0;
+        return '<span class="tq'+(q<=0?' z':'')+'">'+esc(v.size)+' <b>'+q+'</b></span>';
+      }).join('')+'</td>'+
+      '<td class="c">'+x.vars.length+'</td>'+
+      '<td class="c"><b>'+x.tot+'</b></td></tr>';
   });
-
   document.getElementById('printzone').innerHTML =
     repEntete('Rapport de stock', 'État au '+frDate(todayISO()))+
     '<div class="card"><table class="repsum"><tr>'+
@@ -3023,7 +3229,13 @@ function rapportStock(preview){
       '<td><span>Tailles suivies</span><b>'+refs+'</b></td>'+
       '<td><span>Tailles à zéro</span><b class="'+(vides?'stat-ko':'')+'">'+vides+'</b></td>'+
     '</tr></table></div>'+
-    '<div class="card"><h3 style="margin-top:0">Détail par vêtement</h3>'+corps+'</div>'+
+    '<div class="card"><h3 style="margin-top:0">Détail par vêtement</h3>'+
+      '<table class="reptab"><thead><tr><th>Vêtement</th><th>Tailles</th>'+
+      '<th class="c">Réf.</th><th class="c">Total</th></tr></thead>'+
+      '<tbody>'+corps+'</tbody></table></div>'+
+    (bilanArticles(from, to).length
+      ? '<div class="card"><h3 style="margin-top:0">Mouvements sur la période ('+esc(label)+')</h3>'+
+        bilanHTML(bilanArticles(from, to))+'</div>' : '')+
     repPied();
   if(preview){ document.getElementById('printzone').classList.add('preview'); toast('Aperçu généré ci-dessous'); }
   return { from, to, label };
@@ -3061,7 +3273,14 @@ function excelMouvements(){
   ]);
   xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Journal des entrées et sorties',
     label+' · '+mvts.length+' mouvements · édité par '+(evaluator||'—'),
-    [{ titre:'Synthèse', html: syn }, { titre:'Détail chronologique', html: xlsTable(cols, rows) }]);
+    [{ titre:'Synthèse', html: syn },
+     { titre:'Bilan par vêtement', html: xlsTable(
+        [{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
+         {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
+        bilanArticles(from, to).map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
+          {v:'+'+x.entrees,a:'center',bg:XLS.ok},{v:'-'+x.sorties,a:'center',bg:XLS.bad},
+          {v:(x.solde>0?'+':'')+x.solde,a:'center',b:true}])) },
+     { titre:'Détail chronologique', html: xlsTable(cols, rows) }]);
   toast('Journal téléchargé');
 }
 
@@ -3072,8 +3291,8 @@ function excelStock(){
   const lignes = stockLignes();
   if(!lignes.length){ toast('Aucun vêtement en stock'); return; }
   const stock = stockMap();
-  const cols = [{t:'Pour',w:80},{t:'Famille',w:110},{t:'Vêtement',w:190},{t:'Taille',w:75,a:'center'},
-    {t:'Stock',w:70,a:'center'},{t:'État',w:90}];
+  const cols = [{t:'Pour',w:80},{t:'Famille',w:120},{t:'Vêtement',w:200},{t:'Taille',w:80,a:'center'},
+    {t:'Stock',w:75,a:'center'},{t:'État',w:100}];
   const rows = []; let total = 0, vides = 0;
   lignes.forEach(x=>x.vars.forEach(v=>{
     const q = stock[v.id]||0; total += q; if(q<=0) vides++;
@@ -3086,7 +3305,17 @@ function excelStock(){
 
   xlsDownload('stock-penelope-'+todayISO()+'.xls', 'Rapport de stock',
     total+' pièces · '+lignes.length+' vêtements · '+vides+' taille(s) à zéro · édité par '+(evaluator||'—'),
-    [{ titre:'État du stock', html: xlsTable(cols, rows) }]);
+    (()=>{
+      const blocs = [{ titre:'État du stock', html: xlsTable(cols, rows) }];
+      const bil = bilanArticles(from, to);
+      if(bil.length) blocs.push({ titre:'Mouvements sur la période ('+label+')',
+        html: xlsTable([{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
+          {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
+          bil.map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
+            {v:'+'+x.entrees,a:'center',bg:XLS.ok},{v:'-'+x.sorties,a:'center',bg:XLS.bad},
+            {v:(x.solde>0?'+':'')+x.solde,a:'center',b:true}])) });
+      return blocs;
+    })());
   toast('Rapport de stock téléchargé');
 }
 
@@ -3314,6 +3543,12 @@ function ensureToday(){
      Absent en local (file://) ou sur un navigateur ancien : sans conséquence. */
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    // une nouvelle version qui prend la main recharge la page : sans cela un
+    // appareil garderait l'ancienne interface et son ancienne authentification
+    let recharge = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(recharge) return; recharge = true; location.reload();
+    });
   }
   setInterval(()=>{ ensureToday(); checkAuthLock(); pullAll(); }, 45000);
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); checkAuthLock(); pullAll(); } });
