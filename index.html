@@ -1731,6 +1731,14 @@ function showSecurity(){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,
   c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+/* Une photo ne vient normalement que de l'appareil, mais une sauvegarde
+   importée peut contenir n'importe quelle chaîne. Comme elle finit dans un
+   attribut src, on exige la forme exacte d'une image encodée. */
+function photoSure(p){
+  return typeof p === 'string' &&
+    /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p);
+}
+
 /* ---------- POINTAGE ---------- */
 const dateInput = document.getElementById('checkDate');
 dateInput.max = todayISO(); dateInput.value = todayISO();
@@ -1765,9 +1773,7 @@ function renderPointage(){
               '<button class="ko'+(!isOk?' sel':'')+'" data-crit="'+esc(r)+'" data-v="ko" data-h="'+h.id+'" data-d="'+date+'">&#10007;</button>'+
               '</div></div>'+
               // un critère conforme peut aussi mériter une précision : le champ
-              // s'ouvre à la demande pour ne pas alourdir la grille
-              // Un critère conforme peut aussi mériter une précision : le champ
-              // s'ouvre à la demande pour ne pas alourdir la grille.
+              // s'ouvre à la demande, pour ne pas alourdir la grille
               (isOk && !(it && it.comment)
                 ? '<button class="addcc" data-cc-open="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">+ Ajouter un commentaire</button>'
                 : '<input class="ccomment" placeholder="Commentaire (ex. : askip il regardait l\'heure)" '+
@@ -1775,17 +1781,17 @@ function renderPointage(){
               // la photo ne se justifie que sur un écart constaté
               (isOk ? '' :
                 '<div class="photorow">'+
-                (it && it.photo
-                  ? '<img class="pthumb" src="'+it.photo+'">'+
+                (it && photoSure(it.photo)
+                  ? '<img class="pthumb" alt="Photo du poste" src="'+esc(it.photo)+'">'+
                     '<button class="link" data-delphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">retirer la photo</button>'
                   : '<button class="btn small" data-addphoto="'+esc(r)+'" data-h="'+h.id+'" data-d="'+date+'">Photo du poste</button>')+
                 '</div>'+
-                (it && it.photo ? '' : '<p class="mutd" style="margin:2px 0 4px">Photographiez le poste ou l\'élément concerné, jamais une personne.</p>'));
+                (it && photoSure(it.photo) ? '' : '<p class="mutd" style="margin:2px 0 4px">Photographiez le poste ou l\'élément concerné, jamais une personne.</p>'));
           }).join('')+
           (st==='not_ok' ? '<div class="repzone"><label>Ce que j\'ai répondu</label>'+
             '<p class="mutd" style="margin:-2px 0 6px">Décrivez un fait daté et vérifiable. N\'écrivez rien sur l\'apparence physique, la santé, la vie privée, l\'origine ou les convictions. Cette observation est communicable à la personne concernée si elle la demande.</p>'+
             '<textarea placeholder="Ex. : première fois, c\'est noté, merci de ne plus l\'oublier." '+
-            'oninput="noteInput(\''+h.id+'\',\''+date+'\',this)" maxlength="300">'+esc(c && c.note || '')+'</textarea></div>' : '')+
+            'oninput="noteInput('+jsq(h.id)+','+jsq(date)+',this)" maxlength="300">'+esc(c && c.note || '')+'</textarea></div>' : '')+
           '</div>';
       }
       const clearLink = st ? '<button class="link clearday" data-clear="'+h.id+'" data-d="'+date+'">effacer la note du jour</button>' : '';
@@ -1796,8 +1802,8 @@ function renderPointage(){
         '<div class="row">'+
           '<div class="grow"><div class="hname">'+esc(hostName(h))+'</div>'+scoreLine+'</div>'+
           '<div class="seg">'+
-            '<button class="ok'+(sc===100?' sel':'')+'" onclick="markConforme(\''+h.id+'\',\''+date+'\')">Parfait</button>'+
-            '<button class="ko'+(showDetail?' sel':'')+'" onclick="openDetail(\''+h.id+'\',\''+date+'\')">Évaluer</button>'+
+            '<button class="ok'+(sc===100?' sel':'')+'" onclick="markConforme('+jsq(h.id)+','+jsq(date)+')">Parfait</button>'+
+            '<button class="ko'+(showDetail?' sel':'')+'" onclick="openDetail('+jsq(h.id)+','+jsq(date)+')">Évaluer</button>'+
           '</div>'+
         '</div>'+ detail + clearLink +
       '</div>';
@@ -2252,7 +2258,8 @@ function checkDetailHTML(c){
       ? failed.map(([k,v])=> esc(k)+(v.comment ? ' : '+esc(v.comment) : ''))
       : (c.reasons||[]).map(esc);
     if(parts.length) out += '<br><span class="sub">'+parts.join(' · ')+'</span>';
-    failed.forEach(([k,v])=>{ if(v.photo) out += '<img class="pphoto" src="'+v.photo+'" alt="'+esc(k)+'">'; });
+    failed.forEach(([k,v])=>{ if(photoSure(v.photo))
+      out += '<img class="pphoto" src="'+esc(v.photo)+'" alt="'+esc(k)+'">'; });
   }
   if(c.note) out += '<div class="notebox">Réponse : '+esc(c.note)+'</div>';
   return out;

@@ -4,7 +4,7 @@
    suivante (stale-while-revalidate).
    Les données ne passent jamais par ici : l'API est en POST vers un autre
    domaine, et les deux cas sont explicitement écartés plus bas. */
-const CACHE = 'penelope-app-v7';
+const CACHE = 'penelope-app-v8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg',
                './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
