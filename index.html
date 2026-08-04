@@ -22,7 +22,11 @@
   }
   :root{
     color-scheme: light only;
-    --page:#f3f4f3; --surface:#ffffff; --ink:#171b19; --ink2:#4c534f; --muted:#818a85;
+    /* --muted était à #818a85 : 3,2:1 sur le fond de page, sous le minimum
+       lisible de 4,5:1. Les libellés d'onglets, les dates et les légendes
+       paraissaient délavés. À #646e69 on est à 5,3:1 sur blanc et 4,8:1 sur
+       la page, sans que ce gris cesse d'être secondaire. */
+    --page:#f3f4f3; --surface:#ffffff; --ink:#171b19; --ink2:#4c534f; --muted:#646e69;
     --hairline:rgba(20,30,25,.10); --grid:#e7e9e7; --baseline:#d4d8d5;
     --brand:#0f5d4e; --brand-strong:#0b4a3e; --tint:rgba(15,93,78,.09);
     --series:#128a6e; --series-soft:#d7ece6;
@@ -109,7 +113,7 @@
   nav.tabs button[data-v="pointage"]{ --t:#0f5132 }
   nav.tabs button[data-v="equipe"]{ --t:#2563a8 }
   nav.tabs button[data-v="stats"]{ --t:#7a4a9e }
-  nav.tabs button[data-v="stock"]{ --t:#b1553f }
+  nav.tabs button[data-v="stock"]{ --t:#a04d38 }   /* 4,49:1 -> 5,3:1 */
   nav.tabs button[data-v="rapport"]{ --t:#8a6a09 }
   nav.tabs button[data-v="reglages"]{ --t:#4a5a6a }
   nav.tabs button .ic{ color:var(--t); opacity:.45 }
@@ -253,12 +257,6 @@
     padding:4px 8px; min-height:32px }
   .addrow{ display:flex; gap:8px; margin-top:12px }
 
-  /* ---------- sécurité ---------- */
-  .secitem{ display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--hairline) }
-  .secitem:first-of-type{ border-top:none }
-  .secitem .ic-s{ margin-top:2px; color:var(--brand) }
-  .secitem b{ display:block; font-size:14px; margin-bottom:2px }
-
   #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:96px; z-index:50;
     background:var(--ink); color:var(--page); border-radius:99px; padding:9px 18px;
     font-size:13px; font-weight:600; opacity:0; transition:opacity .25s; pointer-events:none;
@@ -272,8 +270,6 @@
   #loginBox{ width:100%; max-width:330px; text-align:center }
   #loginBox input{ text-align:center; letter-spacing:1px;
     font-weight:600; margin:14px 0 10px }
-  .wordmark{ font-size:26px; font-weight:700; letter-spacing:.4px; margin-top:14px }
-  .wordmark + .sub{ margin-top:3px }
 
   /* ---------- sélecteur de profil ---------- */
   #profileOverlay{ position:fixed; inset:0; z-index:95; background:var(--page);
@@ -299,16 +295,16 @@
   .pphoto{ max-width:170px; max-height:170px; border-radius:10px; margin-top:6px; display:block }
 
   /* ---------- modal hôte ---------- */
-  #hostModal, .sheetwrap{ position:fixed; inset:0; z-index:90; display:none;
+  .sheetwrap{ position:fixed; inset:0; z-index:90; display:none;
     background:rgba(0,0,0,.35); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
     align-items:flex-end; justify-content:center }
-  #hostModal.on, .sheetwrap.on{ display:flex }
-  #hostSheet, .sheetbox{ background:var(--surface); width:100%; max-width:560px;
+  .sheetwrap.on{ display:flex }
+  .sheetbox{ background:var(--surface); width:100%; max-width:560px;
     border-radius:22px 22px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:88dvh; overflow-y:auto }
   @media (min-width:600px){
-    #hostModal, .sheetwrap{ align-items:center; padding:24px }
-    #hostSheet, .sheetbox{ border-radius:22px }
+    .sheetwrap{ align-items:center; padding:24px }
+    .sheetbox{ border-radius:22px }
   }
   .sheetwrap.on .sheetbox{ animation: sheetUp .3s cubic-bezier(.2,.8,.25,1) }
   .sheet-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px }
@@ -351,17 +347,8 @@
   input:focus-visible, textarea:focus-visible, select:focus-visible{
     outline:2px solid var(--brand); outline-offset:1px }
   .sheetbox input, .sheetbox textarea{ font-size:16px }
-  .cattag{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
-    border-radius:99px; margin-right:6px; letter-spacing:.01em }
   .artright{ text-align:right; flex:none }
   .artunit{ display:block; color:var(--muted); font-size:11px; margin-top:-2px }
-  .artfoot{ display:flex; align-items:center; gap:10px; justify-content:space-between;
-    margin-top:10px; padding-top:9px; border-top:1px solid var(--hairline); font-size:12px }
-  .chip{ display:inline-block; font-size:11.5px; font-weight:650; padding:3px 9px;
-    border-radius:99px }
-  .chip.ok{ background:var(--ok-soft,#e7f4ec); color:var(--ok-text) }
-  .chip.low{ background:rgba(224,169,58,.14); color:#8a6a09 }
-  .chip.bad{ background:var(--bad-soft); color:var(--bad) }
   .arttotal{ font-weight:750; font-size:17px; font-variant-numeric:tabular-nums; white-space:nowrap }
   .sizegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px }
   .szrow{ display:flex; align-items:center; justify-content:space-between; gap:2px; margin-top:3px }
@@ -371,9 +358,11 @@
   .szbtn:active{ transform:scale(.92) }
   .szrow .qt{ flex:1; border:none; background:transparent; font-size:19px; font-weight:750;
     font-variant-numeric:tabular-nums; color:var(--ink); padding:4px 0; min-height:34px }
-  .grouptitle{ font-size:15px; font-weight:750; margin:20px 0 2px; letter-spacing:-.01em }
-  /* une pastille de couleur par partie : le regard trie avant de lire */
-  .pickcat{ display:flex; align-items:center; gap:7px }
+  /* une pastille de couleur par partie : le regard trie avant de lire.
+     Les règles .pickcat.part-* qui suivent l'emportent sur cette couleur. */
+  .pickcat{ display:flex; align-items:center; gap:7px;
+    font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); margin:18px 2px 8px }
   .pickcat::before{ content:''; width:8px; height:8px; border-radius:99px;
     background:currentColor; opacity:.55; flex:none }
   .pickcat.part-Hauts, .artcard.part-Hauts{ color:#2563a8 }
@@ -382,7 +371,6 @@
   .pickcat.part-Chaussures, .artcard.part-Chaussures{ color:#7a5230 }
   .pickcat.part-Accessoires, .artcard.part-Accessoires{ color:#8a6a09 }
   .pickcat.part-Autres, .artcard.part-Autres{ color:#9aa3a0 }
-  .grouptitle:first-child{ margin-top:4px }
   .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
     box-shadow:0 1px 2px rgba(16,24,40,.04);
     border-radius:10px; padding:6px 4px 5px; text-align:center; line-height:1.15 }
@@ -394,20 +382,7 @@
   .sizecell.low .qt{ color:#8a6a09 }
   .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
   .sizecell.out .qt{ color:var(--bad) }
-  .sizecell.out{ border-color:var(--bad); background:var(--bad-soft) }
-  /* saisie directe : la cellule de taille devient un champ de quantité */
-  .sizecell.edit{ border-color:var(--brand); background:var(--surface); padding:5px 6px 6px }
-  .sizecell.edit input{ width:100%; border:none; box-shadow:none; background:transparent;
-    text-align:center; font-size:16px; font-weight:700; font-variant-numeric:tabular-nums;
-    padding:0; margin:0; color:var(--brand); -moz-appearance:textfield }
-  .sizecell.edit input::-webkit-outer-spin-button,
-  .sizecell.edit input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-  .editbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;
-    background:var(--tint); border-radius:14px; padding:12px 14px; font-size:13px }
-  .editbar .btn{ flex:none; padding:8px 14px; font-size:13px }
   /* choix guidé du vêtement puis de la taille */
-  .pickcat{ font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--muted); margin:18px 2px 8px }
   .pickcat:first-child{ margin-top:2px }
   .pickrow{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
     border:1px solid var(--baseline); background:var(--surface); border-radius:12px;
@@ -429,11 +404,8 @@
   .trend.flat{ color:var(--muted) }
   .toastundo{ background:transparent; border:none; color:#8fd6b0; font-weight:700;
     font-size:13px; padding:4px 2px 4px 14px; text-decoration:underline }
-  .chip{ background:var(--page); color:var(--ink2) }
   .brandtag{ display:inline-block; font-size:11px; font-weight:650; vertical-align:1px;
     padding:2px 7px; border-radius:99px; background:var(--tint); color:var(--brand) }
-  .stockchip{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:650;
-    padding:3px 9px; border-radius:99px; background:var(--tint); color:var(--brand) }
   .movline{ display:flex; align-items:center; gap:10px; padding:9px 0;
     border-top:1px solid var(--hairline); font-size:13.5px }
   .movline:first-child{ border-top:none }
@@ -456,8 +428,8 @@
   .sizepick button{ border:1px solid var(--baseline); background:var(--surface); color:var(--ink2);
     border-radius:10px; padding:9px 13px; font-size:13px; font-weight:600; min-width:48px;
     box-shadow:0 1px 2px rgba(16,24,40,.05); transition:transform .12s ease, box-shadow .12s ease }
-  .sizepick button.sel{ box-shadow:0 2px 6px rgba(15,81,50,.28) }
-  .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff }
+  .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:#fff;
+    box-shadow:0 2px 6px rgba(15,81,50,.28) }
   .sizepick button.free{ border-style:dashed }
   /* Le choix de la coupe doit sauter aux yeux : fond plein, pas un simple liseré. */
   .pourbtn{ flex:1; min-width:96px; padding:13px 14px !important; font-size:14.5px !important;
@@ -489,8 +461,7 @@
   @keyframes slide{ from{ transform:scaleX(0) } }
   .ring{ animation: pop .32s ease-out }
   @keyframes pop{ from{ opacity:0; transform:scale(.86) } }
-  #hostModal.on{ animation: fadeIn .2s }
-  #hostModal.on #hostSheet{ animation: sheetUp .3s cubic-bezier(.2,.8,.25,1) }
+  .sheetwrap.on{ animation: fadeIn .2s }
   @keyframes sheetUp{ from{ transform:translateY(48px); opacity:.5 } }
   @keyframes fadeIn{ from{ opacity:0 } }
   #loginOverlay.on > *, #profileOverlay.on > *{ animation: viewIn .32s ease-out }
@@ -567,7 +538,7 @@
   /* ---------- impression ---------- */
   @media print{
     body{ padding:0; background:#fff; color:#000 }
-    header.app, nav.tabs, .no-print, #toast, #hostModal{ display:none !important }
+    header.app, nav.tabs, .no-print, #toast, .sheetwrap{ display:none !important }
     /* #printzone vit dans la vue Rapport : on garde cette vue affichée et on
        masque ses autres enfants, sinon le parent caché emporte la zone
        d'impression avec lui et la page sort blanche. */
@@ -704,8 +675,8 @@
   </div>
 </div>
 
-<div id="hostModal">
-  <div id="hostSheet">
+<div id="hostModal" class="sheetwrap">
+  <div id="hostSheet" class="sheetbox">
     <div class="sheet-head">
       <h2 id="sheetTitle">Nouvel hôte / hôtesse</h2>
       <button class="link" onclick="closeHostModal()">Fermer</button>
@@ -897,6 +868,22 @@
       <button class="btn" style="width:100%" onclick="demandeEmail()">Enregistrer mon adresse e-mail</button>
       <button class="btn neutral" style="width:100%;margin-top:8px" onclick="demarreVisite(false)">Revoir la visite guidée</button>
     </div>
+    <div class="card">
+      <h2>Sauvegarde</h2>
+      <p class="sub" style="margin-bottom:10px">Le serveur conserve tout, mais un fichier gardé
+      de votre côté vous rend indépendant. À faire avant toute opération lourde.</p>
+      <button class="btn" style="width:100%" onclick="exportJSON()">Télécharger une sauvegarde</button>
+      <label class="btn neutral" style="width:100%;margin-top:8px;display:block;text-align:center;cursor:pointer">
+        Restaurer depuis une sauvegarde
+        <input type="file" accept="application/json,.json" hidden onchange="importJSON(this)">
+      </label>
+      <div class="sep"></div>
+      <button class="btn neutral" style="width:100%" onclick="exportApp()">Télécharger l'application
+        avec les données</button>
+      <p class="mutd" style="margin-top:8px">Un fichier HTML autonome, qui s'ouvre sans réseau ni
+      compte. Pratique pour archiver un état ou le montrer à quelqu'un.</p>
+    </div>
+
     <div class="card">
       <h2>Zone dangereuse</h2>
       <button class="btn danger" onclick="wipeAll()">Tout effacer (pour toute l'équipe)</button>
@@ -1346,11 +1333,7 @@ function showLogin(bad){
   document.getElementById('loginErr').textContent = bad ? 'Mot de passe incorrect.' : '';
   setTimeout(()=>c.focus(), 80);
 }
-function retourProfils(){
-  document.getElementById('loginOverlay').classList.remove('on');
-  pendingProfile = null;
-  showProfiles();
-}
+function retourProfils(){ showProfiles(); }   // showProfiles referme l'écran du mot de passe
 async function doLogin(){
   const c = document.getElementById('loginCode').value;
   const err = document.getElementById('loginErr');
@@ -1758,7 +1741,8 @@ function setAuthTime(name){
 }
 function profileColor(name, i){
   const hues=[168,213,340,28,258,196,96,300];
-  return 'hsl('+hues[i % hues.length]+',42%,40%)';
+  // 34 % de clarté : en dessous, le blanc de l'initiale passe sous 4,5:1
+  return 'hsl('+hues[i % hues.length]+',42%,34%)';
 }
 function renderProfiles(){
   const grid = document.getElementById('profileGrid');
@@ -1775,6 +1759,10 @@ function renderProfiles(){
 function showProfiles(){
   manageProfiles = false;
   renderProfiles();
+  // l'écran du mot de passe passe au-dessus (z-index 100 contre 95) : s'il
+  // reste ouvert, le choix des profils s'affiche derrière et rien ne répond
+  document.getElementById('loginOverlay').classList.remove('on');
+  pendingProfile = null;
   document.getElementById('profileOverlay').classList.add('on');
 }
 function pickProfile(i){
@@ -1928,7 +1916,8 @@ document.getElementById('pointageList').addEventListener('input', e=>{
 function avatarColor(h){
   const hues=[168,196,213,230,258,340,28,150];
   let n=0; for(const ch of h.id) n=(n+ch.charCodeAt(0))%hues.length;
-  return 'hsl('+hues[n]+',34%,40%)';
+  // même contrainte que les tuiles de profil : l'initiale est en blanc
+  return 'hsl('+hues[n]+',34%,34%)';
 }
 function siteColor(name){
   const hues=[168,213,258,340,28,196,96,300];
@@ -2011,8 +2000,27 @@ function openHostModal(id){
   setTimeout(()=>document.getElementById('fFirst').focus(), 60);
 }
 function closeHostModal(){ document.getElementById('hostModal').classList.remove('on'); modalHostId = null; }
-document.getElementById('hostModal').addEventListener('click', e=>{
-  if(e.target.id==='hostModal') closeHostModal();
+/* Toutes les fenêtres se ferment de la même façon : clic sur le fond, ou Échap
+   au clavier. La liste est découverte dans le document plutôt qu'écrite à la
+   main : une fenêtre ajoutée plus tard hérite du comportement sans qu'on ait à
+   y penser, et aucune ne peut rester coincée parce qu'on l'aurait oubliée. */
+const FERMETURES = {
+  hostModal: ()=>closeHostModal(),  artModal: ()=>closeArticleModal(),
+  pickModal: ()=>closePickModal(),  moveModal: ()=>closeMoveModal(),
+  qtyModal:  ()=>closeQtyModal(),
+};
+const fermeFenetre = id =>
+  (FERMETURES[id] || (()=>document.getElementById(id).classList.remove('on')))();
+document.querySelectorAll('.sheetwrap[id]').forEach(el=>{
+  el.addEventListener('click', e=>{
+    if(e.target === el) fermeFenetre(el.id);     // le fond, pas le contenu
+  });
+});
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  const ouverte = [...document.querySelectorAll('.sheetwrap[id].on')].pop();
+  if(ouverte){ fermeFenetre(ouverte.id); return; }
+  if(document.getElementById('tourOverlay').classList.contains('on')) finVisite();
 });
 function saveHostModal(){
   const first = document.getElementById('fFirst').value.trim();
@@ -2061,16 +2069,6 @@ function saveHostComment(id, value){
 }
 
 /* ---------- accueils & critères ---------- */
-function addSitePrompt(){
-  const name = prompt('Nom du nouvel accueil (ex. : Bâtiment Pacific) :');
-  if(!name || !name.trim()) return;
-  const c = cfg();
-  if(c.sites.includes(name.trim())){ toast('Cet accueil existe déjà'); return; }
-  saveConfig({ sites:[...c.sites, name.trim()], criteria:c.criteria });
-  if(currentView==='pointage') renderPointage();
-  else { renderEquipe(); renderManagers(); }
-  toast('Accueil ajouté');
-}
 function addSite(){
   const inp = document.getElementById('newSite');
   const name = inp.value.trim(); if(!name) return;
@@ -2663,12 +2661,6 @@ function setPourFilter(p){ pourFilter = p; openArt.clear(); renderStock(); }
 /* ---------- création / modification d'un article ---------- */
 let modalArticleId = null;
 let pickedSizes = [];
-function fillSelect(id, values, current){
-  document.getElementById(id).innerHTML = values.map(v=>{
-    const val = typeof v==='string' ? v : v.v, lab = typeof v==='string' ? v : v.label;
-    return '<option value="'+esc(val)+'"'+(val===current?' selected':'')+'>'+esc(lab)+'</option>';
-  }).join('');
-}
 /* Chaîne sûre à injecter dans un onclick="…" */
 function jsq(s){ return "'"+String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'"; }
 /* La gamme n'est qu'une proposition : un article peut mélanger des tailles de
@@ -2895,29 +2887,6 @@ function saveMove(){
 }
 
 /* ---------- export ---------- */
-function exportStockCSV(){
-  const stock = stockMap(); const arts = activeArticles();
-  if(!arts.length){ toast('Aucun article à exporter'); return; }
-  const cols = [{t:'Référence',w:170},{t:'Vêtement',w:170},{t:'Marque',w:90},{t:'Catégorie',w:120},
-    {t:'Pour',w:110},{t:'Couleur',w:110},{t:'Taille',w:70,a:'center'},
-    {t:'Stock',w:60,a:'center'},{t:'Statut',w:100}];
-  const rows = []; let total = 0, vides = 0;
-  arts.forEach(a=>articleVariants(a.id).forEach(v=>{
-    const q = stock[v.id]||0; total += q;
-    const vide = q<=0; if(vide) vides++;
-    const bg = vide ? XLS.bad : null;
-    rows.push([{v:v.sku,bg},{v:a.name,bg,b:true},{v:a.brand||'',bg},{v:a.category,bg},
-      {v:a.gender,bg},{v:a.color,bg},{v:v.size,bg,a:'center'},
-      {v:q,bg,a:'center',b:true},{v:vide?'Vide':'En stock',bg}]);
-  }));
-  rows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:arts.length+' vêtements',bg:XLS.ok},{v:'',bg:XLS.ok},
-    {v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:'',bg:XLS.ok},{v:rows.length+' réf.',bg:XLS.ok,a:'center'},
-    {v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok}]);
-  xlsDownload('stock-penelope-'+todayISO()+'.xls', 'État du stock',
-    total+' pièces · '+arts.length+' vêtements · '+vides+' taille(s) à zéro',
-    [{ titre:'Détail par taille', html: xlsTable(cols, rows) }]);
-  toast('Stock exporté');
-}
 function exportMovesCSV(){
   const moves = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
   if(!moves.length){ toast('Aucun mouvement à exporter'); return; }
