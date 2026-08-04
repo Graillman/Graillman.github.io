@@ -2626,9 +2626,9 @@ function renderStock(){
     ? '<div class="card"><h3 style="margin-top:0">Ce mois-ci</h3>'+
       bilan.map(x=>'<div class="movline"><span class="grow"><b>'+esc(x.a.name)+'</b> '+
         '<span class="mutd">'+esc(POUR_COURT[pourOf(x.a)]||'')+'</span></span>'+
-        '<span class="bilcell"><span class="stat-ok">+'+x.entrees+'</span>'+
-        '<span class="stat-ko">-'+x.sorties+'</span>'+
-        '<b class="bilsolde">'+(x.solde>0?'+':'')+x.solde+'</b></span></div>').join('')+
+        '<span class="bilcell"><span class="stat-ok">'+signe(x.entrees)+'</span>'+
+        '<span class="stat-ko">'+signe(-x.sorties)+'</span>'+
+        '<b class="bilsolde">'+signe(x.solde)+'</b></span></div>').join('')+
       '</div>'
     : '';
   document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
@@ -2891,7 +2891,7 @@ function exportMovesCSV(){
   const moves = [...invData().moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
   if(!moves.length){ toast('Aucun mouvement à exporter'); return; }
   const cols = [{t:'Date',w:90},{t:'Sens',w:70},{t:'Quantité',w:75,a:'center'},{t:'Vêtement',w:170},
-    {t:'Marque',w:90},{t:'Couleur',w:100},{t:'Taille',w:70,a:'center'},
+    {t:'Marque',w:90},{t:'Couleur',w:100},{t:'Taille',w:70,a:'center',txt:true},
     {t:'Commentaire',w:300},{t:'Saisi par',w:100}];
   let entrees = 0, sorties = 0;
   const rows = moves.map(m=>{
@@ -2908,7 +2908,7 @@ function exportMovesCSV(){
   xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Entrées et sorties de stock',
     moves.length+' mouvements · '+entrees+' entrées · '+sorties+' sorties · solde '+
     ((entrees-sorties)>0?'+':'')+(entrees-sorties),
-    [{ titre:'Journal complet', html: xlsTable(cols, rows) }]);
+    [{ titre:'Journal complet', ...xlsTable(cols, rows) }]);
   toast('Mouvements exportés');
 }
 /* ---------- classeurs Excel ----------
@@ -2923,7 +2923,10 @@ function xlsEsc(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-/* cols : [{t:'Titre', w:120, a:'left'|'right'|'center'}] ; rows : [[{v,bg,b,a}]] */
+/* cols : [{t:'Titre', w:120, a:'left'|'right'|'center'}] ; rows : [[{v,bg,b,a}]]
+   Renvoie à la fois l'aperçu HTML affiché dans l'appli et les données brutes,
+   qui servent à écrire le vrai classeur. Les deux viennent de la même source :
+   ce qu'on voit à l'écran est exactement ce qu'on télécharge. */
 function xlsTable(cols, rows){
   const th = cols.map(c=>'<th style="background:'+XLS.head+';color:'+XLS.headText+
     ';font-weight:700;border:1px solid '+XLS.line+';padding:6px 8px;text-align:'+(c.a||'left')+
@@ -2934,8 +2937,11 @@ function xlsTable(cols, rows){
     return '<td style="background:'+bg+';border:1px solid '+XLS.line+';padding:5px 8px;text-align:'+
       (c.a||cols[j]&&cols[j].a||'left')+(c.b?';font-weight:700':'')+'">'+xlsEsc(c.v)+'</td>';
   }).join('')+'</tr>').join('');
-  return '<table style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">'+
-    '<thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table>';
+  return {
+    cols, rows,
+    html: '<table style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">'+
+      '<thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table>'
+  };
 }
 /* Aperçu à l'écran du classeur qui sera téléchargé : mêmes tableaux, mêmes
    couleurs. On évite l'aller-retour « télécharger, ouvrir, constater ». */
@@ -2955,26 +2961,233 @@ function apercuExcel(){
   document.getElementById('printzone').classList.add('preview');
   toast('Aperçu du classeur ci-dessous');
 }
+/* ---------- écriture d'un vrai classeur .xlsx ----------
+   Un .xlsx est une archive ZIP contenant quelques fichiers XML. On l'écrit
+   directement, sans bibliothèque. L'ancienne version produisait une page HTML
+   renommée en .xls : Excel la refuse ou avertit que « le format ne correspond
+   pas à l'extension », ce qui la rendait inutilisable pour l'équipe. */
+
+const CRC_TABLE = (()=>{
+  const t = new Uint32Array(256);
+  for(let n=0;n<256;n++){ let c=n;
+    for(let k=0;k<8;k++) c = c & 1 ? 0xEDB88320 ^ (c>>>1) : c>>>1;
+    t[n]=c>>>0; }
+  return t;
+})();
+function crc32(octets){
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<octets.length;i++) c = CRC_TABLE[(c ^ octets[i]) & 0xFF] ^ (c>>>8);
+  return (c ^ 0xFFFFFFFF)>>>0;
+}
+/* Archive ZIP sans compression (méthode « stored ») : suffisant pour quelques
+   dizaines de kilo-octets de XML, et cela évite d'embarquer un compresseur. */
+function zipCreer(fichiers){
+  const enc = new TextEncoder();
+  const parties = [], entrees = [];
+  let position = 0;
+  const u16 = v => [v & 255, (v>>>8) & 255];
+  const u32 = v => [v & 255, (v>>>8) & 255, (v>>>16) & 255, (v>>>24) & 255];
+  /* Horodatage au format MS-DOS. Laisser des zéros donnerait « 1980-00-00 »,
+     une date impossible que certains outils d'archive signalent. */
+  const d = new Date();
+  const dosDate = ((Math.max(1980, d.getFullYear()) - 1980) << 9) | ((d.getMonth()+1) << 5) | d.getDate();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  for(const f of fichiers){
+    const nom = enc.encode(f.nom);
+    const data = enc.encode(f.contenu);
+    const somme = crc32(data);
+    const entete = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(dosTime), ...u16(dosDate), ...u32(somme), ...u32(data.length), ...u32(data.length),
+      ...u16(nom.length), ...u16(0)]);
+    parties.push(entete, nom, data);
+    entrees.push({ nom, somme, taille: data.length, decalage: position });
+    position += entete.length + nom.length + data.length;
+  }
+  const central = [];
+  let tailleCentral = 0;
+  for(const e of entrees){
+    const h = new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800),
+      ...u16(0), ...u16(dosTime), ...u16(dosDate), ...u32(e.somme), ...u32(e.taille), ...u32(e.taille),
+      ...u16(e.nom.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0),
+      ...u32(e.decalage)]);
+    central.push(h, e.nom);
+    tailleCentral += h.length + e.nom.length;
+  }
+  const fin = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0),
+    ...u16(entrees.length), ...u16(entrees.length), ...u32(tailleCentral), ...u32(position),
+    ...u16(0)]);
+  return new Blob([...parties, ...central, fin], { type:
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+const xEsc = s => String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');          // interdits en XML
+const colNom = n => { let s=''; n++; while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s;
+  n=(n-1-r)/26; } return s; };
+const argb = c => 'FF' + String(c||'#ffffff').replace('#','').toUpperCase();
+/* Ce qui décide du type d'une cellule.
+   « +12 » doit être le nombre 12, sinon la colonne Entrées mélange du texte et
+   des nombres et ne s'additionne plus. Le signe est rendu par un format
+   d'affichage, pas par du texte : la valeur reste calculable.
+   À l'inverse une taille (« 38 », « 42 ») est un libellé, jamais une quantité :
+   les cellules marquées txt restent du texte quoi qu'il arrive. */
+function typeCellule(c){
+  const v = c.v;
+  const brut = { type:'texte', v: v==null ? '' : String(v) };
+  if(c.txt) return brut;
+  if(typeof v === 'number') return Number.isFinite(v) ? { type:'nombre', n:v } : brut;
+  if(typeof v !== 'string') return brut;
+  const s = v.trim();
+  if(!/^[+-]?\d+(\.\d+)?$/.test(s)) return brut;
+  return { type:'nombre', n:parseFloat(s), signe: s[0] === '+' };
+}
+
+function xlsxBlob(titre, sousTitre, blocs){
+  /* --- styles : on n'en crée qu'un par combinaison réellement utilisée --- */
+  const polices = [], fonds = [], styles = [], index = new Map();
+  const clefPolice = p => JSON.stringify(p), clefFond = f => String(f);
+  const idPolice = p => { const k = clefPolice(p); let i = polices.findIndex(x=>clefPolice(x)===k);
+    if(i<0){ polices.push(p); i = polices.length-1; } return i; };
+  const idFond = f => { const k = clefFond(f); let i = fonds.findIndex(x=>clefFond(x)===k);
+    if(i<0){ fonds.push(f); i = fonds.length-1; } return i; };
+  idPolice({ sz:11 }); idFond(null); idFond('gris');      // les deux fonds imposés par le format
+  /* fmt : 0 = standard, 164 = signé (« +12 » reste affiché avec son plus) */
+  const style = (p, fond, align, bord, fmt) => {
+    const k = clefPolice(p)+'|'+fond+'|'+align+'|'+bord+'|'+(fmt||0);
+    if(index.has(k)) return index.get(k);
+    styles.push({ f:idPolice(p), b:fond?idFond(fond):0, a:align, bord, fmt:fmt||0 });
+    index.set(k, styles.length-1);
+    return styles.length-1;
+  };
+  const S = {
+    titre:   style({ sz:16, b:1, c:XLS.brand }, null, 'left', 0),
+    sous:    style({ sz:13, b:1 }, null, 'left', 0),
+    note:    style({ sz:10, c:'#5b6b62' }, null, 'left', 0),
+    bloc:    style({ sz:12, b:1, c:XLS.brand }, null, 'left', 0),
+    pied:    style({ sz:9, c:'#8a958f' }, null, 'left', 0),
+  };
+  const entete = a => style({ sz:11, b:1, c:XLS.headText }, XLS.head, a||'left', 1);
+  const cellule = (b, bg, a, fmt) => style(b?{ sz:11, b:1 }:{ sz:11 }, bg, a||'left', 1, fmt);
+
+  /* --- lignes --- */
+  const lignes = [];
+  const pousse = cs => lignes.push(cs);
+  const texte = (v, s) => ({ t:{ type:'texte', v }, s });   // titres et en-têtes
+  pousse([texte('Pénélope · Suivi Prestation', S.titre)]);
+  pousse([texte(titre, S.sous)]);
+  if(sousTitre) pousse([texte(sousTitre, S.note)]);
+  pousse([]);
+  let largeurs = [];
+  for(const b of blocs){
+    if(!b.cols) continue;                     // bloc sans données tabulaires
+    if(b.titre) pousse([texte(b.titre, S.bloc)]);
+    pousse(b.cols.map(c=>texte(c.t, entete(c.a))));
+    b.cols.forEach((c,j)=>{ const l = Math.round((c.w||110)/7);
+      largeurs[j] = Math.max(largeurs[j]||9, Math.min(l, 60)); });
+    b.rows.forEach((r,i)=>pousse(r.map((cell,j)=>{
+      const c = (cell && typeof cell==='object') ? cell : { v:cell };
+      const bg = c.bg || (i%2 ? XLS.zebra : null);
+      // une colonne déclarée « txt » ne se convertit jamais en nombre
+      const col = b.cols[j] || {};
+      const t = typeCellule(col.txt ? Object.assign({}, c, { txt:true }) : c);
+      return { t, s:cellule(c.b, bg, c.a || col.a, t.signe ? 164 : 0) };
+    })));
+    pousse([]);
+  }
+  pousse([texte('Document interne · édité le '+frDate(todayISO())+
+    ' depuis Suivi Prestation · Pénélope', S.pied)]);
+
+  /* --- feuille --- */
+  const sheet = lignes.map((cs, r)=>{
+    if(!cs.length) return '<row r="'+(r+1)+'"/>';
+    return '<row r="'+(r+1)+'">'+cs.map((c, j)=>{
+      const ref = colNom(j)+(r+1);
+      const t = c.t;
+      if(t.type === 'nombre')
+        return '<c r="'+ref+'" s="'+c.s+'"><v>'+t.n+'</v></c>';
+      const v = t.v !== undefined ? t.v : t.brut;
+      if(v === '' || v == null) return '<c r="'+ref+'" s="'+c.s+'"/>';
+      return '<c r="'+ref+'" s="'+c.s+'" t="inlineStr"><is><t xml:space="preserve">'+
+        xEsc(v)+'</t></is></c>';
+    }).join('')+'</row>';
+  }).join('');
+  const cols = largeurs.length
+    ? '<cols>'+largeurs.map((w,j)=>'<col min="'+(j+1)+'" max="'+(j+1)+'" width="'+w+
+        '" customWidth="1"/>').join('')+'</cols>' : '';
+
+  const xmlPolice = p => '<font><sz val="'+p.sz+'"/>'+(p.b?'<b/>':'')+
+    (p.c?'<color rgb="'+argb(p.c)+'"/>':'')+'<name val="Calibri"/></font>';
+  const xmlFond = f => f === null
+    ? '<fill><patternFill patternType="none"/></fill>'
+    : f === 'gris' ? '<fill><patternFill patternType="gray125"/></fill>'
+    : '<fill><patternFill patternType="solid"><fgColor rgb="'+argb(f)+
+      '"/><bgColor indexed="64"/></patternFill></fill>';
+  const styleXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    // 164 : un nombre positif garde son « + » à l'affichage tout en restant
+    // une vraie valeur, donc additionnable et triable
+    '<numFmts count="1"><numFmt numFmtId="164" formatCode="+0;\\-0;0"/></numFmts>'+
+    '<fonts count="'+polices.length+'">'+polices.map(xmlPolice).join('')+'</fonts>'+
+    '<fills count="'+fonds.length+'">'+fonds.map(xmlFond).join('')+'</fills>'+
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'+
+    '<border><left style="thin"><color rgb="'+argb(XLS.line)+'"/></left>'+
+    '<right style="thin"><color rgb="'+argb(XLS.line)+'"/></right>'+
+    '<top style="thin"><color rgb="'+argb(XLS.line)+'"/></top>'+
+    '<bottom style="thin"><color rgb="'+argb(XLS.line)+'"/></bottom><diagonal/></border></borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="'+styles.length+'">'+styles.map(s=>
+      '<xf numFmtId="'+(s.fmt||0)+'" fontId="'+s.f+'" fillId="'+s.b+'" borderId="'+s.bord+'" xfId="0" '+
+      'applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"'+
+      (s.fmt?' applyNumberFormat="1"':'')+'>'+
+      '<alignment horizontal="'+(s.a||'left')+'" vertical="center" wrapText="0"/></xf>').join('')+
+    '</cellXfs><cellStyles count="1">'+
+    '<cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+  const nomFeuille = String(titre||'Feuille').replace(/[\\\/\?\*\[\]:]/g,' ').slice(0,31) || 'Feuille';
+  return zipCreer([
+    { nom:'[Content_Types].xml', contenu:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+      '<Default Extension="xml" ContentType="application/xml"/>'+
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+      '</Types>' },
+    { nom:'_rels/.rels', contenu:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'+
+      '</Relationships>' },
+    { nom:'xl/workbook.xml', contenu:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '+
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+      '<sheets><sheet name="'+xEsc(nomFeuille)+'" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+    { nom:'xl/_rels/workbook.xml.rels', contenu:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+      '</Relationships>' },
+    { nom:'xl/styles.xml', contenu: styleXml },
+    { nom:'xl/worksheets/sheet1.xml', contenu:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      '<sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>'+
+      cols+'<sheetData>'+sheet+'</sheetData>'+
+      '<pageMargins left="0.4" right="0.4" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'+
+      '</worksheet>' },
+  ]);
+}
+
 function xlsDownload(filename, titre, sousTitre, blocs){
   // en mode aperçu on retient le contenu au lieu de déclencher un téléchargement
   if(apercuBlocs === null && apercuEnCours){ apercuBlocs = { titre, sousTitre, blocs }; return; }
-  const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head>'+
-    '<meta charset="utf-8">'+
-    '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>'+
-    '<x:Name>'+xlsEsc(titre.slice(0,28))+'</x:Name><x:WorksheetOptions>'+
-    '<x:FreezePanes/><x:SplitHorizontal>1</x:SplitHorizontal><x:TopRowBottomPane>1</x:TopRowBottomPane>'+
-    '<x:ActivePane>2</x:ActivePane></x:WorksheetOptions></x:ExcelWorksheet>'+
-    '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->'+
-    '</head><body style="font-family:Calibri,Arial,sans-serif">'+
-    '<div style="font-size:16pt;font-weight:700;color:'+XLS.brand+'">Pénélope · Suivi Prestation</div>'+
-    '<div style="font-size:13pt;font-weight:700">'+xlsEsc(titre)+'</div>'+
-    '<div style="font-size:10pt;color:#5b6b62">'+xlsEsc(sousTitre)+'</div><br>'+
-    blocs.map(b=>(b.titre?'<div style="font-size:11pt;font-weight:700;color:'+XLS.brand+
-      '">'+xlsEsc(b.titre)+'</div>':'')+b.html+'<br>').join('')+
-    '<div style="font-size:9pt;color:#8a958f">Document interne · '+
-    'édité le '+xlsEsc(frDate(todayISO()))+' depuis Suivi Prestation · Pénélope</div>'+
-    '</body></html>';
-  download('﻿'+html, filename, 'application/vnd.ms-excel;charset=utf-8');
+  const nom = filename.replace(/\.xlsx?$/i, '') + '.xlsx';
+  download(xlsxBlob(titre, sousTitre, blocs), nom,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
 /* ---------- RAPPORT ---------- */
@@ -3084,6 +3297,9 @@ function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 10
 /* Bilan par vêtement sur une période : entrées, sorties et solde.
    C'est la question qu'on se pose vraiment - « ce mois-ci, combien de
    chemises sont entrées et sorties ? » - et non le détail ligne à ligne. */
+/* « +12 », « -5 », mais « 0 » quand il n'y a rien : « -0 » se lit mal et ne
+   veut rien dire. */
+function signe(n){ return n === 0 ? '0' : (n > 0 ? '+' : '-') + Math.abs(n); }
 function bilanArticles(from, to){
   const par = new Map();
   invData().moves.forEach(m=>{
@@ -3104,8 +3320,8 @@ function bilanHTML(bilan){
     '<th class="c">Sorties</th><th class="c">Solde</th></tr></thead><tbody>'+
     bilan.map(x=>'<tr><td><b>'+esc(x.a.name)+'</b> <span class="mutd">'+
       esc(POUR_COURT[pourOf(x.a)]||'')+'</span></td>'+
-      '<td class="c stat-ok">+'+x.entrees+'</td><td class="c stat-ko">-'+x.sorties+'</td>'+
-      '<td class="c"><b>'+(x.solde>0?'+':'')+x.solde+'</b></td></tr>').join('')+
+      '<td class="c stat-ok">'+signe(x.entrees)+'</td><td class="c stat-ko">'+signe(-x.sorties)+'</td>'+
+      '<td class="c"><b>'+signe(x.solde)+'</b></td></tr>').join('')+
     '</tbody></table>';
 }
 
@@ -3225,7 +3441,7 @@ function excelMouvements(){
   const sorties = -mvts.filter(m=>m.delta<0).reduce((n,m)=>n+m.delta,0);
   const cols = [{t:'Date',w:95},{t:'Heure',w:70,a:'center'},{t:'Sens',w:80},
     {t:'Quantité',w:85,a:'center'},{t:'Vêtement',w:200},{t:'Pour',w:80},
-    {t:'Taille',w:75,a:'center'},{t:'Commentaire',w:300},{t:'Saisi par',w:110}];
+    {t:'Taille',w:75,a:'center',txt:true},{t:'Commentaire',w:300},{t:'Saisi par',w:110}];
   const rows = mvts.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
     const e = (m.delta||0) > 0; const bg = e ? XLS.ok : XLS.bad;
@@ -3242,14 +3458,14 @@ function excelMouvements(){
   ]);
   xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Journal des entrées et sorties',
     label+' · '+mvts.length+' mouvements · édité par '+(evaluator||'—'),
-    [{ titre:'Synthèse', html: syn },
-     { titre:'Bilan par vêtement', html: xlsTable(
+    [{ titre:'Synthèse', ...syn },
+     { titre:'Bilan par vêtement', ...xlsTable(
         [{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
          {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
         bilanArticles(from, to).map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
-          {v:'+'+x.entrees,a:'center',bg:XLS.ok},{v:'-'+x.sorties,a:'center',bg:XLS.bad},
-          {v:(x.solde>0?'+':'')+x.solde,a:'center',b:true}])) },
-     { titre:'Détail chronologique', html: xlsTable(cols, rows) }]);
+          {v:signe(x.entrees),a:'center',bg:XLS.ok},{v:signe(-x.sorties),a:'center',bg:XLS.bad},
+          {v:signe(x.solde),a:'center',b:true}])) },
+     { titre:'Détail chronologique', ...xlsTable(cols, rows) }]);
   toast('Journal téléchargé');
 }
 
@@ -3260,7 +3476,7 @@ function excelStock(){
   const lignes = stockLignes();
   if(!lignes.length){ toast('Aucun vêtement en stock'); return; }
   const stock = stockMap();
-  const cols = [{t:'Pour',w:80},{t:'Famille',w:120},{t:'Vêtement',w:200},{t:'Taille',w:80,a:'center'},
+  const cols = [{t:'Pour',w:80},{t:'Famille',w:120},{t:'Vêtement',w:200},{t:'Taille',w:80,a:'center',txt:true},
     {t:'Stock',w:75,a:'center'},{t:'État',w:100}];
   const rows = []; let total = 0, vides = 0;
   lignes.forEach(x=>x.vars.forEach(v=>{
@@ -3275,14 +3491,14 @@ function excelStock(){
   xlsDownload('stock-penelope-'+todayISO()+'.xls', 'Rapport de stock',
     total+' pièces · '+lignes.length+' vêtements · '+vides+' taille(s) à zéro · édité par '+(evaluator||'—'),
     (()=>{
-      const blocs = [{ titre:'État du stock', html: xlsTable(cols, rows) }];
+      const blocs = [{ titre:'État du stock', ...xlsTable(cols, rows) }];
       const bil = bilanArticles(from, to);
       if(bil.length) blocs.push({ titre:'Mouvements sur la période ('+label+')',
-        html: xlsTable([{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
+        ...xlsTable([{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
           {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
           bil.map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
-            {v:'+'+x.entrees,a:'center',bg:XLS.ok},{v:'-'+x.sorties,a:'center',bg:XLS.bad},
-            {v:(x.solde>0?'+':'')+x.solde,a:'center',b:true}])) });
+            {v:signe(x.entrees),a:'center',bg:XLS.ok},{v:signe(-x.sorties),a:'center',bg:XLS.bad},
+            {v:signe(x.solde),a:'center',b:true}])) });
       return blocs;
     })());
   toast('Rapport de stock téléchargé');
@@ -3317,7 +3533,7 @@ function excelConformite(){
   ]);
   xlsDownload('suivi-prestation-penelope-'+todayISO()+'.xls', 'Rapport de conformité',
     label+' · '+rows.length+' passages · édité par '+(evaluator||'—'),
-    [{ titre:'Synthèse', html: syn }, { titre:'Détail des passages', html: xlsTable(cols, rows) }]);
+    [{ titre:'Synthèse', ...syn }, { titre:'Détail des passages', ...xlsTable(cols, rows) }]);
   toast('Rapport Excel téléchargé');
 }
 
