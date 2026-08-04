@@ -1166,10 +1166,52 @@ function load(){
    arrière-plan ou se ferme, pour ne rien perdre. L'envoi au serveur, lui,
    reste immédiat : c'est lui qui fait foi. */
 let saveTimer = null;
+/* Fenêtre effectivement conservée en local, en jours. null = tout.
+   Mesuré : 60 hôtes sur un an font 7 Mo, et le stockage d'un navigateur
+   plafonne à 5 Mo. Passé ce seuil, chaque enregistrement échouait et l'appli
+   perdait purement et simplement son fonctionnement hors réseau — sans que
+   personne ne s'en aperçoive avant la panne de réseau. On réduit donc la copie
+   locale jusqu'à ce qu'elle passe : le serveur garde l'historique complet, la
+   copie locale n'a besoin que de la période sur laquelle on travaille. */
+let fenetreLocale = null;
+const FENETRES = [null, 180, 90, 45, 21, 7];
+function etatReduit(jours){
+  if(jours === null) return state;
+  const limite = addDays(todayISO(), -jours);
+  const checks = {};
+  for(const [id, jrs] of Object.entries(state.checks || {})){
+    for(const [d, c] of Object.entries(jrs)){
+      if(d < limite) continue;
+      // les photos sont le plus gros du volume et le serveur les conserve
+      const items = {};
+      for(const [k, v] of Object.entries(c.items || {}))
+        items[k] = v && v.photo ? Object.assign({}, v, { photo:'' }) : v;
+      (checks[id] = checks[id] || {})[d] = Object.assign({}, c, { items });
+    }
+  }
+  return Object.assign({}, state, { checks, fenetreJours:jours });
+}
+/* On repart de la fenêtre qui a déjà fonctionné : réessayer l'état complet à
+   chaque enregistrement coûterait une sérialisation de plusieurs dizaines de
+   méga-octets pour rien. La fenêtre se rouvre au rechargement de la page. */
+let idxFenetre = 0;
 function flushSave(){
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-  catch(e){ toast('Impossible d\'enregistrer (stockage plein ?)'); }
+  for(let i = idxFenetre; i < FENETRES.length; i++){
+    const jours = FENETRES[i];
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(etatReduit(jours)));
+      idxFenetre = i;
+      if(jours !== fenetreLocale){ fenetreLocale = jours; syncUI(); }
+      return;
+    }catch(e){ /* quota dépassé : on réessaie avec une fenêtre plus courte */ }
+  }
+  idxFenetre = FENETRES.length;
+  /* Même sept jours ne passent pas : on renonce au miroir local plutôt que de
+     laisser une copie à moitié écrite. Les modifications non synchronisées
+     vivent dans la file, qui est minuscule et enregistrée à part. */
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  if(fenetreLocale !== -1){ fenetreLocale = -1; syncUI(); }
 }
 function save(){
   const t = document.getElementById('savedTag');
@@ -1248,32 +1290,46 @@ function push(action, payload){
    représenter — on l'abandonne pour ne pas bloquer la file. */
 const PERMANENT_ERRORS = ['bad_request','limit','unknown_action','code_too_short','bad_response'];
 async function flush(){
-  if(flushing || !accessCode) return; flushing = true;
-  while(queue.length){
-    const op = queue[0];
-    try{
-      await api(op.action, op.payload);
-      queue.shift(); saveQueue(); online = true;
-    }catch(e){
-      if(e.message==='bad_code') break;
-      if(PERMANENT_ERRORS.includes(e.message)){
-        queue.shift(); saveQueue();
-        toast('Une modification a été refusée par le serveur'+(e.message==='limit'?' (limite de profils atteinte)':''));
-        continue;
+  if(flushing || !accessCode) return;
+  flushing = true;
+  /* try/finally obligatoire : si quoi que ce soit lève en dehors du bloc
+     protégé, le drapeau resterait à true et plus rien ne se synchroniserait
+     jusqu'au rechargement de la page. */
+  try{
+    while(queue.length){
+      const op = queue[0];
+      try{
+        await api(op.action, op.payload);
+        queue.shift(); saveQueue(); online = true;
+      }catch(e){
+        if(e.message==='bad_code' || e.message==='locked') break;
+        if(PERMANENT_ERRORS.includes(e.message)){
+          queue.shift(); saveQueue();
+          toast('Une modification a été refusée par le serveur'+(e.message==='limit'?' (limite de profils atteinte)':''));
+          continue;
+        }
+        if(e.message==='server'){
+          op.tries = (op.tries||0)+1; saveQueue();
+          if(op.tries>=5){ queue.shift(); saveQueue();
+            toast('Une modification n\'a pas pu être synchronisée'); continue; }
+        }
+        online = false; break;
       }
-      if(e.message==='server'){
-        op.tries = (op.tries||0)+1; saveQueue();
-        if(op.tries>=5){ queue.shift(); saveQueue();
-          toast('Une modification n\'a pas pu être synchronisée'); continue; }
-      }
-      online = false; break;
     }
-  }
-  flushing = false; syncUI();
+  } finally { flushing = false; syncUI(); }
 }
 function syncUI(){
   const el = document.getElementById('syncStrip');
   if(!el) return;
+  /* Copie locale réduite : à dire seulement quand on est hors réseau, car
+     c'est le seul moment où cela change quelque chose pour l'utilisateur. */
+  if(accessCode && !queue.length && !online && fenetreLocale !== null){
+    el.style.display = 'block';
+    el.textContent = fenetreLocale === -1
+      ? 'Hors ligne : cet appareil n\'a pas pu garder de copie locale'
+      : 'Hors ligne : les ' + fenetreLocale + ' derniers jours sont consultables';
+    return;
+  }
   if(accessCode && queue.length){
     el.style.display = 'block';
     el.textContent = (online ? '' : 'Hors ligne : ') + queue.length +
@@ -1309,7 +1365,7 @@ async function pullAll(){
           at:m.created_at }))
       };
     }
-    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+    flushSave();          // même réduction de fenêtre que partout ailleurs
     online = true;
     rerenderSoft();
   }catch(e){ if(e.message!=='bad_code') online = false; }
@@ -1322,8 +1378,12 @@ function rerenderSoft(){
   const a = document.activeElement;
   if(a && (a.tagName==='TEXTAREA' ||
     (a.tagName==='INPUT' && (a.type==='text'||a.type==='search'||a.type==='number')))) return;
-  if(document.getElementById('hostModal').classList.contains('on')) return;
-  // saisie directe des quantités en cours : ne pas re-rendre la grille sous les doigts
+  /* Aucune fenêtre ne doit voir la page se reconstruire sous elle : la
+     synchronisation tourne toutes les 45 secondes et refermerait les accordéons
+     ou périmerait la fiche en cours d'édition. On les teste toutes, pas
+     seulement celle des hôtes. */
+  if(document.querySelector('.sheetwrap[id].on')) return;
+  if(document.getElementById('tourOverlay').classList.contains('on')) return;
   if(currentView==='pointage') renderPointage();
   else if(currentView==='equipe'){ renderEquipe(); renderManagers(); }
   else if(currentView==='stock') renderStock();
@@ -1614,7 +1674,13 @@ function teamRange(from, to){
     }
   }
   const ag = (from===null && to===null) ? monthlyAgg(null, null) : { sum:0, n:0 };
-  return { total:scores.length+ag.n, pct: blendAvg(scores, ag), reasons, ok, ko };
+  /* detail : les passages dont on a encore le journal, seuls à se répartir en
+     conformes / non conformes. archives : ceux dont le détail a été purgé au
+     bout d'un an et qui ne survivent que dans les bilans mensuels. Les
+     confondre ferait un total supérieur à la somme de ses parts. La moyenne,
+     elle, tient compte des deux : c'est la vraie note de l'équipe. */
+  return { total:scores.length+ag.n, detail:scores.length, archives:ag.n,
+    pct: blendAvg(scores, ag), reasons, ok, ko };
 }
 
 /* ---------- navigation ---------- */
@@ -2693,7 +2759,7 @@ function renderStock(){
       '</div>'
     : '';
   document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
-    '<button class="'+(movFilter===f?'sel':'')+'" onclick="setMovFilter('+jsq(f)+')">'+f+'</button>').join('');
+    '<button class="'+(movFilter===f?'sel':'')+'" onclick="setMovFilter('+jsq(f)+')">'+esc(f)+'</button>').join('');
 
   let hist = [...moves].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||'')));
   if(movFilter==='Entrées') hist = hist.filter(m=>(m.delta||0)>0);
@@ -2723,7 +2789,17 @@ function setPourFilter(p){ pourFilter = p; openArt.clear(); renderStock(); }
 let modalArticleId = null;
 let pickedSizes = [];
 /* Chaîne sûre à injecter dans un onclick="…" */
-function jsq(s){ return "'"+String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'"; }
+/* Chaîne sûre à insérer dans un onclick="…", c'est-à-dire dans un attribut
+   HTML à guillemets doubles dont le contenu sera ensuite lu comme du
+   JavaScript. Il faut donc les deux échappements, dans cet ordre :
+     1. antislash et apostrophe, pour que la valeur reste une chaîne JS close ;
+     2. échappement HTML, pour qu'un guillemet double ne referme pas
+        l'attribut — sans quoi tout ce qui suit devient du balisage.
+   Le navigateur décode les entités avant de donner le texte à JavaScript, donc
+   « &#39; » redevient l'apostrophe déjà protégée par son antislash. */
+function jsq(s){
+  return "'" + esc(String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")) + "'";
+}
 /* La gamme n'est qu'une proposition : un article peut mélanger des tailles de
    plusieurs gammes (ex. un col roulé en S/M, L, L/XL et XXXL) ou porter une
    taille libre (« Inconnue »). L'ordre d'affichage suit la gamme, les tailles
@@ -3330,11 +3406,15 @@ function rapportConformite(preview){
     repEntete('Rapport de conformité', label)+
     '<div class="card">'+
     '<table class="repsum"><tr>'+
-      '<td><span>Passages</span><b>'+team.total+'</b></td>'+
+      '<td><span>Passages</span><b>'+team.detail+'</b></td>'+
       '<td><span>Conformes</span><b class="stat-ok">'+team.ok+'</b></td>'+
       '<td><span>Non conformes</span><b class="stat-ko">'+team.ko+'</b></td>'+
       '<td><span>Conformité</span><b>'+pctTxt(team.pct)+'</b></td>'+
-    '</tr></table></div>'+
+    '</tr></table>'+
+    (team.archives ? '<p class="mutd" style="margin-top:8px">Plus '+team.archives+
+      ' passage'+(team.archives>1?'s':'')+' de plus d\'un an, dont le détail a été '+
+      'effacé : ils comptent dans la conformité mais n\'apparaissent plus au détail.</p>' : '')+
+    '</div>'+
     '<div class="card"><h3>Détail par personne</h3>'+
     (rows.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Accueil</th><th>Passages</th><th>Note période</th><th>Appréciation</th><th>Note globale</th><th>Points récurrents</th></tr>'+
       rows.map(r2=>'<tr><td>'+esc(hostName(r2.h))+(r2.h.archivedAt?' <span class="mutd">(archivé)</span>':'')+'</td>'+
@@ -3587,9 +3667,11 @@ function excelConformite(){
   if(!rows.length){ toast('Aucun passage sur cette période'); return; }
   const team = teamRange(from, to);
   const syn = xlsTable([{t:'Indicateur',w:200},{t:'Valeur',w:120,a:'center'}], [
-    [{v:'Passages évalués',b:true},{v:team.total,a:'center',b:true}],
+    [{v:'Passages évalués',b:true},{v:team.detail,a:'center',b:true}],
     [{v:'Passages conformes',bg:XLS.ok},{v:team.ok,a:'center',bg:XLS.ok}],
     [{v:'Passages non conformes',bg:XLS.bad},{v:team.ko,a:'center',bg:XLS.bad}],
+    ...(team.archives ? [[{v:'Passages archivés (bilan mensuel)'},
+      {v:team.archives,a:'center'}]] : []),
     [{v:'Conformité globale',b:true},{v:pctTxt(team.pct),a:'center',b:true}]
   ]);
   xlsDownload('suivi-prestation-penelope-'+todayISO()+'.xls', 'Rapport de conformité',
