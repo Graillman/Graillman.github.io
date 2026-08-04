@@ -347,13 +347,49 @@
   .pwwrap input::-webkit-textfield-decoration-container{ visibility:hidden; display:none !important }
   .pweye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:40px; height:40px;
     border:none; background:transparent; font-size:18px; opacity:.55; line-height:1 }
+  /* Trois plans, dans cet ordre : le voile, l'élément désigné, puis le panneau.
+     Sans cette séparation l'élément entouré passait par-dessus le texte de
+     l'étape et les deux devenaient illisibles. */
+  #tourVeil{ position:fixed; inset:0; z-index:58; display:none;
+    background:rgba(16,24,40,.45) }
+  #tourVeil.on{ display:block }
   #tourOverlay{ position:fixed; inset:0; z-index:60; display:none; align-items:flex-end;
-    justify-content:center; background:rgba(16,24,40,.45); padding:16px }
+    justify-content:center; padding:16px; pointer-events:none }
   #tourOverlay.on{ display:flex }
-  .tourbox{ width:100%; max-width:460px; animation:selpop .22s ease-out }
+  .tourbox{ width:100%; max-width:460px; animation:selpop .22s ease-out; pointer-events:auto;
+    max-height:62vh; display:flex; flex-direction:column;
+    box-shadow:0 -8px 34px rgba(16,24,40,.22) }
+  .tourscroll{ overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch }
+  /* Pendant la visite, la page reçoit de la marge en bas : sans elle, une vue
+     courte ne peut pas défiler et l'élément désigné reste coincé derrière le
+     panneau, quoi qu'on fasse. */
+  body.visite main{ padding-bottom:70vh }
   .tdots{ display:flex; gap:6px; justify-content:center; margin-top:14px }
   .tdot{ width:6px; height:6px; border-radius:99px; background:var(--baseline) }
   .tdot.on{ background:var(--brand); width:18px }
+  /* Halo posé sur l'élément que l'étape décrit. Il bat doucement pour attirer
+     l'œil sans donner l'impression que quelque chose ne va pas. */
+  .tourcible{ position:relative; z-index:59; border-radius:12px; background:var(--surface);
+    box-shadow:0 0 0 3px var(--brand), 0 0 0 9px rgba(15,93,78,.22);
+    animation:tourbat 1.5s ease-in-out infinite }
+  @keyframes tourbat{
+    0%,100%{ box-shadow:0 0 0 3px var(--brand), 0 0 0 9px rgba(15,93,78,.22) }
+    50%    { box-shadow:0 0 0 3px var(--brand), 0 0 0 15px rgba(15,93,78,.06) }
+  }
+  /* Contenu d'une étape : des listes courtes, une action par ligne. */
+  .tourbox h2{ font-size:20px; letter-spacing:-.02em; color:var(--brand) }
+  .tourbox .quoi{ font-size:15px; line-height:1.5; color:var(--ink); margin:0 0 12px }
+  .tourbox ul{ list-style:none; padding:0; margin:0 }
+  .tourbox li{ display:flex; gap:9px; align-items:flex-start; font-size:14.5px;
+    line-height:1.45; padding:7px 0; border-top:1px solid var(--hairline) }
+  .tourbox li:first-child{ border-top:none }
+  .tourbox li b{ color:var(--ink) }
+  .tourpuce{ flex:none; width:22px; height:22px; border-radius:7px; display:grid;
+    place-items:center; font-size:12.5px; font-weight:750; margin-top:1px;
+    background:var(--tint); color:var(--brand) }
+  .tourastuce{ margin-top:12px; padding:10px 12px; border-radius:12px;
+    background:rgba(224,169,58,.12); font-size:13.5px; line-height:1.45; color:#6b5207 }
+  .tourastuce b{ color:#523f05 }
   .applogo{ height:30px; width:auto; display:block }
   @media (min-width:760px){ .applogo{ height:40px } }
   @media (min-width:1100px){ .applogo{ height:46px } }
@@ -574,11 +610,16 @@
 </head>
 <body>
 
+<div id="tourVeil"></div>
 <div id="tourOverlay">
   <div class="tourbox card">
-    <div class="mutd" id="tourStep"></div>
-    <h2 id="tourTitle" style="margin:4px 0 6px"></h2>
-    <p class="sub" id="tourText"></p>
+    <!-- seul le contenu défile : les boutons restent visibles en bas, sinon
+         « Suivant » disparaît dès que l'étape est un peu longue -->
+    <div class="tourscroll">
+      <div class="mutd" id="tourStep"></div>
+      <h2 id="tourTitle" style="margin:4px 0 8px"></h2>
+      <div id="tourText"></div>
+    </div>
     <div class="tdots" id="tourDots"></div>
     <div class="row" style="gap:8px;margin-top:14px">
       <button class="btn grow" onclick="finVisite()">Passer</button>
@@ -3784,19 +3825,109 @@ function dismissSeed(){ document.getElementById('seedBanner').style.display='non
    Montrée une fois, à la première connexion d'un profil, puis rappelable
    depuis les Réglages. Chaque étape ouvre la page concernée et l'explique. */
 const VISITE_KEY = LS_KEY + '_visite';
+/* Visite guidée.
+   Écrite pour quelqu'un qui n'aime pas l'informatique : une page par étape, ce
+   qu'on y fait en une phrase, puis les gestes possibles un par un. « cible »
+   est le sélecteur de l'élément dont parle l'étape : il est entouré à l'écran,
+   pour que « ce bouton » désigne quelque chose de visible plutôt qu'une idée. */
 const VISITE = [
-  { vue:'pointage', titre:'Passage',
-    txt:'Chaque jour, vous notez le passage de chaque hôte. Parfait en un geste, ou Évaluer pour détailler critère par critère et laisser un commentaire.' },
-  { vue:'equipe', titre:'Équipe',
-    txt:'Les hôtes et hôtesses, regroupés par accueil. Touchez une fiche pour voir ses statistiques, son historique et éditer son dossier personnel.' },
-  { vue:'stats', titre:'Stats',
-    txt:'La conformité du jour, sur 7 et 30 jours, avec l\'écart par rapport à la période précédente. De quoi voir si ça progresse.' },
-  { vue:'stock', titre:'Stock',
-    txt:'Les tenues, rangées par coupe puis par type. Touchez un vêtement pour voir ses tailles, puis le moins ou le plus pour corriger une quantité.' },
-  { vue:'rapport', titre:'Rapport',
-    txt:'Les documents à transmettre : rapport de conformité, rapport de stock, en PDF ou en Excel, sur la période de votre choix.' },
-  { vue:'reglages', titre:'Réglages',
-    txt:'Vos critères, vos accueils, votre mot de passe, et le détail des protections mises en place sur les données.' }
+  { vue:'reglages', titre:'D\'abord : votre mot de passe',
+    cible:'#view-reglages button[onclick="changeCode()"]',
+    quoi:'Vous vous êtes connecté avec un mot de passe de départ, du type <b>Prénom2026*</b>. '+
+      'Il a été choisi pour vous, et vos collègues le devineraient sans peine.',
+    gestes:[
+      ['1','Touchez <b>Changer mon mot de passe</b>, entouré de vert juste au-dessus.'],
+      ['2','Choisissez-en un que <b>vous seul</b> connaissez, 8 caractères au minimum.'],
+      ['3','Notez-le quelque part de sûr : personne ne peut le relire, pas même l\'application.'],
+    ],
+    astuce:'Si vous l\'oubliez un jour, un collègue vous en redonnera un depuis cette même '+
+      'page, et l\'application vous demandera aussitôt d\'en choisir un nouveau.' },
+
+  { vue:'pointage', titre:'Passage — la tournée du jour',
+    cible:'#view-pointage .hostline .seg, #view-pointage .card',
+    quoi:'C\'est l\'écran que vous ouvrirez tous les jours. Chaque hôte y a sa ligne.',
+    gestes:[
+      ['✓','<b>Parfait</b> : tout est en ordre. Un seul geste, c\'est noté.'],
+      ['✗','<b>Évaluer</b> : ouvre la liste des critères. Vous cochez ce qui va, vous décochez '+
+        'ce qui ne va pas.'],
+      ['+','Sur chaque critère, <b>Ajouter un commentaire</b> pour préciser un fait '+
+        '(« badge oublié, deuxième fois cette semaine »).'],
+      ['📷','Sur un critère non conforme, vous pouvez joindre une <b>photo du poste</b>. '+
+        'Jamais d\'une personne.'],
+    ],
+    astuce:'La date en haut se change : vous pouvez rattraper un passage oublié hier.' },
+
+  { vue:'equipe', titre:'Équipe — qui travaille où',
+    cible:'#view-equipe > button.primary',
+    quoi:'La liste de vos hôtes et hôtesses, regroupés par accueil.',
+    gestes:[
+      ['+','<b>Ajouter un hôte / une hôtesse</b>, le bouton entouré, pour une nouvelle arrivée.'],
+      ['→','<b>Touchez une fiche</b> : sa note, son historique, ses points récurrents.'],
+      ['⤓','Depuis sa fiche, <b>Éditer le dossier personnel</b> crée un fichier Excel à lui '+
+        'remettre s\'il vous le demande.'],
+      ['⌫','<b>Archiver</b> un départ : il disparaît de la tournée, son historique reste.'],
+    ],
+    astuce:'Plus bas sur cette page, vous réglez <b>vos accueils</b> et <b>vos critères</b> : '+
+      'ce sont les vôtres, ajoutez-en, retirez-en.' },
+
+  { vue:'stats', titre:'Stats — est-ce que ça progresse',
+    cible:'#view-stats .tiles',
+    quoi:'Les chiffres de l\'équipe, sans avoir à les calculer.',
+    gestes:[
+      ['%','Les <b>quatre cercles</b> entourés : aujourd\'hui, 7 jours, 30 jours, depuis le début.'],
+      ['↗','Sous le cercle des 7 jours, l\'<b>écart</b> avec la période précédente : en hausse '+
+        'ou en baisse.'],
+      ['▤','Plus bas : la note <b>par accueil</b>, les <b>motifs les plus fréquents</b>, et les '+
+        'personnes à accompagner.'],
+    ],
+    astuce:'La liste par personne est <b>alphabétique, jamais un classement</b>. C\'est un outil '+
+      'd\'accompagnement, pas un palmarès.' },
+
+  { vue:'stock', titre:'Stock — les tenues',
+    cible:'#invTabs',
+    quoi:'Votre inventaire de vêtements. Deux onglets, entourés en vert.',
+    gestes:[
+      ['1','<b>Stock</b> : l\'état actuel. Choisissez <b>Femme</b> ou <b>Homme</b>, puis touchez '+
+        'un vêtement pour déplier ses tailles.'],
+      ['±','Sur chaque taille, <b>−</b> et <b>+</b> corrigent la quantité. C\'est enregistré '+
+        'immédiatement, inutile de valider.'],
+      ['✎','Touchez <b>le chiffre lui-même</b> pour saisir directement une quantité.'],
+      ['2','<b>Entrées · sorties</b> : le journal. Qui a pris quoi, quand, et le bilan du mois '+
+        'par vêtement (+10 puis −5 donne <b>+5</b>).'],
+    ],
+    astuce:'Le stock n\'est jamais écrasé : chaque correction devient une ligne du journal, '+
+      'datée et signée. On peut toujours remonter le fil.' },
+
+  { vue:'rapport', titre:'Rapport — ce qu\'on transmet',
+    cible:'#view-rapport #repType ~ .row:not(#customDates)',
+    quoi:'Les documents à envoyer à votre direction ou au client. Les quatre boutons '+
+      'entourés en vert font tout le travail.',
+    gestes:[
+      ['1','Tout en haut, choisissez le document : <b>Conformité</b>, <b>Stock</b> ou '+
+        '<b>Entrées · sorties</b>.'],
+      ['2','Juste en dessous, choisissez la <b>période</b>.'],
+      ['👁','<b>Aperçu</b> affiche le document dans la page, avant de l\'envoyer.'],
+      ['⎙','<b>Imprimer / PDF</b> : dans la fenêtre qui s\'ouvre, choisissez '+
+        '« Enregistrer en PDF » pour obtenir un fichier à joindre à un e-mail.'],
+      ['⤓','<b>Excel</b> télécharge un vrai classeur, avec des colonnes que l\'on peut trier '+
+        'et additionner.'],
+    ],
+    astuce:'<b>Aperçu Excel</b> vous montre le classeur à l\'écran avant de le télécharger : '+
+      'plus besoin d\'ouvrir le fichier pour vérifier qu\'il est bon.' },
+
+  { vue:'reglages', titre:'Réglages — et la sécurité',
+    cible:'#view-reglages .card:first-of-type .row',
+    quoi:'Votre compte, la sauvegarde, et ce qu\'il faut pouvoir montrer à un employeur.',
+    gestes:[
+      ['🛡','<b>Détail des protections</b> et <b>Protection des données</b>, les deux boutons '+
+        'entourés : à ouvrir si on vous demande comment les données sont traitées.'],
+      ['⤓','<b>Télécharger une sauvegarde</b> : un fichier à garder de votre côté. À faire '+
+        'avant toute opération importante.'],
+      ['👥','<b>Mots de passe de l\'équipe</b> : si un collègue a oublié le sien, vous lui en '+
+        'redonnez un ici.'],
+    ],
+    astuce:'Vous pouvez revoir cette visite à tout moment depuis cette page, bouton '+
+      '<b>Revoir la visite guidée</b>.' },
 ];
 let visiteIdx = 0, visiteFin = null;
 function demarreVisite(auto){
@@ -3807,6 +3938,35 @@ function demarreVisite(auto){
   visiteIdx = 0; visiteFin = auto ? 'email' : null;
   etapeVisite();
 }
+/* Retire le halo de l'étape précédente. Toujours appelé avant d'en poser un
+   autre, et à la fin de la visite : un halo oublié resterait à l'écran. */
+function effaceCible(){
+  document.querySelectorAll('.tourcible').forEach(x=>x.classList.remove('tourcible'));
+}
+function poseCible(sel){
+  effaceCible();
+  if(!sel) return;
+  let el = null;
+  // plusieurs sélecteurs séparés par une virgule : on prend le premier visible,
+  // car le contenu dépend des données déjà saisies
+  for(const s of sel.split(',')){
+    const cand = document.querySelector(s.trim());
+    if(cand && cand.offsetParent){ el = cand; break; }
+  }
+  if(!el) return;
+  el.classList.add('tourcible');
+  /* Le panneau occupe le bas de l'écran ; il reste la bande du haut. On y
+     centre l'élément s'il y tient, sinon on cale son bord supérieur : mieux
+     vaut voir le début d'un grand bloc que son milieu caché derrière. */
+  const r = el.getBoundingClientRect();
+  const panneau = document.querySelector('.tourbox');
+  const libre = (panneau ? panneau.getBoundingClientRect().top : window.innerHeight * 0.4) - 12;
+  const vise = r.height + 24 < libre
+    ? libre / 2 - r.height / 2          // centré dans la bande libre
+    : Math.max(12, libre * 0.06);       // trop grand : on montre son début
+  const dy = r.top - vise;
+  if(Math.abs(dy) > 8) window.scrollBy({ top: dy, behavior:'smooth' });
+}
 function etapeVisite(){
   const e = VISITE[visiteIdx];
   if(!e){ finVisite(); return; }
@@ -3814,18 +3974,33 @@ function etapeVisite(){
   const ov = document.getElementById('tourOverlay');
   document.getElementById('tourStep').textContent = 'Étape '+(visiteIdx+1)+' sur '+VISITE.length;
   document.getElementById('tourTitle').textContent = e.titre;
-  document.getElementById('tourText').textContent = e.txt;
+  document.getElementById('tourText').innerHTML =
+    '<p class="quoi">'+e.quoi+'</p>'+
+    '<ul>'+e.gestes.map(([p,t])=>
+      '<li><span class="tourpuce">'+esc(p)+'</span><span>'+t+'</span></li>').join('')+'</ul>'+
+    (e.astuce ? '<div class="tourastuce"><b>À savoir :</b> '+e.astuce+'</div>' : '');
   document.getElementById('tourNext').textContent = visiteIdx === VISITE.length-1 ? 'Terminer' : 'Suivant';
   document.getElementById('tourDots').innerHTML = VISITE.map((_,i)=>
     '<span class="tdot'+(i===visiteIdx?' on':'')+'"></span>').join('');
   ov.classList.add('on');
+  document.getElementById('tourVeil').classList.add('on');
+  document.body.classList.add('visite');
+  // après le rendu de la vue, sinon la cible n'existe pas encore
+  setTimeout(()=>poseCible(e.cible), 120);
 }
 function visiteSuivante(){ visiteIdx++; etapeVisite(); }
+/* Un clic sur le voile ferme la visite. C'est le geste attendu, et cela évite
+   surtout qu'un voile resté ouvert à la suite d'un incident bloque toute
+   l'application : il porte lui-même sa sortie. */
+document.getElementById('tourVeil').addEventListener('click', finVisite);
 function finVisite(){
   let vues = {}; try{ vues = JSON.parse(localStorage.getItem(VISITE_KEY)||'{}'); }catch(e){}
   vues[evaluator] = Date.now();
   try{ localStorage.setItem(VISITE_KEY, JSON.stringify(vues)); }catch(e){}
+  effaceCible();
+  document.body.classList.remove('visite');
   document.getElementById('tourOverlay').classList.remove('on');
+  document.getElementById('tourVeil').classList.remove('on');
   show('pointage');
   if(visiteFin === 'email') setTimeout(demandeEmail, 400);
 }
