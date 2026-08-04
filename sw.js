@@ -4,8 +4,9 @@
    suivante (stale-while-revalidate).
    Les données ne passent jamais par ici : l'API est en POST vers un autre
    domaine, et les deux cas sont explicitement écartés plus bas. */
-const CACHE = 'penelope-app-v4';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'penelope-app-v5';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg',
+               './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   // Fichier par fichier : addAll rejette en bloc dès qu'une seule ressource

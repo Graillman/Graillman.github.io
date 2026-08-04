@@ -11,6 +11,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%230f5d4e'/%3E%3Ctext x='32' y='43' font-size='32' font-weight='600' text-anchor='middle' fill='white' font-family='Helvetica,Arial'%3EP%3C/text%3E%3C/svg%3E">
+<!-- iOS ignore le SVG pour l'écran d'accueil : sans cette icône, « Ajouter à
+     l'écran d'accueil » affiche une capture de la page à la place du logo. -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <title>Suivi Prestation · Pénélope</title>
 <style>
   @font-face{
@@ -63,7 +66,10 @@
   #view-reglages .view-title{ color:#4a5a6a }
   .view-title{ font-size:27px; font-weight:750; letter-spacing:-.5px; margin:8px 2px 16px }
   h2{ font-size:16.5px; font-weight:650; margin-bottom:10px }
-  h3{ font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase;
+  /* Intertitre discret. Porté par h3 partout, mais aussi par h2 dans Stats :
+     là-bas les cartes viennent directement sous le titre de la vue, sauter de
+     h1 à h3 rendrait le plan du document incohérent pour un lecteur d'écran. */
+  h3, h2.inter{ font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase;
     letter-spacing:.6px; margin-bottom:10px }
   svg.ic{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8;
     stroke-linecap:round; stroke-linejoin:round; display:block; margin:0 auto 3px }
@@ -205,7 +211,16 @@
   .bar{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0 }
   .bar i{ width:70%; max-width:26px; background:var(--series); border-radius:4px 4px 0 0; display:block }
   .bar i.empty{ background:var(--grid); height:3px !important; border-radius:2px }
-  .bar .v{ font-size:10.5px; color:var(--ink2); margin-bottom:3px; font-variant-numeric:tabular-nums; white-space:nowrap }
+  /* Sur 14 colonnes au format téléphone, « 100 % » est plus large que sa
+     barre : les étiquettes se chevauchaient et devenaient illisibles. On
+     n'écrit plus que le nombre, borné à la largeur de la colonne. La valeur
+     exacte et le nombre de passages restent dans l'infobulle. */
+  .bar .v{ font-size:10.5px; color:var(--ink2); margin-bottom:3px; font-variant-numeric:tabular-nums;
+    white-space:nowrap; max-width:100%; overflow:hidden; text-align:center }
+  /* Sur un petit écran, une série longue n'a plus la place d'afficher ses
+     valeurs : tronquées, elles mentent (« 100 » devient « 10 »). On les retire
+     franchement ; l'infobulle et les compteurs du haut donnent les chiffres. */
+  @media (max-width:430px){ .bars.dense .v{ display:none } }
   .bar .l{ font-size:10.5px; color:var(--muted); margin-top:5px; white-space:nowrap; overflow:hidden; max-width:100% }
   .hbars .hb{ display:flex; align-items:center; gap:8px; margin-bottom:8px }
   .hbars .hb .lab{ width:46%; font-size:12.5px; color:var(--ink2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -716,7 +731,7 @@
 
   <!-- ================= PASSAGE ================= -->
   <section class="view" id="view-pointage">
-    <div class="view-title">Passage</div>
+    <h1 class="view-title">Passage</h1>
     <div class="card">
       <div class="datebar">
         <b style="flex:none;font-size:14px">Jour</b>
@@ -731,7 +746,7 @@
 
   <!-- ================= ÉQUIPE ================= -->
   <section class="view" id="view-equipe">
-    <div class="view-title">Équipe</div>
+    <h1 class="view-title">Équipe</h1>
     <button class="btn primary no-print" style="width:100%;margin-bottom:12px" onclick="openHostModal(null)">Ajouter un hôte / une hôtesse</button>
     <div class="card no-print" id="searchWrap" style="display:none;padding:6px 12px;border-radius:12px">
       <input id="hostSearch" placeholder="Rechercher un hôte, un accueil…" style="border:none;box-shadow:none;padding:8px 2px" oninput="debRender(renderEquipe)">
@@ -768,7 +783,7 @@
 
   <!-- ================= RAPPORT ================= -->
   <section class="view" id="view-rapport">
-    <div class="view-title">Rapport</div>
+    <h1 class="view-title">Rapport</h1>
     <div class="card no-print">
       <p class="sub" style="margin-bottom:10px">Choisissez le document, la période, puis
       l'aperçu à l'écran, l'impression / PDF ou l'export Excel.</p>
@@ -805,7 +820,7 @@
   <!-- ================= RÉGLAGES ================= -->
   <!-- ================= STOCK ================= -->
   <section class="view" id="view-stock">
-    <div class="view-title">Stock</div>
+    <h1 class="view-title">Stock</h1>
     <div class="seg wide no-print" id="invTabs" style="margin-bottom:12px">
       <button class="sel" onclick="setInvTab('stock')">Stock</button>
       <button onclick="setInvTab('mouv')">Entrées · sorties</button>
@@ -839,7 +854,7 @@
   </section>
 
   <section class="view" id="view-reglages">
-    <div class="view-title">Réglages</div>
+    <h1 class="view-title">Réglages</h1>
     <div class="card">
       <h2>Sécurité &amp; confidentialité</h2>
       <p class="sub" style="margin-bottom:10px">Code d'accès chiffré, base verrouillée, protection
@@ -894,7 +909,7 @@
   <!-- ================= SÉCURITÉ ================= -->
   <section class="view" id="view-securite">
     <button class="link no-print" onclick="show('reglages')">‹ Réglages</button>
-    <div class="view-title">Sécurité</div>
+    <h1 class="view-title">Sécurité</h1>
 
     <div class="card">
       <p class="sub">Les données de suivi sont des données professionnelles sensibles. Cette
@@ -1045,7 +1060,7 @@
   <!-- ================= NOTICE RGPD ================= -->
   <section class="view" id="view-rgpd">
     <button class="link no-print" onclick="showSecurity()">‹ Sécurité</button>
-    <div class="view-title">Protection des données</div>
+    <h1 class="view-title">Protection des données</h1>
 
     <div class="card">
       <p class="sub">Les données saisies ici sont des données professionnelles. Cette page résume
@@ -2016,9 +2031,50 @@ document.querySelectorAll('.sheetwrap[id]').forEach(el=>{
     if(e.target === el) fermeFenetre(el.id);     // le fond, pas le contenu
   });
 });
+/* À l'ouverture on entre dans la fenêtre, à la fermeture on revient sur le
+   bouton qui l'a ouverte : sans cela le curseur repart en haut de la page. */
+let avantFenetre = null;
+const veilleFenetres = new MutationObserver(muts=>{
+  muts.forEach(m=>{
+    const el = m.target, ouvert = el.classList.contains('on');
+    if(ouvert === /(^|\s)on(\s|$)/.test(m.oldValue||'')) return;
+    if(ouvert){
+      avantFenetre = document.activeElement;
+      if(!el.contains(document.activeElement))
+        setTimeout(()=>{ const l = focalisables(el); if(l.length) l[0].focus(); }, 60);
+    } else if(avantFenetre && document.contains(avantFenetre)){
+      try{ avantFenetre.focus(); }catch(e){}
+      avantFenetre = null;
+    }
+  });
+});
+// on n'observe que les cinq fenêtres : surveiller tout le corps du document
+// ferait travailler l'observateur à chaque rendu de liste
+document.querySelectorAll('.sheetwrap[id]').forEach(el=>
+  veilleFenetres.observe(el, { attributes:true, attributeFilter:['class'], attributeOldValue:true }));
+/* Tant qu'une fenêtre est ouverte, la tabulation doit y rester. Sans cela on
+   passe derrière, dans la page masquée : on ne voit plus où l'on est et on
+   modifie des champs invisibles. */
+const fenetreOuverte = () => [...document.querySelectorAll('.sheetwrap[id].on')].pop();
+function focalisables(dans){
+  return [...dans.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), '+
+    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter(e=>{ const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+}
 document.addEventListener('keydown', e=>{
+  if(e.key === 'Tab'){
+    const w = fenetreOuverte(); if(!w) return;
+    const liste = focalisables(w); if(!liste.length) return;
+    const premier = liste[0], dernier = liste[liste.length-1];
+    const actif = document.activeElement;
+    if(!w.contains(actif)){ e.preventDefault(); (e.shiftKey ? dernier : premier).focus(); return; }
+    if(e.shiftKey && actif === premier){ e.preventDefault(); dernier.focus(); }
+    else if(!e.shiftKey && actif === dernier){ e.preventDefault(); premier.focus(); }
+    return;
+  }
   if(e.key !== 'Escape') return;
-  const ouverte = [...document.querySelectorAll('.sheetwrap[id].on')].pop();
+  const ouverte = fenetreOuverte();
   if(ouverte){ fermeFenetre(ouverte.id); return; }
   if(document.getElementById('tourOverlay').classList.contains('on')) finVisite();
 });
@@ -2126,10 +2182,10 @@ function checkDetailHTML(c){
 function barChart(data){
   const has = data.some(d=>d.pct!=null);
   if(!has) return '<p class="mutd">Pas encore de passages sur cette période.</p>';
-  return '<div class="bars">'+data.map(d=>{
+  return '<div class="bars'+(data.length > 8 ? ' dense' : '')+'">'+data.map(d=>{
     const h = d.pct==null ? 0 : Math.max(4, d.pct*0.92);
     return '<div class="bar" title="'+(d.pct==null?'aucun passage':Math.round(d.pct)+' % ('+d.n+' passages)')+'">'+
-      '<span class="v">'+(d.pct==null?'':Math.round(d.pct)+'%')+'</span>'+
+      '<span class="v">'+(d.pct==null?'':Math.round(d.pct))+'</span>'+
       '<i class="'+(d.pct==null?'empty':'')+'" style="height:'+h+'%"></i>'+
       '<span class="l">'+esc(d.label)+'</span></div>';
   }).join('')+'</div>';
@@ -2201,41 +2257,46 @@ function openFiche(id){
 }
 
 /* Droit d'accès (art. 15 RGPD) : dossier complet d'une personne, remis sur demande. */
+/* Le dossier personnel part en classeur, comme les autres documents.
+   Ce n'était pas qu'une question d'homogénéité : en CSV, une cellule qui
+   commence par « = », « + », « - » ou « @ » est exécutée comme une formule à
+   l'ouverture dans Excel. Un hôte nommé « =cmd|… » suffisait à faire tourner
+   une commande sur le poste du responsable. Dans un classeur, le texte est
+   écrit en chaîne littérale : il ne peut pas devenir une formule. */
 function exportHostData(id){
   const h = hostById(id); if(!h) return;
   const s = hostStats(h);
-  const sep=';'; const q = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const L = [];
-  L.push('DOSSIER PERSONNEL — SUIVI PRESTATION PENELOPE');
-  L.push('Édité le'+sep+q(frDate(todayISO())));
-  L.push('');
-  L.push('IDENTITE');
-  L.push('Prénom'+sep+q(h.firstName));
-  L.push('Nom'+sep+q(h.lastName||''));
-  L.push('Accueil'+sep+q(h.site||''));
-  L.push('Date d\'arrivée'+sep+q(frDate(h.startedOn)));
-  L.push('Commentaire sur le profil'+sep+q(h.comment||''));
-  L.push('');
-  L.push('SYNTHESE');
-  L.push('Note moyenne'+sep+q(pctTxt(s.pct)));
-  L.push('Nombre de passages conservés'+sep+s.total);
-  L.push('');
-  L.push('EVALUATIONS DETAILLEES (conservées 1 an)');
-  L.push('Date'+sep+'Note'+sep+'Appréciation'+sep+'Points signalés'+sep+'Commentaires'+sep+'Réponse apportée'+sep+'Évaluateur');
-  s.list.slice().reverse().forEach(c=>{
-    const failed = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
-    const sc = checkScore(c);
-    L.push([q(frDate(c.date)), sc+' %', q(rateLabel(sc)),
-      q(failed.map(([k])=>k).join(', ')),
-      q(failed.filter(([,v])=>v.comment).map(([k,v])=>k+' : '+v.comment).join(' | ')),
-      q(c.note||''), q(c.by||'')].join(sep));
-  });
-  L.push('');
-  L.push('VOS DROITS');
-  L.push(q('Vous pouvez demander la rectification, la limitation ou l\'effacement de ces données, et vous opposer au traitement pour des raisons tenant à votre situation particulière. Adressez votre demande au responsable du site. Une réponse motivée vous sera apportée sous un mois.'));
-  download(String.fromCharCode(65279)+L.join('\r\n'),
-    'dossier-'+(h.firstName+'-'+(h.lastName||'')).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+todayISO()+'.csv',
-    'text/csv;charset=utf-8');
+  const nom = (h.firstName+' '+(h.lastName||'')).trim();
+  const identite = xlsTable(
+    [{t:'Information',w:220},{t:'Valeur',w:320}],
+    [['Prénom', h.firstName], ['Nom', h.lastName||'—'], ['Accueil', h.site||'—'],
+     ['Date d\'arrivée', frDate(h.startedOn)], ['Commentaire sur le profil', h.comment||'—'],
+     ['Note moyenne', pctTxt(s.pct)], ['Passages conservés', s.total]]
+      .map(([k,v])=>[{v:k,b:true},{v}]));
+  const passages = xlsTable(
+    [{t:'Date',w:95},{t:'Note',w:70,a:'center'},{t:'Appréciation',w:120},
+     {t:'Points signalés',w:230},{t:'Commentaires',w:320},{t:'Réponse apportée',w:280},
+     {t:'Évaluateur',w:120}],
+    s.list.slice().reverse().map(c=>{
+      const rates = c.items ? Object.entries(c.items).filter(([,v])=>v && v.ok===false) : [];
+      const sc = checkScore(c);
+      const bg = sc===100 ? XLS.ok : (sc>=75 ? null : XLS.bad);
+      return [{v:frDate(c.date),bg},{v:sc+' %',a:'center',b:true,bg},{v:rateLabel(sc),bg},
+        {v:rates.map(([k])=>k).join(', '),bg},
+        {v:rates.filter(([,v])=>v.comment).map(([k,v])=>k+' : '+v.comment).join(' | '),bg},
+        {v:c.note||'',bg},{v:c.by||'',bg}];
+    }));
+  const droits = xlsTable([{t:'Vos droits',w:820}], [[{v:
+    'Vous pouvez demander la rectification, la limitation ou l\'effacement de ces données, '+
+    'et vous opposer au traitement pour des raisons tenant à votre situation particulière. '+
+    'Adressez votre demande au responsable du site. Une réponse motivée vous sera apportée '+
+    'sous un mois.'}]]);
+  xlsDownload('dossier-'+(nom||'hote').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+todayISO()+'.xlsx',
+    'Dossier personnel', nom + ' · ' + s.total + ' passage' + (s.total>1?'s':'') +
+    ' conservé' + (s.total>1?'s':'') + ' (un an) · édité par ' + (evaluator||'—'),
+    [{ titre:'Identité et synthèse', ...identite },
+     { titre:'Évaluations détaillées', ...passages },
+     { titre:'Information', ...droits }]);
   toast('Dossier personnel édité');
 }
 
@@ -2308,7 +2369,7 @@ function animateRings(){
 function renderStats(){
   const hosts = activeHosts();
   const box = document.getElementById('view-stats');
-  const title = '<div class="view-title">Statistiques</div>';
+  const title = '<h1 class="view-title">Statistiques</h1>';
   const pct0 = p => p==null ? '0 %' : pctTxt(p);
   const today = teamDay(todayISO());
   const t7 = teamRange(addDays(todayISO(),-6), todayISO());
@@ -2337,14 +2398,14 @@ function renderStats(){
       ringHTML('30 derniers jours', t30.pct, t30.total+' passages', delta(t30.pct, t30prec.pct))+
       ringHTML('Depuis le début', tAll.pct, tAll.total+' passages')+
     '</div>'+
-    '<div class="card"><h3>Note par accueil (30 j.)</h3>'+accueilBars()+'</div>'+
-    '<div class="card"><h3>Note de l\'équipe sur 14 jours</h3>'+barChart(days)+'</div>'+
-    '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(teamMonthly(6))+'</div>'+
-    '<div class="card"><h3>Motifs les plus fréquents (30 j.)</h3>'+reasonBars(t30.reasons)+'</div>'+
-    (watch.length ? '<div class="card"><h3>Points de vigilance (note sous 75 % sur 30 j.)</h3>'+
+    '<div class="card"><h2 class="inter">Note par accueil (30 j.)</h2>'+accueilBars()+'</div>'+
+    '<div class="card"><h2 class="inter">Note de l\'équipe sur 14 jours</h2>'+barChart(days)+'</div>'+
+    '<div class="card"><h2 class="inter">Évolution sur 6 mois</h2>'+barChart(teamMonthly(6))+'</div>'+
+    '<div class="card"><h2 class="inter">Motifs les plus fréquents (30 j.)</h2>'+reasonBars(t30.reasons)+'</div>'+
+    (watch.length ? '<div class="card"><h2 class="inter">Points de vigilance (note sous 75 % sur 30 j.)</h2>'+
       watch.map(x=>'<div class="row" style="padding:6px 0"><span class="grow" style="font-size:14px">'+esc(hostName(x.h))+'</span>'+
       '<b class="stat-ko">'+pctTxt(x.s.pct30)+'</b></div>').join('')+'</div>' : '')+
-    '<div class="card"><h3>Suivi par personne</h3>'+
+    '<div class="card"><h2 class="inter">Suivi par personne</h2>'+
       (alpha.length ? '<div class="tablewrap"><table><tr><th>Hôte</th><th>Note</th><th>Passages</th></tr>'+
       alpha.map(x=>'<tr>'+
         '<td>'+esc(hostName(x.h))+'</td><td><b style="color:'+rateColor(x.s.pct)+'">'+pctTxt(x.s.pct)+'</b> '+
