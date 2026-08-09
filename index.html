@@ -227,6 +227,19 @@
   .hbars .hb .trk{ flex:1; height:10px; background:var(--grid); border-radius:4px; overflow:hidden }
   .hbars .hb .trk i{ display:block; height:100%; background:var(--series); border-radius:4px 0 0 4px }
   .hbars .hb .n{ width:26px; text-align:right; font-size:12px; color:var(--ink2); font-variant-numeric:tabular-nums }
+  /* Un motif qu'on peut ouvrir pour lire les faits qu'il recouvre */
+  .hbars .hb.hbclic{ cursor:pointer; margin:0 -6px 8px; padding:4px 6px; border-radius:8px }
+  .hbars .hb.hbclic:hover{ background:var(--page) }
+  .hbars .hb.hbclic:focus-visible{ outline:2px solid var(--brand); outline-offset:1px }
+  .hbars .hb.hbclic .hbchev{ color:var(--muted); font-size:15px; line-height:1;
+    transition:transform .18s ease; flex:none }
+  .hbars .hb.hbclic.on{ background:var(--page) }
+  .hbars .hb.hbclic.on .hbchev{ transform:rotate(180deg) }
+  .hbars .hbdet{ margin:-4px 0 12px; padding:9px 11px; border-left:3px solid var(--series);
+    background:var(--page); border-radius:0 8px 8px 0 }
+  .hbars .hbdet .fait{ font-size:12.5px; color:var(--ink2); line-height:1.5; padding:3px 0;
+    border-bottom:1px solid var(--grid) }
+  .hbars .hbdet .fait:last-of-type{ border-bottom:0 }
 
   .gradepill{ display:inline-block; font-size:11.5px; font-weight:650; padding:3px 10px;
     border-radius:99px; vertical-align:middle }
@@ -2465,14 +2478,55 @@ function barChart(data){
       '<span class="l">'+esc(d.label)+'</span></div>';
   }).join('')+'</div>';
 }
-function reasonBars(reasons){
+/* Les occurrences d'un même motif, du plus récent au plus ancien : la date, ce
+   qui a été dit, et par qui. C'est la matière du suivi — « badge oublié le 3,
+   le 5, le 12 » pèse plus lourd qu'une moyenne à 87 %. Sans ce regroupement il
+   fallait éplucher tout l'historique à la main pour rassembler les mêmes faits. */
+function occurrencesParMotif(list){
+  const par = {};
+  list.filter(c=>c.status==='not_ok').forEach(c=>{
+    const items = c.items || {};
+    (c.reasons||[]).forEach(r=>{
+      const it = items[r] || {};
+      (par[r] = par[r] || []).push({ date:c.date, comment: it.comment || '',
+        by: c.by || '', photo: photoSure(it.photo) });
+    });
+  });
+  Object.values(par).forEach(l=>l.sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0));
+  return par;
+}
+function reasonBars(reasons, occ){
   const entries = Object.entries(reasons).sort((a,b)=>b[1]-a[1]);
   if(!entries.length) return '<p class="mutd">Aucun motif enregistré.</p>';
   const max = entries[0][1];
-  return '<div class="hbars">'+entries.map(([r,n])=>
-    '<div class="hb"><span class="lab" title="'+esc(r)+'">'+esc(r)+'</span>'+
-    '<span class="trk"><i style="width:'+(n/max*100)+'%"></i></span>'+
-    '<span class="n">'+n+'</span></div>').join('')+'</div>';
+  return '<div class="hbars">'+entries.map(([r,n],i)=>{
+    const faits = occ && occ[r] ? occ[r] : null;
+    const barre = '<span class="lab" title="'+esc(r)+'">'+esc(r)+'</span>'+
+      '<span class="trk"><i style="width:'+(n/max*100)+'%"></i></span>'+
+      '<span class="n">'+n+'</span>';
+    if(!faits || !faits.length) return '<div class="hb">'+barre+'</div>';
+    const dits = faits.filter(f=>f.comment).length;
+    return '<div class="hb hbclic" role="button" tabindex="0" '+
+      'aria-expanded="false" onclick="basculeMotif(this)" '+
+      'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();basculeMotif(this)}">'+
+      barre+'<span class="hbchev">⌄</span></div>'+
+      '<div class="hbdet" hidden>'+
+      faits.map(f=>'<div class="fait"><b>'+frDate(f.date)+'</b>'+
+        (f.comment ? ' — '+esc(f.comment) : ' <span class="mutd">(aucune précision notée)</span>')+
+        (f.photo ? ' <span class="mutd">· photo</span>' : '')+
+        (f.by ? '<span class="mutd"> · '+esc(f.by)+'</span>' : '')+'</div>').join('')+
+      '<p class="mutd" style="margin-top:6px">'+faits.length+' fois'+
+        (dits ? ', dont '+dits+' avec une précision écrite' : ', aucune précision écrite')+'.</p>'+
+      '</div>';
+  }).join('')+'</div>';
+}
+function basculeMotif(el){
+  const det = el.nextElementSibling;
+  if(!det || !det.classList.contains('hbdet')) return;
+  const ouvert = !det.hidden;
+  det.hidden = ouvert;
+  el.classList.toggle('on', !ouvert);
+  el.setAttribute('aria-expanded', String(!ouvert));
 }
 function openFiche(id){
   const h = hostById(id); if(!h) return;
@@ -2513,7 +2567,10 @@ function openFiche(id){
       'onblur="saveHostComment(\''+h.id+'\', this.value)">'+esc(h.comment||'')+'</textarea>'+
       '<p class="mutd" style="margin-top:6px">Visible par toute l\'équipe encadrante, enregistré automatiquement.</p></div>'+
     '<div class="card"><h3>Évolution sur 6 mois</h3>'+barChart(monthly(h,6))+'</div>'+
-    '<div class="card"><h3>Motifs de non-conformité</h3>'+reasonBars(s.reasons)+'</div>'+
+    '<div class="card"><h3>Motifs de non-conformité</h3>'+
+      '<p class="mutd" style="margin:-2px 0 8px">Touchez un motif pour voir toutes les fois '+
+      'où il a été relevé, avec ce qui a été dit ce jour-là.</p>'+
+      reasonBars(s.reasons, occurrencesParMotif(s.list))+'</div>'+
     '<div class="card"><h3>Historique récent</h3>'+(hist||'<p class="mutd">Aucun passage pour l\'instant.</p>')+'</div>'+
     '<div class="card no-print"><h3>Données personnelles</h3>'+
       '<p class="sub" style="margin-bottom:10px">'+esc(h.firstName)+' peut demander à consulter les données '+
