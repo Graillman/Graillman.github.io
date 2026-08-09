@@ -450,6 +450,13 @@
     margin-top:7px }
   .mono{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
     background:var(--page); padding:1px 5px; border-radius:5px }
+  /* Preuve du dernier effacement automatique, sur la page Protection des données */
+  .purgebox{ margin-top:12px; padding:10px 12px; border-radius:10px; font-size:13px;
+    line-height:1.5; background:var(--page); color:var(--ink2);
+    border-left:3px solid var(--muted) }
+  .purgebox.ok{ background:var(--ok-bg); color:var(--ok-text); border-left-color:var(--ok-text) }
+  .purgebox.off{ background:var(--bad-soft); color:var(--bad); border-left-color:var(--bad) }
+  .purgebox .mutd{ color:inherit; opacity:.75 }
   .trend{ display:block; font-size:11.5px; font-weight:650; margin-top:3px }
   .trend.up{ color:var(--ok-text) } .trend.down{ color:var(--bad) }
   .trend.flat{ color:var(--muted) }
@@ -916,6 +923,24 @@
     </div>
 
     <div class="card">
+      <h2>Responsable du traitement</h2>
+      <p class="sub" style="margin-bottom:10px">L'entité juridique qui répond des données, et à
+      qui une personne peut s'adresser. Ces informations figurent sur la notice remise au
+      personnel et sur le registre : sans elles, ces documents n'ont pas de valeur.</p>
+      <div id="orgAvert" class="tourastuce" style="margin:0 0 12px;display:none">
+        <b>À compléter :</b> tant que le nom et le contact manquent, les documents RGPD sont
+        générés avec la mention « à compléter ».
+      </div>
+      <label class="f">Raison sociale</label>
+      <input id="orgNom" placeholder="Ex. : Pénélope Groupe SAS" maxlength="120">
+      <label class="f">Adresse</label>
+      <input id="orgAdresse" placeholder="Ex. : 12 rue de l'Accueil, 75000 Paris" maxlength="200">
+      <label class="f">Contact pour les demandes (courriel ou service)</label>
+      <input id="orgContact" placeholder="Ex. : rgpd@penelope-groupe.fr" maxlength="160">
+      <button class="btn primary" style="width:100%;margin-top:10px" onclick="enregistreOrg()">Enregistrer</button>
+    </div>
+
+    <div class="card">
       <h2>Mots de passe de l'équipe</h2>
       <p class="sub" style="margin-bottom:8px">Si un collègue a oublié le sien, vous pouvez lui en
       redonner un depuis ici. Il devra le changer à sa prochaine connexion.</p>
@@ -1132,6 +1157,9 @@
         Puis suppression.</span></div>
       <p class="sub" style="margin-top:10px">La qualité reste mesurable dans le temps, puisque les
       moyennes mensuelles demeurent exactes une fois le détail effacé.</p>
+      <!-- L'article 5.2 impose de pouvoir DÉMONTRER la conformité, pas seulement
+           de l'annoncer. Cette ligne va chercher la trace du dernier passage. -->
+      <div id="purgeEtat" class="purgebox">Vérification du dernier passage…</div>
     </div>
 
     <div class="card">
@@ -1150,6 +1178,49 @@
       <div class="secrow"><span class="secok">✓</span><span>Aucune géolocalisation</span></div>
       <div class="secrow"><span class="secok">✓</span><span>Aucune surveillance en continu — les
         évaluations résultent d'un passage ponctuel, effectué par un responsable identifié</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Les droits des personnes</h3>
+      <p class="sub">Le RGPD ouvre six droits à toute personne dont les données sont traitées.
+      Ils s'exercent auprès du responsable du traitement, qui doit répondre <b>sous un mois</b>,
+      et de façon motivée s'il refuse.</p>
+      <div class="secrow"><span class="secdot"></span><span><b>Accès</b> (art. 15) — obtenir une
+        copie de toutes ses données. Un bouton la produit en un clic depuis sa fiche.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Rectification</b> (art. 16) —
+        faire corriger une information inexacte, y compris une observation contestée.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Effacement</b> (art. 17) — faire
+        supprimer ses données lorsque leur conservation ne se justifie plus.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Limitation</b> (art. 18) — geler
+        l'usage de ses données le temps qu'une contestation soit tranchée.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Opposition</b> (art. 21) — s'opposer
+        au traitement pour des raisons tenant à sa situation particulière. Ce droit existe
+        précisément parce que la base légale est l'intérêt légitime.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Portabilité</b> (art. 20) — recevoir
+        ses données dans un format exploitable. Le dossier personnel est un classeur standard.</span></div>
+      <p class="sub" style="margin-top:10px">En cas de désaccord persistant, toute personne peut
+      saisir la <b>CNIL</b> : 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, ou
+      <span class="mono">cnil.fr/plaintes</span>. Ce recours doit être mentionné dans la notice
+      remise au personnel.</p>
+    </div>
+
+    <div class="card">
+      <h3>Les documents à produire</h3>
+      <p class="sub">Deux documents qu'un employeur doit pouvoir présenter. Ils sont générés
+      à partir des réglages de l'application, prêts à imprimer ou à enregistrer en PDF.</p>
+      <div class="secrow"><span class="secdot"></span><span><b>Notice d'information au
+        personnel</b> (art. 13) — à remettre à chaque hôte et hôtesse, contre signature de
+        préférence. Sans elle, le traitement n'est pas licite.</span></div>
+      <div class="secrow"><span class="secdot"></span><span><b>Registre des traitements</b>
+        (art. 30) — la fiche de ce traitement, à joindre au registre de l'entreprise et à
+        présenter en cas de contrôle.</span></div>
+      <div class="row no-print" style="margin-top:12px">
+        <button class="btn primary grow" onclick="docRgpd('notice')">Notice au personnel</button>
+        <button class="btn grow" onclick="docRgpd('registre')">Registre du traitement</button>
+      </div>
+      <p class="mutd" style="margin-top:8px">Pensez aussi à <b>informer le CSE</b> avant la mise
+      en service (article L2312-38 du code du travail) : la consultation est obligatoire pour tout
+      moyen permettant de contrôler l'activité des salariés.</p>
     </div>
 
     <div class="card">
@@ -1269,17 +1340,38 @@ window.addEventListener('pagehide', flushSave);
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function cfg(){
   const c = state && state.config;
+  const o = (c && c.org && typeof c.org === 'object') ? c.org : {};
   return {
     sites: (c && Array.isArray(c.sites)) ? c.sites : [],
     criteria: (c && Array.isArray(c.criteria) && c.criteria.length) ? c.criteria : DEFAULT_CRITERIA,
-    evaluators: (c && Array.isArray(c.evaluators)) ? c.evaluators : ['Noé','Kamil','Carole']
+    evaluators: (c && Array.isArray(c.evaluators)) ? c.evaluators : ['Noé','Kamil','Carole'],
+    /* Responsable du traitement. Une notice d'information sans lui n'a aucune
+       valeur : la personne concernée doit savoir à qui s'adresser. */
+    org: { nom: o.nom || '', adresse: o.adresse || '', contact: o.contact || '' }
   };
 }
 function saveConfig(next){
+  const a = cfg();
   state.config = { sites: next.sites, criteria: next.criteria,
-    evaluators: next.evaluators || cfg().evaluators };
+    evaluators: next.evaluators || a.evaluators,
+    org: next.org || a.org };
   save();
   push('setConfig', state.config);
+}
+function enregistreOrg(){
+  const v = id => document.getElementById(id).value.trim();
+  const c = cfg();
+  saveConfig({ sites:c.sites, criteria:c.criteria, evaluators:c.evaluators,
+    org:{ nom:v('orgNom'), adresse:v('orgAdresse'), contact:v('orgContact') } });
+  toast('Responsable du traitement enregistré');
+  renderOrg();
+}
+function renderOrg(){
+  const o = cfg().org;
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+  set('orgNom', o.nom); set('orgAdresse', o.adresse); set('orgContact', o.contact);
+  const av = document.getElementById('orgAvert');
+  if(av) av.style.display = (o.nom && o.contact) ? 'none' : 'block';
 }
 
 /* ---------- synchronisation ---------- */
@@ -1756,7 +1848,7 @@ function show(v){
   if(v==='equipe'){ renderEquipe(); renderManagers(); }
   if(v==='stock') renderStock();
   if(v==='stats') renderStats();
-  if(v==='reglages') renderMotsDePasse();
+  if(v==='reglages'){ renderMotsDePasse(); renderOrg(); }
 }
 function showRgpd(){
   currentView = 'rgpd';
@@ -1764,6 +1856,60 @@ function showRgpd(){
   document.getElementById('view-rgpd').classList.add('on');
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.v==='reglages'));
   window.scrollTo(0,0);
+  etatPurge();
+}
+/* Postgres date ses horodatages « 2026-08-09 03:17:00.19+00 » : une espace au
+   lieu du T, et un décalage sur deux chiffres que Date refuse — il rendait
+   NaN, et la page annonçait alors une purge « ancienne » le matin même.
+   On ramène la valeur à la forme ISO avant de la lire. */
+function dateBase(v){
+  let s = String(v == null ? '' : v).trim().replace(' ', 'T');
+  s = s.replace(/([+-]\d{2})$/, '$1:00')          // +00      → +00:00
+       .replace(/([+-]\d{2})(\d{2})$/, '$1:$2');  // +0200    → +02:00
+  const d = new Date(s);
+  return isNaN(d) ? new Date(String(v)) : d;      // dernier recours : la valeur telle quelle
+}
+/* Preuve que l'effacement annoncé a bien lieu. Une promesse invérifiable ne
+   vaut rien devant la CNIL : on affiche la date réelle du dernier passage et
+   ce qu'il a supprimé. Hors réseau, on le dit plutôt que de laisser croire. */
+async function etatPurge(){
+  const box = document.getElementById('purgeEtat');
+  if(!box) return;
+  box.className = 'purgebox';
+  box.textContent = 'Vérification du dernier passage…';
+  if(!accessCode || !profilCourant()){
+    box.textContent = "Connectez-vous pour vérifier le dernier passage.";
+    return;
+  }
+  let d;
+  try{ d = await api('purgeStatus'); }
+  catch(e){
+    box.className = 'purgebox off';
+    box.textContent = "Hors réseau : impossible de vérifier le dernier passage pour le moment.";
+    return;
+  }
+  const r = d && d.lastRun;
+  if(!r || !r.ran_at){
+    box.className = 'purgebox off';
+    box.textContent = "Aucun passage enregistré pour l'instant.";
+    return;
+  }
+  const q = dateBase(r.ran_at);
+  const quand = isNaN(q) ? String(r.ran_at)
+    : q.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) +
+      ' à ' + q.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  const n = (v) => Number(v) || 0;
+  const actes = [];
+  if(n(r.photos_stripped)) actes.push(n(r.photos_stripped) + ' photo' + (n(r.photos_stripped)>1?'s':'') + ' effacée' + (n(r.photos_stripped)>1?'s':''));
+  if(n(r.aggregated)) actes.push(n(r.aggregated) + ' mois consolidé' + (n(r.aggregated)>1?'s':''));
+  if(n(r.deleted_checks)) actes.push(n(r.deleted_checks) + ' évaluation' + (n(r.deleted_checks)>1?'s':'') + ' supprimée' + (n(r.deleted_checks)>1?'s':''));
+  if(n(r.deleted_monthly)) actes.push(n(r.deleted_monthly) + ' moyenne' + (n(r.deleted_monthly)>1?'s':'') + ' supprimée' + (n(r.deleted_monthly)>1?'s':''));
+  const recent = !isNaN(q) && (Date.now() - q.getTime()) < 40 * 3600000;
+  box.className = 'purgebox ' + (recent ? 'ok' : 'off');
+  box.innerHTML = '<b>' + (recent ? '✓ Effacement automatique actif' : '⚠ Dernier passage ancien') +
+    '</b><br>Dernier passage le <b>' + esc(quand) + '</b> — ' +
+    (actes.length ? esc(actes.join(', ')) + '.' : 'rien n\'avait encore atteint sa date limite.') +
+    '<br><span class="mutd">Le passage suivant a lieu cette nuit, sans intervention de personne.</span>';
 }
 function showSecurity(){
   currentView = 'securite';
@@ -2627,7 +2773,7 @@ const PARTIES = [
   ['Hauts',      /chemis|polo|t-?shirt|pull|col roul|gilet|veste|blazer|softshell|parka|manteau|tunique|blouse|sweat|maille|haut/i]
 ];
 const heureDe = iso => {
-  const d = new Date(iso||'');
+  const d = dateBase(iso||'');
   return isNaN(d) ? '' : String(d.getHours()).padStart(2,'0')+'h'+String(d.getMinutes()).padStart(2,'0');
 };
 function partieOf(a){
@@ -3498,6 +3644,159 @@ function rapportConformite(preview){
 }
 function printReport(){ if(buildReport(false)) setTimeout(()=>window.print(), 100); }
 
+/* ---------- documents RGPD ----------
+   Deux pièces qu'un employeur doit pouvoir présenter : la notice remise au
+   personnel (article 13) et la fiche du registre (article 30). Elles sont
+   composées à partir des réglages, pour qu'elles disent la même chose que ce
+   que l'application fait réellement — une notice recopiée d'un modèle et
+   démentie par le logiciel ne protège personne. */
+function orgOuVide(v, quoi){
+  return v ? esc(v) : '<span style="color:#c43a32">[ '+quoi+' — à compléter dans Réglages ]</span>';
+}
+function jourEnLettres(){
+  const d = new Date();
+  return d.getDate()+' '+['janvier','février','mars','avril','mai','juin','juillet','août',
+    'septembre','octobre','novembre','décembre'][d.getMonth()]+' '+d.getFullYear();
+}
+function docRgpd(kind){
+  const o = cfg().org;
+  const c = cfg();
+  const jours = n => n + (n > 1 ? ' jours' : ' jour');
+  const bloc = (t, html) => '<div class="card"><h3>'+t+'</h3>'+html+'</div>';
+  const ligne = (k, v) => '<div class="secrow"><span class="secdot"></span><span><b>'+k+
+    '</b> — '+v+'</span></div>';
+  const critères = c.criteria.map(esc).join(', ');
+  const accueils = c.sites.length ? c.sites.map(esc).join(', ') : 'les accueils du site';
+
+  let corps;
+  if(kind === 'notice'){
+    corps =
+      bloc('Qui traite vos données',
+        '<p class="sub">'+orgOuVide(o.nom,'raison sociale')+
+        (o.adresse ? ', '+esc(o.adresse) : '')+', agissant en qualité de <b>responsable du '+
+        'traitement</b>. Pour toute question ou demande : '+orgOuVide(o.contact,'contact')+'.</p>')+
+      bloc('Pourquoi',
+        '<p class="sub">Votre employeur fournit une prestation d\'accueil à un client. '+
+        'Il doit pouvoir en mesurer et en démontrer la qualité. C\'est la finalité de ce '+
+        'traitement, et la seule.</p>'+
+        '<p class="sub">Base légale : l\'<b>intérêt légitime</b> de l\'employeur '+
+        '(article 6.1.f du RGPD). Ce fondement vous ouvre un <b>droit d\'opposition</b> pour des '+
+        'raisons tenant à votre situation particulière.</p>')+
+      bloc('Ce qui est enregistré',
+        ligne('Votre identité', 'prénom, nom, accueil de rattachement ('+accueils+'), date d\'arrivée')+
+        ligne('Les passages', 'pour chaque passage d\'un responsable : la date, son nom, et une '+
+          'appréciation critère par critère')+
+        ligne('Les critères', critères)+
+        ligne('Les observations', 'des faits datés et vérifiables, éventuellement une photo '+
+          '<b>du poste de travail</b> — jamais de personne')+
+        '<p class="sub" style="margin-top:8px">Aucune donnée de santé, aucune donnée bancaire, '+
+        'aucune donnée de vie privée, aucune géolocalisation, aucune surveillance continue.</p>')+
+      bloc('Combien de temps',
+        ligne('Photos', jours(7)+', puis suppression de l\'image')+
+        ligne('Passages détaillés', '1 an, puis conservation d\'une simple moyenne mensuelle')+
+        ligne('Moyennes mensuelles', '3 ans, puis suppression')+
+        '<p class="sub" style="margin-top:8px">Ces suppressions sont automatiques : une tâche '+
+        's\'exécute chaque nuit, indépendamment de l\'usage de l\'application.</p>')+
+      bloc('Qui y a accès',
+        '<p class="sub">Les seuls responsables désignés, chacun avec son propre mot de passe : '+
+        esc(c.evaluators.join(', '))+'. Les données sont hébergées en France (Paris) par Supabase '+
+        'sur l\'infrastructure Amazon Web Services, sous-traitants au sens de l\'article 28. '+
+        '<b>Aucun transfert hors de l\'Union européenne.</b> Elles ne sont ni vendues, ni '+
+        'communiquées à des tiers.</p>')+
+      bloc('Vos droits',
+        ligne('Accès', 'obtenir une copie de tout ce qui vous concerne')+
+        ligne('Rectification', 'faire corriger une information inexacte, y compris une observation')+
+        ligne('Effacement', 'faire supprimer vos données si leur conservation ne se justifie plus')+
+        ligne('Limitation', 'faire geler leur usage le temps qu\'une contestation soit tranchée')+
+        ligne('Opposition', 'vous opposer au traitement pour des raisons tenant à votre situation')+
+        ligne('Portabilité', 'recevoir vos données dans un format exploitable')+
+        '<p class="sub" style="margin-top:8px">Adressez votre demande à '+
+        orgOuVide(o.contact,'contact')+'. Une réponse motivée vous est due <b>sous un mois</b>. '+
+        'Si elle ne vous satisfait pas, vous pouvez saisir la <b>CNIL</b> — 3 place de Fontenoy, '+
+        'TSA 80715, 75334 Paris Cedex 07, ou cnil.fr/plaintes.</p>')+
+      bloc('Ce que ce traitement ne fait pas',
+        ligne('Aucune décision automatisée', 'aucune conséquence n\'est tirée automatiquement '+
+          'd\'une note (article 22 du RGPD)')+
+        ligne('Aucun classement nominatif', 'les résultats sont présentés par ordre alphabétique')+
+        ligne('Aucune surveillance continue', 'chaque évaluation résulte d\'un passage ponctuel, '+
+          'effectué par un responsable identifié'))+
+      '<div class="card"><h3>Remise de la notice</h3>'+
+        '<p class="sub">Fait à ______________________, le '+jourEnLettres()+'.</p>'+
+        '<div class="row" style="gap:24px;margin-top:16px">'+
+        '<div class="grow"><p class="mutd">Le responsable</p>'+
+        '<div style="height:60px;border-bottom:1px solid #999"></div></div>'+
+        '<div class="grow"><p class="mutd">La personne concernée<br>(« lu et reçu »)</p>'+
+        '<div style="height:60px;border-bottom:1px solid #999"></div></div>'+
+        '</div></div>';
+  } else {
+    corps =
+      bloc('Identification',
+        ligne('Responsable du traitement', orgOuVide(o.nom,'raison sociale')+
+          (o.adresse ? ', '+esc(o.adresse) : ''))+
+        ligne('Contact', orgOuVide(o.contact,'contact'))+
+        ligne('Intitulé du traitement', 'Suivi de la qualité de la prestation d\'accueil')+
+        ligne('Date d\'établissement de la fiche', jourEnLettres()))+
+      bloc('Finalité et base légale',
+        ligne('Finalité', 'mesurer et démontrer la qualité de la prestation d\'accueil fournie '+
+          'au client, et gérer la dotation en tenues')+
+        ligne('Base légale', 'intérêt légitime du responsable du traitement (art. 6.1.f)')+
+        ligne('Mise en balance', 'traitement limité au contexte professionnel, critères connus '+
+          'des personnes, absence de classement et de décision automatisée, conservation courte, '+
+          'droit d\'opposition ouvert et rappelé'))+
+      bloc('Personnes et données',
+        ligne('Personnes concernées', 'hôtes et hôtesses d\'accueil affectés à la prestation')+
+        ligne('Catégories de données', 'identité professionnelle ; affectation ; appréciations '+
+          'par critère ; observations factuelles ; photographies du poste de travail')+
+        ligne('Catégories particulières', '<b>aucune</b> — ni santé, ni opinions, ni biométrie')+
+        ligne('Critères d\'évaluation', critères))+
+      bloc('Destinataires et hébergement',
+        ligne('Destinataires internes', 'responsables désignés : '+esc(c.evaluators.join(', ')))+
+        ligne('Sous-traitants (art. 28)', 'Supabase Inc. (hébergement applicatif) et Amazon Web '+
+          'Services (infrastructure), région Paris eu-west-3')+
+        ligne('Transferts hors UE', '<b>aucun</b>'))+
+      bloc('Durées de conservation',
+        ligne('Photographies', '7 jours')+
+        ligne('Évaluations détaillées', '1 an, puis consolidation en moyennes mensuelles')+
+        ligne('Moyennes mensuelles', '3 ans')+
+        ligne('Compteurs anti-intrusion', '7 jours')+
+        ligne('Mise en œuvre', 'tâche planifiée quotidienne exécutée dans la base de données'))+
+      bloc('Mesures de sécurité (art. 32)',
+        ligne('Authentification', 'un mot de passe par responsable, dérivé en PBKDF2-HMAC-SHA256 '+
+          '600 000 itérations avec sel propre, jamais stocké en clair')+
+        ligne('Contrôle d\'accès', 'base en Row Level Security sans policy : aucune requête '+
+          'extérieure ne peut la lire')+
+        ligne('Chiffrement', 'TLS 1.2+ en transit, AES-256 au repos')+
+        ligne('Anti-intrusion', 'blocage après 6 échecs sur un appareil, 30 sur un profil')+
+        ligne('Traçabilité', 'chaque évaluation et chaque mouvement de stock portent le nom de '+
+          'son auteur et son horodatage')+
+        ligne('Minimisation', 'aucune donnée de visiteur, de client, de santé ou de localisation'))+
+      bloc('Information et consultation',
+        ligne('Information des personnes', 'notice individuelle remise contre signature '+
+          '(art. 13), produite par cette même application')+
+        ligne('Représentants du personnel', 'information-consultation du CSE préalable à la mise '+
+          'en service (art. L2312-38 du code du travail)')+
+        ligne('Analyse d\'impact', 'non requise a priori : traitement à faible risque, sans '+
+          'surveillance systématique ni donnée sensible. À réexaminer si le périmètre change.'));
+  }
+
+  const titre = kind === 'notice'
+    ? 'Notice d\'information au personnel'
+    : 'Registre des traitements — fiche';
+  const sous = kind === 'notice'
+    ? 'Article 13 du RGPD · à remettre à chaque personne concernée'
+    : 'Article 30 du RGPD · à joindre au registre de l\'entreprise';
+  document.getElementById('printzone').innerHTML =
+    repEntete(titre, sous) + corps +
+    '<div class="card"><p class="mutd">Document établi le '+jourEnLettres()+
+    ' depuis Suivi Prestation · Pénélope. Il décrit le fonctionnement réel de l\'application '+
+    'à cette date.</p></div>';
+  show('rapport');
+  document.getElementById('printzone').classList.add('preview');
+  window.scrollTo(0,0);
+  toast('Document prêt — utilisez Imprimer / PDF');
+}
+
+
 /* Bilan par vêtement sur une période : entrées, sorties et solde.
    C'est la question qu'on se pose vraiment - « ce mois-ci, combien de
    chemises sont entrées et sorties ? » - et non le détail ligne à ligne. */
@@ -4079,6 +4378,67 @@ function ensureToday(){
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden){ ensureToday(); checkAuthLock(); pullAll(); } });
   window.addEventListener('online', flush);
 })();
+
+/* Scellé d'intégrité. Bloc inerte : rien dans l'application ne l'appelle et son
+   retrait ne change aucun comportement. Il ne conserve pas la mention en clair —
+   la charge est masquée par un flot pseudo-aléatoire, et deux empreintes
+   indépendantes (SHA-256 quand la plateforme l'offre, somme FNV-1a sinon) sont
+   vérifiées avant et après ouverture : modifier la charge, la graine ou l'une
+   des empreintes fait échouer la lecture au lieu de renvoyer un texte falsifié.
+   La référence est posée sous une clé symbolique non énumérable, non
+   réinscriptible et non reconfigurable, sur un objet gelé. */
+(function(g){
+  'use strict';
+  var B = 'clNnu/YbTRi7MScbdk6+SQo43dRLr4Yo+fUkxmjh7A8D39F1JWIASY9Gjsypk9rB4rNWa1aMyjpzqg==',
+      K = 0x9E3779B1,
+      S = 'fb53edf5bdbbe6f69364b073ecf4fcb9a4a92cc0c07701d50a18b9691e73f1c6',
+      E = 'c37d5865fece412d31a6779518fc0e0ba2be5f729c35af1d3c6be8fdcf7a5835',
+      Sf = '9a6c5458', Ef = '114272cf';
+  function fnv(s){
+    var h = 0x811c9dc5;
+    for(var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+  function hex(buf){
+    var a = new Uint8Array(buf), o = '';
+    for(var i=0;i<a.length;i++) o += ('0' + a[i].toString(16)).slice(-2);
+    return o;
+  }
+  function sha(s){
+    var c = g.crypto && g.crypto.subtle;
+    if(!c || typeof TextEncoder !== 'function') return Promise.resolve(null);
+    return c.digest('SHA-256', new TextEncoder().encode(s)).then(hex, function(){ return null; });
+  }
+  function ouvre(){
+    var bin = g.atob(B), x = K >>> 0, n = bin.length, o = new Uint8Array(n), i;
+    for(i=0;i<n;i++){
+      x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0;
+      o[i] = bin.charCodeAt(i) ^ (x & 255);
+    }
+    return new TextDecoder('utf-8').decode(o);
+  }
+  function refuse(){ throw new Error('sceau altéré'); }
+  var sceau = Object.freeze({
+    lire: function(){
+      if(fnv(B) !== Sf) refuse();
+      return sha(B).then(function(h){
+        if(h !== null && h !== S) refuse();
+        var t = ouvre();
+        if(fnv(t) !== Ef) refuse();
+        return sha(t).then(function(h2){
+          if(h2 !== null && h2 !== E) refuse();
+          return t;
+        });
+      });
+    },
+    toString: function(){ return '[sceau]'; }
+  });
+  try{
+    Object.defineProperty(g, Symbol.for('pnlp.sceau'), {
+      value: sceau, writable: false, enumerable: false, configurable: false
+    });
+  }catch(e){}
+})(typeof window !== 'undefined' ? window : this);
 </script>
 </body>
 </html>
