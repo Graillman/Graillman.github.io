@@ -522,11 +522,28 @@
   .sizepick button.sel{ background:var(--brand); border-color:var(--brand); color:var(--on-brand);
     box-shadow:0 2px 6px rgba(15,81,50,.28) }
   .sizepick button.free{ border-style:dashed }
-  /* Le choix de la coupe doit sauter aux yeux : fond plein, pas un simple liseré. */
-  .pourbtn{ flex:1; min-width:96px; padding:13px 14px !important; font-size:14.5px !important;
-    border-width:2px !important }
-  .pourbtn.sel{ background:var(--ink) !important; border-color:var(--ink) !important;
-    color:var(--on-ink) !important; box-shadow:0 3px 10px rgba(16,24,40,.28) !important }
+  /* Bascule à cases colorées : Femme / Homme, Stock / Entrées·sorties. Chaque
+     case porte sa propre couleur — visible même non choisie — et la case
+     active se remplit, se soulève et affiche un ✓. On ne peut pas se tromper
+     sur ce qui est sélectionné. Distinct du .seg du pointage, laissé intact. */
+  .segpick{ display:flex; gap:8px }
+  .segpick.wide{ width:100% }
+  .segpick button{ flex:1; min-width:0; min-height:46px; border:2px solid var(--baseline);
+    background:var(--surface); color:var(--ink2); border-radius:13px; padding:9px 12px;
+    font-weight:700; font-size:14.5px; display:inline-flex; align-items:center;
+    justify-content:center; gap:6px; transition:background-color .16s, color .16s,
+    border-color .16s, box-shadow .16s, transform .12s }
+  .segpick button.sel::before{ content:'✓'; font-weight:800; font-size:13px }
+  .segpick button.sel{ color:#fff; transform:translateY(-1px) }
+  .segpick button:active{ transform:scale(.97) }
+  .segpick .k-femme{ color:#a83b7c; border-color:#e7c3db }
+  .segpick .k-homme{ color:#2c609a; border-color:#c3d7ea }
+  .segpick .k-stock{ color:#0e6d50; border-color:#bfe0d3 }
+  .segpick .k-mouv{  color:#985a10; border-color:#ecd8b4 }
+  .segpick .k-femme.sel{ background:#b5468a; border-color:#b5468a; box-shadow:0 4px 12px rgba(181,70,138,.34) }
+  .segpick .k-homme.sel{ background:#2f6fb0; border-color:#2f6fb0; box-shadow:0 4px 12px rgba(47,111,176,.34) }
+  .segpick .k-stock.sel{ background:#0f7a5a; border-color:#0f7a5a; box-shadow:0 4px 12px rgba(15,122,90,.34) }
+  .segpick .k-mouv.sel{  background:#a05c0f; border-color:#a05c0f; box-shadow:0 4px 12px rgba(160,92,15,.34) }
   .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
   .filterrow button{ flex:none; border:1px solid var(--baseline); background:var(--surface);
     color:var(--ink2); border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:600 }
@@ -595,10 +612,19 @@
     text-transform:uppercase; letter-spacing:.05em; padding:7px 8px }
   .reptab tr.sgrp td{ color:var(--muted); font-weight:700; font-size:11px;
     text-transform:uppercase; letter-spacing:.05em; padding:6px 8px; background:var(--page) }
-  .tq{ display:inline-block; border:1px solid var(--baseline); border-radius:7px;
-    padding:2px 7px; margin:0 4px 4px 0; font-size:11.5px; white-space:nowrap }
-  .tq b{ font-variant-numeric:tabular-nums }
-  .tq.z{ border-color:var(--bad); color:var(--bad); background:var(--bad-soft) }
+  /* Chaque taille est une petite tuile : le libellé de taille au-dessus, la
+     quantité en gros dessous. Aligné, lisible, bien mieux qu'une suite
+     « 34 2 36 1 38 4 ». Une taille à zéro passe en rouge. */
+  .szwrap{ display:flex; flex-wrap:wrap; gap:6px }
+  .szcell{ display:inline-flex; flex-direction:column; align-items:stretch; min-width:40px;
+    border:1px solid var(--baseline); border-radius:9px; overflow:hidden;
+    font-variant-numeric:tabular-nums; text-align:center }
+  .szcell .szl{ font-size:10px; font-weight:700; color:var(--muted); background:var(--page);
+    padding:2px 8px; letter-spacing:.03em; text-transform:uppercase }
+  .szcell .szq{ font-size:15px; font-weight:750; padding:3px 8px; color:var(--ink) }
+  .szcell.z{ border-color:var(--bad) }
+  .szcell.z .szl{ color:#fff; background:var(--bad) }
+  .szcell.z .szq{ color:var(--bad) }
 
   /* ---------- tablette et ordinateur ---------- */
   @media (min-width:760px){
@@ -622,7 +648,11 @@
 
   /* ---------- impression ---------- */
   @media print{
-    body{ padding:0; background:#fff; color:#000 }
+    /* print-color-adjust: exact force le navigateur à imprimer les fonds et
+       les couleurs (verts de marque, rouges d'alerte, en-têtes de tableau).
+       Sans lui, une imprimante economise l'encre et sort tout en gris. */
+    body{ padding:0; background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+    #printzone, #printzone *{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
     header.app, nav.tabs, .no-print, #toast, .sheetwrap{ display:none !important }
     /* #printzone vit dans la vue Rapport : on garde cette vue affichée et on
        masque ses autres enfants, sinon le parent caché emporte la zone
@@ -631,7 +661,15 @@
     #view-rapport{ display:block !important; padding:0 }
     #view-rapport > *{ display:none !important }
     #printzone{ display:block !important }
-    .card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid }
+    /* break-inside:avoid sur toute la carte poussait un grand tableau en entier
+       sur la page suivante, laissant un énorme blanc après l'en-tête. On ne
+       protège plus que l'en-tête, le résumé et le pied ; le tableau de détail,
+       lui, coule d'une page à l'autre et répète ses colonnes en haut. */
+    .card{ box-shadow:none; border:1px solid var(--hairline); break-inside:auto }
+    .rephead, .reppied, .repsum, .repsum tr{ break-inside:avoid }
+    .reptab thead{ display:table-header-group }
+    .reptab tr{ break-inside:avoid }
+    .reptab tr.grp, .reptab tr.sgrp{ break-after:avoid }
   }
   #printzone{ display:none }
   /* À l'écran, un tableau de rapport plus large que le téléphone doit défiler
@@ -908,9 +946,9 @@
   <!-- ================= STOCK ================= -->
   <section class="view" id="view-stock">
     <h1 class="view-title">Stock</h1>
-    <div class="seg wide no-print" id="invTabs" style="margin-bottom:12px">
-      <button class="sel" onclick="setInvTab('stock')">Stock</button>
-      <button onclick="setInvTab('mouv')">Entrées · sorties</button>
+    <div class="segpick wide no-print" id="invTabs" style="margin-bottom:12px">
+      <button class="k-stock sel" onclick="setInvTab('stock')">Stock</button>
+      <button class="k-mouv" onclick="setInvTab('mouv')">Entrées · sorties</button>
     </div>
 
     <div id="invPaneStock">
@@ -3036,8 +3074,9 @@ function renderStock(){
     const dispo = ORDRE_POUR.filter(p=>list.some(a=>pourOf(a)===p));
     if(!dispo.includes(pourFilter)) pourFilter = dispo[0] || null;
     document.getElementById('invPour').innerHTML = dispo.length > 1
-      ? '<div class="seg wide">'+dispo.map(p=>'<button class="'+(p===pourFilter?'sel':'')+
-          '" onclick="setPourFilter('+jsq(p)+')">'+esc(POUR_COURT[p]||p)+'</button>').join('')+'</div>'
+      ? '<div class="segpick wide">'+dispo.map(p=>'<button class="'+(POUR_KLASS[p]||'')+
+          (p===pourFilter?' sel':'')+'" onclick="setPourFilter('+jsq(p)+')">'+
+          esc(POUR_COURT[p]||p)+'</button>').join('')+'</div>'
       : '';
     let html = '';
     ORDRE_PARTIES.forEach(partie=>{
@@ -3115,13 +3154,15 @@ function sizeOrder(type, sz){
 }
 let sizeType = 'alpha', aPour = 'Coupe femme';
 const POUR_COURT = { 'Coupe femme':'Femme', 'Coupe homme':'Homme' };
+// couleur propre à chaque coupe, partagée par le sélecteur du stock et de la fiche
+const POUR_KLASS = { 'Coupe femme':'k-femme', 'Coupe homme':'k-homme' };
 // les vêtements enregistrés avant la suppression du mixte sont rattachés aux hommes
 const pourOf = a => (a.gender === 'Coupe femme') ? 'Coupe femme' : 'Coupe homme';
 function setPour(v){ aPour = v; renderPour(); }
 function renderPour(){
-  document.getElementById('aPour').innerHTML = INV_GENDERS.map(g=>
-    '<button class="pourbtn'+(g===aPour?' sel':'')+'" onclick="setPour('+jsq(g)+')">'+
-    esc(POUR_COURT[g]||g)+'</button>').join('');
+  document.getElementById('aPour').innerHTML = '<div class="segpick wide">'+INV_GENDERS.map(g=>
+    '<button class="'+(POUR_KLASS[g]||'')+(g===aPour?' sel':'')+'" onclick="setPour('+jsq(g)+')">'+
+    esc(POUR_COURT[g]||g)+'</button>').join('')+'</div>';
 }
 let sizeTypeInutilise = null;
 function pickGamme(k){ sizeType = k; pickedSizes = SIZE_SETS[k].sizes.slice(); renderSizePick(); }
@@ -3375,9 +3416,13 @@ function xlsTable(cols, rows){
     ';width:'+(c.w||110)+'px">'+xlsEsc(c.t)+'</th>').join('');
   const tr = rows.map((r,i)=>'<tr>'+r.map((cell,j)=>{
     const c = (cell && typeof cell==='object') ? cell : { v:cell };
+    const col = cols[j] || {};
     const bg = c.bg || (i%2 ? XLS.zebra : '#ffffff');
+    // une cellule à formule montre sa valeur calculée dans l'aperçu
+    const disp = c.f!=null ? (c.cache==null?'':c.cache) : c.v;
+    const wrapCss = col.wrap ? ';white-space:normal;max-width:340px;vertical-align:top' : '';
     return '<td style="background:'+bg+';border:1px solid '+XLS.line+';padding:5px 8px;text-align:'+
-      (c.a||cols[j]&&cols[j].a||'left')+(c.b?';font-weight:700':'')+'">'+xlsEsc(c.v)+'</td>';
+      (c.a||col.a||'left')+(c.b?';font-weight:700':'')+wrapCss+'">'+xlsEsc(disp)+'</td>';
   }).join('')+'</tr>').join('');
   return {
     cols, rows,
@@ -3495,10 +3540,10 @@ function xlsxBlob(titre, sousTitre, blocs){
     if(i<0){ fonds.push(f); i = fonds.length-1; } return i; };
   idPolice({ sz:11 }); idFond(null); idFond('gris');      // les deux fonds imposés par le format
   /* fmt : 0 = standard, 164 = signé (« +12 » reste affiché avec son plus) */
-  const style = (p, fond, align, bord, fmt) => {
-    const k = clefPolice(p)+'|'+fond+'|'+align+'|'+bord+'|'+(fmt||0);
+  const style = (p, fond, align, bord, fmt, wrap) => {
+    const k = clefPolice(p)+'|'+fond+'|'+align+'|'+bord+'|'+(fmt||0)+'|'+(wrap?'w':'');
     if(index.has(k)) return index.get(k);
-    styles.push({ f:idPolice(p), b:fond?idFond(fond):0, a:align, bord, fmt:fmt||0 });
+    styles.push({ f:idPolice(p), b:fond?idFond(fond):0, a:align, bord, fmt:fmt||0, wrap:!!wrap });
     index.set(k, styles.length-1);
     return styles.length-1;
   };
@@ -3510,7 +3555,7 @@ function xlsxBlob(titre, sousTitre, blocs){
     pied:    style({ sz:9, c:'#8a958f' }, null, 'left', 0),
   };
   const entete = a => style({ sz:11, b:1, c:XLS.headText }, XLS.head, a||'left', 1);
-  const cellule = (b, bg, a, fmt) => style(b?{ sz:11, b:1 }:{ sz:11 }, bg, a||'left', 1, fmt);
+  const cellule = (b, bg, a, fmt, wrap) => style(b?{ sz:11, b:1 }:{ sz:11 }, bg, a||'left', 1, fmt, wrap);
 
   /* --- lignes --- */
   const lignes = [];
@@ -3527,13 +3572,20 @@ function xlsxBlob(titre, sousTitre, blocs){
     pousse(b.cols.map(c=>texte(c.t, entete(c.a))));
     b.cols.forEach((c,j)=>{ const l = Math.round((c.w||110)/7);
       largeurs[j] = Math.max(largeurs[j]||9, Math.min(l, 60)); });
+    const firstData = lignes.length;   // 1re ligne de données de ce bloc, pour résoudre « #C »
     b.rows.forEach((r,i)=>pousse(r.map((cell,j)=>{
       const c = (cell && typeof cell==='object') ? cell : { v:cell };
       const bg = c.bg || (i%2 ? XLS.zebra : null);
-      // une colonne déclarée « txt » ne se convertit jamais en nombre
       const col = b.cols[j] || {};
+      const wrap = !!col.wrap;
+      /* Cellule à formule : « @C » = colonne C de cette même ligne, « #C » =
+         toutes les lignes de données du bloc situées au-dessus. La valeur
+         numérique jointe n'est qu'un cache : Excel la recalcule à l'ouverture. */
+      if(c.f) return { t:{ type:'formule', n:(c.cache==null?0:c.cache) }, f:c.f, blocFirst:firstData,
+        s:cellule(c.b, bg, c.a || col.a, c.fmt||0, wrap) };
+      // une colonne déclarée « txt » ne se convertit jamais en nombre
       const t = typeCellule(col.txt ? Object.assign({}, c, { txt:true }) : c);
-      return { t, s:cellule(c.b, bg, c.a || col.a, t.signe ? 164 : 0) };
+      return { t, s:cellule(c.b, bg, c.a || col.a, t.signe ? 164 : (c.fmt||0), wrap) };
     })));
     pousse([]);
   }
@@ -3546,6 +3598,12 @@ function xlsxBlob(titre, sousTitre, blocs){
     return '<row r="'+(r+1)+'">'+cs.map((c, j)=>{
       const ref = colNom(j)+(r+1);
       const t = c.t;
+      if(t.type === 'formule'){
+        const R = r+1, first = c.blocFirst+1, prev = r;   // #C → C{first}:C{ligne-1}
+        const f = c.f.replace(/@([A-Z]+)/g, (m,L)=>L+R)
+                     .replace(/#([A-Z]+)/g, (m,L)=>L+first+':'+L+prev);
+        return '<c r="'+ref+'" s="'+c.s+'"><f>'+xEsc(f)+'</f><v>'+t.n+'</v></c>';
+      }
       if(t.type === 'nombre')
         return '<c r="'+ref+'" s="'+c.s+'"><v>'+t.n+'</v></c>';
       const v = t.v !== undefined ? t.v : t.brut;
@@ -3582,7 +3640,8 @@ function xlsxBlob(titre, sousTitre, blocs){
       '<xf numFmtId="'+(s.fmt||0)+'" fontId="'+s.f+'" fillId="'+s.b+'" borderId="'+s.bord+'" xfId="0" '+
       'applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"'+
       (s.fmt?' applyNumberFormat="1"':'')+'>'+
-      '<alignment horizontal="'+(s.a||'left')+'" vertical="center" wrapText="0"/></xf>').join('')+
+      '<alignment horizontal="'+(s.a||'left')+'" vertical="'+(s.wrap?'top':'center')+
+      '" wrapText="'+(s.wrap?1:0)+'"/></xf>').join('')+
     '</cellXfs><cellStyles count="1">'+
     '<cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
 
@@ -3606,7 +3665,8 @@ function xlsxBlob(titre, sousTitre, blocs){
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '+
       'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
-      '<sheets><sheet name="'+xEsc(nomFeuille)+'" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      '<sheets><sheet name="'+xEsc(nomFeuille)+'" sheetId="1" r:id="rId1"/></sheets>'+
+      '<calcPr fullCalcOnLoad="1"/></workbook>' },
     { nom:'xl/_rels/workbook.xml.rels', contenu:
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
@@ -3994,15 +4054,17 @@ function rapportStock(preview){
   let corps = '', pourCourant = '', partieCourante = '';
   lignes.forEach(x=>{
     if(x.pour !== pourCourant){ pourCourant = x.pour; partieCourante = '';
-      corps += '<tr class="grp"><td colspan="4">'+esc(POUR_COURT[x.pour])+'</td></tr>'; }
+      corps += '<tr class="grp"><td colspan="3">'+esc(POUR_COURT[x.pour])+'</td></tr>'; }
     if(x.partie !== partieCourante){ partieCourante = x.partie;
-      corps += '<tr class="sgrp"><td colspan="4">'+esc(x.partie)+'</td></tr>'; }
-    corps += '<tr><td><b>'+esc(x.a.name)+'</b></td>'+
-      '<td>'+x.vars.map(v=>{
+      corps += '<tr class="sgrp"><td colspan="3">'+esc(x.partie)+'</td></tr>'; }
+    const marque = (x.a.brand||'').trim();
+    corps += '<tr><td><b>'+esc(x.a.name)+'</b>'+
+        (marque ? '<br><span class="mutd" style="font-weight:500">'+esc(marque)+'</span>' : '')+'</td>'+
+      '<td><div class="szwrap">'+x.vars.map(v=>{
         const q = stock[v.id]||0;
-        return '<span class="tq'+(q<=0?' z':'')+'">'+esc(v.size)+' <b>'+q+'</b></span>';
-      }).join('')+'</td>'+
-      '<td class="c">'+x.vars.length+'</td>'+
+        return '<span class="szcell'+(q<=0?' z':'')+'"><span class="szl">'+esc(v.size)+
+          '</span><span class="szq">'+q+'</span></span>';
+      }).join('')+'</div></td>'+
       '<td class="c"><b>'+x.tot+'</b></td></tr>';
   });
   document.getElementById('printzone').innerHTML =
@@ -4014,8 +4076,8 @@ function rapportStock(preview){
       '<td><span>Tailles à zéro</span><b class="'+(vides?'stat-ko':'')+'">'+vides+'</b></td>'+
     '</tr></table></div>'+
     '<div class="card"><h3 style="margin-top:0">Détail par vêtement</h3>'+
-      '<table class="reptab"><thead><tr><th>Vêtement</th><th>Tailles</th>'+
-      '<th class="c">Réf.</th><th class="c">Total</th></tr></thead>'+
+      '<table class="reptab reptab-stock"><thead><tr><th>Vêtement</th>'+
+      '<th>Tailles en stock</th><th class="c">Total</th></tr></thead>'+
       '<tbody>'+corps+'</tbody></table></div>'+
     (bilanArticles(from, to).length
       ? '<div class="card"><h3 style="margin-top:0">Mouvements sur la période ('+esc(label)+')</h3>'+
@@ -4040,7 +4102,7 @@ function excelMouvements(){
   const sorties = -mvts.filter(m=>m.delta<0).reduce((n,m)=>n+m.delta,0);
   const cols = [{t:'Date',w:95},{t:'Heure',w:70,a:'center'},{t:'Sens',w:80},
     {t:'Quantité',w:85,a:'center'},{t:'Vêtement',w:200},{t:'Pour',w:80},
-    {t:'Taille',w:75,a:'center',txt:true},{t:'Commentaire',w:300},{t:'Saisi par',w:110}];
+    {t:'Taille',w:75,a:'center',txt:true},{t:'Commentaire',w:340,wrap:true},{t:'Saisi par',w:110}];
   const rows = mvts.map(m=>{
     const v = variantById(m.variantId); const a = v ? articleById(v.articleId) : null;
     const e = (m.delta||0) > 0; const bg = e ? XLS.ok : XLS.bad;
@@ -4055,51 +4117,71 @@ function excelMouvements(){
     [{v:'Sorties',bg:XLS.bad},{v:'-'+sorties,a:'center',bg:XLS.bad}],
     [{v:'Solde',b:true},{v:((entrees-sorties)>0?'+':'')+(entrees-sorties),a:'center',b:true}]
   ]);
-  xlsDownload('mouvements-penelope-'+todayISO()+'.xls', 'Journal des entrées et sorties',
+  const bil = bilanArticles(from, to);
+  const bilRows = bil.map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
+    {v:x.entrees,a:'center',bg:XLS.ok},{v:x.sorties,a:'center',bg:XLS.bad},
+    {f:'@C-@D',cache:x.solde,a:'center',b:true}]);            // Solde recalculé par le tableur
+  bilRows.push([{v:'Total',b:true,bg:XLS.zebra},{v:'',bg:XLS.zebra},
+    {f:'SUM(#C)',cache:entrees,a:'center',b:true,bg:XLS.zebra},
+    {f:'SUM(#D)',cache:sorties,a:'center',b:true,bg:XLS.zebra},
+    {f:'SUM(#E)',cache:entrees-sorties,a:'center',b:true,bg:XLS.zebra}]);
+  xlsDownload('mouvements-penelope-'+todayISO()+'.xlsx', 'Journal des entrées et sorties',
     label+' · '+mvts.length+' mouvements · édité par '+(evaluator||'—'),
     [{ titre:'Synthèse', ...syn },
      { titre:'Bilan par vêtement', ...xlsTable(
         [{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
-         {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
-        bilanArticles(from, to).map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
-          {v:signe(x.entrees),a:'center',bg:XLS.ok},{v:signe(-x.sorties),a:'center',bg:XLS.bad},
-          {v:signe(x.solde),a:'center',b:true}])) },
+         {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}], bilRows) },
      { titre:'Détail chronologique', ...xlsTable(cols, rows) }]);
   toast('Journal téléchargé');
 }
 
-/* Classeur stock : l'état taille par taille. */
+/* Classeur stock : les mouvements de la période d'abord, puis l'état du stock —
+   une ligne par vêtement, les tailles réunies dans une seule cellule, et des
+   totaux que le tableur recalcule tout seul. */
 function excelStock(){
   const r = reportRange(); if(!r) return;
   const [from, to, label] = r;
   const lignes = stockLignes();
   if(!lignes.length){ toast('Aucun vêtement en stock'); return; }
   const stock = stockMap();
-  const cols = [{t:'Pour',w:80},{t:'Famille',w:120},{t:'Vêtement',w:200},{t:'Taille',w:80,a:'center',txt:true},
-    {t:'Stock',w:75,a:'center'},{t:'État',w:100}];
-  const rows = []; let total = 0, vides = 0;
-  lignes.forEach(x=>x.vars.forEach(v=>{
-    const q = stock[v.id]||0; total += q; if(q<=0) vides++;
-    const bg = q<=0 ? XLS.bad : null;
-    rows.push([{v:POUR_COURT[x.pour],bg},{v:x.partie,bg},{v:x.a.name,bg,b:true},
-      {v:v.size,bg,a:'center'},{v:q,bg,a:'center',b:true},{v:q<=0?'Vide':'En stock',bg}]);
-  }));
-  rows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:'',bg:XLS.ok},{v:lignes.length+' vêtements',bg:XLS.ok},
-    {v:rows.length+' réf.',bg:XLS.ok,a:'center'},{v:total,b:true,bg:XLS.ok,a:'center'},{v:'',bg:XLS.ok}]);
+  const blocs = [];
 
-  xlsDownload('stock-penelope-'+todayISO()+'.xls', 'Rapport de stock',
+  // 1) Mouvements sur la période — en premier, et calculés dans les cellules
+  const bil = bilanArticles(from, to);
+  if(bil.length){
+    const mvCols = [{t:'Vêtement',w:230},{t:'Pour',w:80},{t:'Entrées',w:90,a:'center'},
+      {t:'Sorties',w:90,a:'center'},{t:'Solde',w:90,a:'center'}];
+    const mvRows = bil.map(x=>[
+      {v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
+      {v:x.entrees,a:'center',bg:XLS.ok},{v:x.sorties,a:'center',bg:XLS.bad},
+      {f:'@C-@D',cache:x.solde,a:'center',b:true}]);            // Solde = Entrées − Sorties
+    mvRows.push([{v:'Total',b:true,bg:XLS.zebra},{v:'',bg:XLS.zebra},
+      {f:'SUM(#C)',cache:bil.reduce((n,x)=>n+x.entrees,0),a:'center',b:true,bg:XLS.zebra},
+      {f:'SUM(#D)',cache:bil.reduce((n,x)=>n+x.sorties,0),a:'center',b:true,bg:XLS.zebra},
+      {f:'SUM(#E)',cache:bil.reduce((n,x)=>n+x.solde,0),a:'center',b:true,bg:XLS.zebra}]);
+    blocs.push({ titre:'Mouvements sur la période ('+label+')', ...xlsTable(mvCols, mvRows) });
+  }
+
+  // 2) État des stocks — une ligne par vêtement, tailles regroupées, total recalculé
+  const stCols = [{t:'Pour',w:80},{t:'Famille',w:120},{t:'Vêtement',w:210},{t:'Marque / modèle',w:150},
+    {t:'Détail des tailles',w:340,wrap:true},{t:'Total',w:80,a:'center'}];
+  const stRows = []; let total = 0, vides = 0;
+  lignes.forEach(x=>{
+    x.vars.forEach(v=>{ if((stock[v.id]||0)<=0) vides++; });
+    total += x.tot;
+    const detail = x.vars.map(v=>v.size+' : '+(stock[v.id]||0)).join('     ');
+    const bg = x.tot<=0 ? XLS.bad : null;
+    stRows.push([{v:POUR_COURT[x.pour],bg},{v:x.partie,bg},{v:x.a.name,b:true,bg},
+      {v:(x.a.brand||'').trim(),bg},{v:detail,bg},{v:x.tot,a:'center',b:true,bg}]);
+  });
+  stRows.push([{v:'TOTAL',b:true,bg:XLS.ok},{v:'',bg:XLS.ok},{v:lignes.length+' vêtements',b:true,bg:XLS.ok},
+    {v:'',bg:XLS.ok},{v:vides+' taille(s) à zéro',bg:XLS.ok},
+    {f:'SUM(#F)',cache:total,a:'center',b:true,bg:XLS.ok}]);
+  blocs.push({ titre:'État des stocks au '+frDate(todayISO()), ...xlsTable(stCols, stRows) });
+
+  xlsDownload('stock-penelope-'+todayISO()+'.xlsx', 'Rapport de stock',
     total+' pièces · '+lignes.length+' vêtements · '+vides+' taille(s) à zéro · édité par '+(evaluator||'—'),
-    (()=>{
-      const blocs = [{ titre:'État du stock', ...xlsTable(cols, rows) }];
-      const bil = bilanArticles(from, to);
-      if(bil.length) blocs.push({ titre:'Mouvements sur la période ('+label+')',
-        ...xlsTable([{t:'Vêtement',w:220},{t:'Pour',w:80},{t:'Entrées',w:85,a:'center'},
-          {t:'Sorties',w:85,a:'center'},{t:'Solde',w:85,a:'center'}],
-          bil.map(x=>[{v:x.a.name,b:true},{v:POUR_COURT[pourOf(x.a)]||''},
-            {v:signe(x.entrees),a:'center',bg:XLS.ok},{v:signe(-x.sorties),a:'center',bg:XLS.bad},
-            {v:signe(x.solde),a:'center',b:true}])) });
-      return blocs;
-    })());
+    blocs);
   toast('Rapport de stock téléchargé');
 }
 
