@@ -1,13 +1,18 @@
 {
+  "id": "/?app=penelope",
   "name": "Suivi Prestation · Pénélope",
   "short_name": "Pénélope",
   "description": "Suivi quotidien de la prestation d'accueil, équipe Pénélope",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#f5f5f6",
   "theme_color": "#0f5d4e",
   "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "icon.svg",
@@ -28,7 +33,7 @@
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

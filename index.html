@@ -294,6 +294,17 @@
     box-shadow:0 6px 20px rgba(16,24,40,.16); text-align:center;
     background:var(--bad-soft); border-radius:12px; padding:10px 14px;
     margin-bottom:12px; font-size:13px; color:var(--ink2) }
+  /* Invite d'installation : discrète, en bas, au-dessus de la barre d'onglets. */
+  #installStrip{ position:fixed; left:12px; right:12px; bottom:78px; z-index:26;
+    display:flex; align-items:center; gap:10px; justify-content:space-between;
+    box-shadow:0 6px 20px rgba(16,24,40,.16); background:var(--surface);
+    border:1px solid var(--hairline); border-radius:12px; padding:9px 10px 9px 14px;
+    font-size:13.5px; color:var(--ink) }
+  #installStrip .installStripAct{ display:flex; align-items:center; gap:4px; flex:none }
+  #installStrip .link{ padding:6px 8px; min-height:36px }
+  #installStrip .iconbtn{ background:none; border:none; color:var(--muted); font-size:15px;
+    line-height:1; padding:8px; min-width:36px; min-height:36px; border-radius:9px; cursor:pointer }
+  #installStrip .iconbtn:hover{ background:var(--tint); color:var(--ink) }
 
   /* ---------- listes gérables (critères / accueils) ---------- */
   .mrow{ display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--hairline) }
@@ -846,6 +857,17 @@
        la lecture en cours, le bandeau n'est pas une urgence. -->
   <div id="syncStrip" class="no-print" role="status" aria-live="polite"
        style="display:none"></div>
+  <!-- Invite discrète à installer l'appli. N'apparaît que si l'appareil sait
+       l'installer (ou iOS/Safari hors écran d'accueil), et une seule fois :
+       une fois fermée ou l'appli installée, elle ne revient plus. -->
+  <div id="installStrip" class="no-print" style="display:none">
+    <span id="installStripTxt">Installer l'application sur cet appareil ?</span>
+    <span class="installStripAct">
+      <button class="link" id="installStripBtn" onclick="lancerInstall()">Installer</button>
+      <button class="link" id="installStripHelp" onclick="show('reglages')" style="display:none">Comment faire</button>
+      <button class="iconbtn" aria-label="Fermer" onclick="fermerInstallStrip()">✕</button>
+    </span>
+  </div>
   <div id="seedBanner" class="banner" style="display:none">
     Ce fichier contient des données incluses (<span id="seedInfo"></span>).
     <div class="row">
@@ -997,6 +1019,25 @@
         <button class="btn grow" onclick="changeCode()">Changer mon mot de passe</button>
       </div>
       <button class="btn neutral" onclick="logout()">Se déconnecter</button>
+    </div>
+
+    <div class="card" id="installCard">
+      <h2>Installer l'application</h2>
+      <p class="sub" id="installSub" style="margin-bottom:10px">Installée sur l'écran d'accueil,
+      l'application s'ouvre en plein écran comme une vraie appli, et fonctionne même sans réseau.</p>
+      <button class="btn primary" id="installBtn" style="width:100%;display:none"
+        onclick="lancerInstall()">Installer sur cet appareil</button>
+      <div id="installIos" style="display:none">
+        <div class="secrow"><span class="secdot"></span><span>Touchez
+          <b>Partager</b> (le carré avec une flèche vers le haut) dans la barre de Safari.</span></div>
+        <div class="secrow"><span class="secdot"></span><span>Choisissez
+          <b>Sur l'écran d'accueil</b>.</span></div>
+        <div class="secrow"><span class="secdot"></span><span>Confirmez avec
+          <b>Ajouter</b> : l'icône Pénélope apparaît sur l'écran d'accueil.</span></div>
+      </div>
+      <p class="mutd" id="installGeneric" style="display:none">Depuis le menu de votre navigateur,
+      choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>
+      <p class="mutd" id="installDone" style="display:none">✓ L'application est déjà installée sur cet appareil.</p>
     </div>
 
     <div class="card">
@@ -1556,6 +1597,7 @@ function syncUI(){
     el.textContent = fenetreLocale === -1
       ? 'Hors ligne : cet appareil n\'a pas pu garder de copie locale'
       : 'Hors ligne : les ' + fenetreLocale + ' derniers jours sont consultables';
+    if(typeof majInstallUI==='function') majInstallUI();
     return;
   }
   if(accessCode && queue.length){
@@ -1563,6 +1605,7 @@ function syncUI(){
     el.textContent = (online ? '' : 'Hors ligne : ') + queue.length +
       ' modification' + (queue.length>1?'s':'') + ' en attente de synchronisation';
   } else el.style.display = 'none';
+  if(typeof majInstallUI==='function') majInstallUI();
 }
 async function pullAll(){
   if(!accessCode || !profilCourant()) return;
@@ -1936,7 +1979,7 @@ function show(v){
   if(v==='equipe'){ renderEquipe(); renderManagers(); }
   if(v==='stock') renderStock();
   if(v==='stats') renderStats();
-  if(v==='reglages'){ renderMotsDePasse(); renderOrg(); }
+  if(v==='reglages'){ renderMotsDePasse(); renderOrg(); majInstallUI(); }
 }
 function showRgpd(){
   currentView = 'rgpd';
@@ -4515,6 +4558,70 @@ function ensureToday(){
     rerenderSoft();
   }
 }
+/* ---------- installation sur l'écran d'accueil (PWA) ----------
+   Trois cas :
+   - Android / Chrome / Edge : le navigateur émet « beforeinstallprompt ». On le
+     met de côté pour l'offrir au bon moment, en un bouton, au lieu de laisser
+     l'utilisateur fouiller le menu.
+   - iOS / Safari : aucune API d'installation n'existe, on montre les trois
+     gestes (Partager → Sur l'écran d'accueil).
+   - déjà installée (plein écran) : on n'insiste pas. */
+let promptInstall = null;
+const INSTALL_KEY = LS_KEY + '_install_masque';
+function estStandalone(){
+  return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+}
+function estIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent||''); }
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); promptInstall = e; majInstallUI(); });
+window.addEventListener('appinstalled', ()=>{
+  promptInstall = null;
+  try{ localStorage.setItem(INSTALL_KEY, '1'); }catch(e){}
+  majInstallUI(); toast('Application installée');
+});
+async function lancerInstall(){
+  if(promptInstall){
+    promptInstall.prompt();
+    try{ await promptInstall.userChoice; }catch(e){}
+    promptInstall = null; fermerInstallStrip(); majInstallUI();
+  } else {
+    // iOS ou navigateur sans invite : on renvoie vers la marche à suivre
+    show('reglages');
+    const c = document.getElementById('installCard');
+    if(c) c.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+function fermerInstallStrip(){
+  const s = document.getElementById('installStrip'); if(s) s.style.display='none';
+  try{ localStorage.setItem(INSTALL_KEY, '1'); }catch(e){}
+}
+function majInstallUI(){
+  const installe = estStandalone(), ios = estIOS();
+  const set = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  // carte dans Réglages
+  set('installDone', installe);
+  set('installSub', !installe);
+  set('installBtn', !installe && !!promptInstall);
+  set('installIos', !installe && !promptInstall && ios);
+  set('installGeneric', !installe && !promptInstall && !ios);
+  // bandeau discret, une seule fois
+  let masque = false; try{ masque = localStorage.getItem(INSTALL_KEY)==='1'; }catch(e){}
+  const strip = document.getElementById('installStrip');
+  if(strip){
+    const proposable = !installe && !masque && (!!promptInstall || ios);
+    strip.style.display = proposable ? 'flex' : 'none';
+    if(proposable){
+      // ne pas chevaucher le bandeau de synchronisation s'il est affiché
+      const sync = document.getElementById('syncStrip');
+      strip.style.bottom = (sync && sync.style.display!=='none') ? '132px' : '78px';
+      set('installStripBtn', !!promptInstall);
+      set('installStripHelp', !promptInstall && ios);
+      const txt = document.getElementById('installStripTxt');
+      if(txt) txt.textContent = promptInstall
+        ? 'Installer l’application sur cet appareil ?'
+        : 'Ajouter l’application à l’écran d’accueil ?';
+    }
+  }
+}
 (function init(){
   const local = load();
   if(local){ state = local; if(!('config' in state)) state.config = null; }
@@ -4537,6 +4644,7 @@ function ensureToday(){
   document.querySelectorAll('img.brandimg').forEach(i=>{ i.src = LOGO_URI; });
   show('pointage');
   syncUI();
+  majInstallUI();
   refreshProfileUI();
   // on arrive toujours sur le choix des profils, façon Netflix
   if(accessCode) { flush(); pullAll(); }
