@@ -327,6 +327,14 @@
   #loginBox{ width:100%; max-width:330px; text-align:center }
   #loginBox input{ text-align:center; letter-spacing:1px;
     font-weight:600; margin:14px 0 10px }
+  /* iOS/Safari n'affiche pas les points de masquage (•) d'un champ mot de passe
+     si la police active ne contient pas ce glyphe. La police personnalisée
+     « Jakarta » ne l'a pas : on tapait son mot de passe à l'aveugle, sans même
+     voir les points, et il fallait l'œil pour écrire en clair. Une police
+     système, qui a le glyphe, règle le problème sur tous les appareils. */
+  input[type="password"], #loginCode{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Arial,sans-serif;
+  }
   .loginliens{ display:flex; flex-wrap:wrap; justify-content:center;
     column-gap:18px; row-gap:2px }
 
