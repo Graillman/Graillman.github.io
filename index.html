@@ -305,6 +305,16 @@
   #installStrip .iconbtn{ background:none; border:none; color:var(--muted); font-size:15px;
     line-height:1; padding:8px; min-width:36px; min-height:36px; border-radius:9px; cursor:pointer }
   #installStrip .iconbtn:hover{ background:var(--tint); color:var(--ink) }
+  /* Carte « Inviter les responsables » : QR à scanner en personne, lien à
+     partager ou copier pour un envoi à distance. */
+  #shareCard .sharewrap{ display:flex; gap:16px; align-items:center; flex-wrap:wrap }
+  #shareCard .shareqr{ width:150px; height:150px; border-radius:12px; border:1px solid var(--baseline);
+    background:#fff; padding:6px; flex:none }
+  #shareCard .sharecol{ flex:1; min-width:190px; display:flex; flex-direction:column; gap:9px }
+  #shareCard .sharelien{ font-size:13px; font-weight:600; color:var(--ink2); word-break:break-all;
+    background:var(--page); border:1px solid var(--baseline); border-radius:9px; padding:8px 10px }
+  #shareCard .sharebtns{ display:flex; gap:8px }
+  #shareCard .sharebtns .btn{ flex:1; min-width:0 }
 
   /* ---------- listes gérables (critères / accueils) ---------- */
   .mrow{ display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--hairline) }
@@ -378,7 +388,7 @@
 
   /* ---------- inventaire ---------- */
   .artcard{ content-visibility:auto; contain-intrinsic-size:auto 190px; transition:box-shadow .15s ease;
-    border-left:3px solid currentColor;
+    border-left:3px solid var(--brand);
     background:var(--surface); border-radius:16px; box-shadow:var(--card-shadow);
     padding:14px 15px; margin-bottom:10px }
   .arthead{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
@@ -468,19 +478,14 @@
   .szbtn:active{ transform:scale(.92) }
   .szrow .qt{ flex:1; border:none; background:transparent; font-size:19px; font-weight:750;
     font-variant-numeric:tabular-nums; color:var(--ink); padding:4px 0; min-height:34px }
-  /* une pastille de couleur par partie : le regard trie avant de lire.
-     Les règles .pickcat.part-* qui suivent l'emportent sur cette couleur. */
+  /* En-tête de catégorie : un intitulé sobre, la même pastille verte pour
+     toutes. Le nom suffit à trier ; on réserve la couleur au sens (rupture,
+     stock bas), pas à décorer chaque famille d'une teinte différente. */
   .pickcat{ display:flex; align-items:center; gap:7px;
     font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
     color:var(--muted); margin:18px 2px 8px }
   .pickcat::before{ content:''; width:8px; height:8px; border-radius:99px;
-    background:currentColor; opacity:.55; flex:none }
-  .pickcat.part-Hauts, .artcard.part-Hauts{ color:var(--part-hauts) }
-  .pickcat.part-Bas, .artcard.part-Bas{ color:var(--part-bas) }
-  .pickcat.part-Robes, .artcard.part-Robes{ color:var(--part-robes) }
-  .pickcat.part-Chaussures, .artcard.part-Chaussures{ color:var(--part-chaussures) }
-  .pickcat.part-Accessoires, .artcard.part-Accessoires{ color:var(--part-accessoires) }
-  .pickcat.part-Autres, .artcard.part-Autres{ color:var(--part-autres) }
+    background:var(--brand); opacity:.5; flex:none }
   .sizecell{ min-width:52px; border:1px solid var(--baseline); background:var(--surface);
     box-shadow:0 1px 2px rgba(16,24,40,.04);
     border-radius:10px; padding:6px 4px 5px; text-align:center; line-height:1.15 }
@@ -562,14 +567,15 @@
   .segpick button.sel::before{ content:'✓'; font-weight:800; font-size:13px }
   .segpick button.sel{ color:#fff; transform:translateY(-1px) }
   .segpick button:active{ transform:scale(.97) }
-  .segpick .k-femme{ color:#a83b7c; border-color:#e7c3db }
-  .segpick .k-homme{ color:#2c609a; border-color:#c3d7ea }
-  .segpick .k-stock{ color:#0e6d50; border-color:#bfe0d3 }
-  .segpick .k-mouv{  color:#985a10; border-color:#ecd8b4 }
-  .segpick .k-femme.sel{ background:#b5468a; border-color:#b5468a; box-shadow:0 4px 12px rgba(181,70,138,.34) }
-  .segpick .k-homme.sel{ background:#2f6fb0; border-color:#2f6fb0; box-shadow:0 4px 12px rgba(47,111,176,.34) }
-  .segpick .k-stock.sel{ background:#0f7a5a; border-color:#0f7a5a; box-shadow:0 4px 12px rgba(15,122,90,.34) }
-  .segpick .k-mouv.sel{  background:#a05c0f; border-color:#a05c0f; box-shadow:0 4px 12px rgba(160,92,15,.34) }
+  /* Un seul accent — le vert de la marque — pour l'onglet actif, contour
+     neutre pour les autres. L'état sélectionné reste parfaitement lisible,
+     sans faire cohabiter quatre teintes qui se disputent l'écran. */
+  .segpick .k-femme, .segpick .k-homme, .segpick .k-stock, .segpick .k-mouv{
+    color:var(--ink2); border-color:var(--baseline) }
+  .segpick .k-femme.sel, .segpick .k-homme.sel,
+  .segpick .k-stock.sel, .segpick .k-mouv.sel{
+    background:var(--brand); border-color:var(--brand);
+    box-shadow:0 4px 12px rgba(15,93,78,.30) }
   .filterrow{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px }
   .filterrow button{ flex:none; border:1px solid var(--baseline); background:var(--surface);
     color:var(--ink2); border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:600 }
@@ -1053,6 +1059,25 @@
       <p class="mutd" id="installGeneric" style="display:none">Depuis le menu de votre navigateur,
       choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>
       <p class="mutd" id="installDone" style="display:none">✓ L'application est déjà installée sur cet appareil.</p>
+    </div>
+
+    <div class="card" id="shareCard">
+      <h2>Inviter les responsables</h2>
+      <p class="sub" style="margin-bottom:12px">Transmettez ce lien à un responsable : il ouvre
+      l'application dans son navigateur, puis l'installe sur son téléphone en un geste — bouton
+      « Installer » sur Android, « Partager » puis « Sur l'écran d'accueil » sur iPhone.</p>
+      <div class="sharewrap">
+        <img class="shareqr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGCAIAAAAG+WgKAAAEJUlEQVR4nO3d3alcNxhA0TikgHTmDlxcOkhn6eDm3QIjxNbPmLUezcyZsb0RfOiMzrevr68/oPPn7S/A70ZSxCRFTFLEJEVMUsQkRUxSxCRFTFLEJEXsr5kX/f3j++7v8Qv//fPvT38y833Gd43G66y9a8bMlWe89n8xskoRkxQxSRGTFDFJEZua+EbV/DKqJpqZaW7tbzEzgVaT48x1Xvu/sEoRkxQxSRGTFDFJEVuc+EZ3d75OXnnfLtvdfcDq061SxCRFTFLEJEVMUsSyie+kfXdsrn36+FnVrt++uXUfqxQxSRGTFDFJEZMUsY+c+E7+lm3fXaajT5zvRlYpYpIiJilikiImKWLZxHdyWln7rLUdtOrcmJP7d3cnR6sUMUkRkxQxSRGTFLHFie/uiZEz09Pd16w5eXboPlYpYpIiJilikiImKWLfftcnsO/biauuPPOuT2SVIiYpYpIiJilikiI2NfG9v/dU3ed58sprqhNg9p3naZUiJilikiImKWKSIrbx5JaTu2Mnf6M38+lrPnG6HFmliEmKmKSISYqYpIhNTXwnnyf+2q/SRnfvz7y7fzfDKkVMUsQkRUxSxCRFbONdnfuuM3Pl0b7f1p2csE6eFLr2LqsUMUkRkxQxSRGTFLHFPb7qLspRNYWdPFFz5tPXrrzvqfH7WKWISYqYpIhJipikiC3u8VX27TTNqPbmXtvj28ceHxdIipikiEmKmKSIHd3jm3HyOXozqneN32dtr/DkE+HXpkurFDFJEZMUMUkRkxSxqYlv31PqZl6zdlbnmn17jid/W3d3H9AqRUxSxCRFTFLEJEUsewL7a2envLbnWH3W2rv2/fuMrFLEJEVMUsQkRUxSxBb3+EavPcHhtb2wk7+FPLknO7JKEZMUMUkRkxQxSRHbeHLLvn2uuxPNvh290d09Pk9n4AmSIiYpYpIiJiliR8/qfH8yqt5Vqb7zDE9g51GSIiYpYpIiJilizz2d4e4e38n7PF87cWXkrk6eIClikiImKWKSIrb4dIZ99n3W3RM119zdFV1jlSImKWKSIiYpYpIilp3css++5+jtu2Nz31R49y7TGVYpYpIiJilikiImKWJTE99o35Sxb7o8+QyFmdecPG3m5Bk1VilikiImKWKSIiYpYosT3+juaSGjagdttO9Oy+pdM9dZu8d1hlWKmKSISYqYpIhJilg28d21tu/22h2S+86xmVFdxypFTFLEJEVMUsQkRewjJ761aW7mOqPqOifPe6nOMnVXJ0+QFDFJEZMUMUkRyya+13bHRtUe377pad8EevJZFVYpYpIiJilikiImKWKLE9/d0ztP7rvNfPrJJwaePIPUXZ08QVLEJEVMUsQkRWzqCewwzypFTFLEJEVMUsQkRUxSxCRFTFLEJEVMUsQkRex/FL44FDV36psAAAAASUVORK5CYII=" alt="QR code d'accès à l'application"
+          width="150" height="150" decoding="async">
+        <div class="sharecol">
+          <span class="sharelien" id="appLien">graillman.github.io</span>
+          <div class="sharebtns">
+            <button class="btn primary" id="shareBtn" onclick="partagerApp()">Partager le lien</button>
+            <button class="btn neutral" onclick="copierLien()">Copier</button>
+          </div>
+          <span class="mutd">En personne, faites simplement scanner le QR code.</span>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -1996,7 +2021,7 @@ function show(v){
   if(v==='equipe'){ renderEquipe(); renderManagers(); }
   if(v==='stock') renderStock();
   if(v==='stats') renderStats();
-  if(v==='reglages'){ renderMotsDePasse(); renderOrg(); majInstallUI(); }
+  if(v==='reglages'){ renderMotsDePasse(); renderOrg(); majInstallUI(); majLienApp(); }
 }
 function showRgpd(){
   currentView = 'rgpd';
@@ -4671,6 +4696,35 @@ function estStandalone(){
   return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 }
 function estIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent||''); }
+/* Partage du lien d'accès aux responsables. On lit l'adresse réelle de la
+   page (origine + chemin) : le lien reste juste quel que soit le domaine. */
+function lienApp(){ return location.origin + location.pathname; }
+function majLienApp(){
+  const el = document.getElementById('appLien');
+  if(el) el.textContent = lienApp().replace(/^https?:\/\//,'').replace(/\/$/,'');
+}
+async function partagerApp(){
+  const url = lienApp();
+  if(navigator.share){
+    try{ await navigator.share({ title:'Suivi Prestation · Pénélope',
+      text:"Accédez au Suivi Prestation Pénélope et installez-le sur votre téléphone.", url }); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; }   // l'utilisateur a fermé le partage
+  }
+  copierLien();                                            // navigateur sans partage natif : on copie
+}
+function copierLien(){
+  const url = lienApp(), ok = ()=>toast('Lien copié');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok).catch(()=>copieSecours(url, ok));
+  } else copieSecours(url, ok);
+}
+function copieSecours(txt, ok){
+  const t = document.createElement('textarea');
+  t.value = txt; t.setAttribute('readonly',''); t.style.position='fixed'; t.style.opacity='0';
+  document.body.appendChild(t); t.select();
+  try{ document.execCommand('copy'); ok(); }catch(e){ toast('Copie impossible'); }
+  document.body.removeChild(t);
+}
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); promptInstall = e; majInstallUI(); });
 window.addEventListener('appinstalled', ()=>{
   promptInstall = null;
