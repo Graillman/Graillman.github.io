@@ -327,11 +327,10 @@
   #loginBox{ width:100%; max-width:330px; text-align:center }
   #loginBox input{ text-align:center; letter-spacing:1px;
     font-weight:600; margin:14px 0 10px }
-  /* iOS/Safari n'affiche pas les points de masquage (•) d'un champ mot de passe
-     si la police active ne contient pas ce glyphe. La police personnalisée
-     « Jakarta » ne l'a pas : on tapait son mot de passe à l'aveugle, sans même
-     voir les points, et il fallait l'œil pour écrire en clair. Une police
-     système, qui a le glyphe, règle le problème sur tous les appareils. */
+  /* Le champ mot de passe garde la police système : elle contient à coup sûr
+     le glyphe de masquage (•), là où une police personnalisée peut ne pas
+     l'avoir. Ceinture et bretelles avec la règle ci-dessus qui ne masque plus
+     le conteneur de saisie sur iOS. */
   input[type="password"], #loginCode{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Arial,sans-serif;
   }
@@ -397,11 +396,14 @@
   .pwwrap{ position:relative }
   .pwwrap input{ padding-right:52px }
   /* Edge et Safari greffent leur propre bouton sur un champ mot de passe :
-     on les retire pour ne pas afficher deux yeux côte à côte. */
+     on les retire pour ne pas afficher deux yeux côte à côte. On ne masque
+     QUE ces boutons — surtout pas ::-webkit-textfield-decoration-container,
+     qui sur iOS enveloppe la zone de saisie elle-même : le masquer faisait
+     disparaître les points du mot de passe (on tapait à l'aveugle, et seul
+     l'œil rendait le texte lisible en le repassant en clair). */
   .pwwrap input::-ms-reveal, .pwwrap input::-ms-clear{ display:none }
   .pwwrap input::-webkit-credentials-auto-fill-button,
-  .pwwrap input::-webkit-strong-password-auto-fill-button,
-  .pwwrap input::-webkit-textfield-decoration-container{ visibility:hidden; display:none !important }
+  .pwwrap input::-webkit-strong-password-auto-fill-button{ visibility:hidden; display:none !important }
   .pweye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:40px; height:40px;
     border:none; background:transparent; font-size:18px; opacity:.55; line-height:1 }
   /* Trois plans, dans cet ordre : le voile, l'élément désigné, puis le panneau.
