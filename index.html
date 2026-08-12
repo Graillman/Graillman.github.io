@@ -381,6 +381,11 @@
   .artcard .artmeta, .artcard .arttotal, .artcard .artunit{ color:var(--ink2) }
   .artcard .arttotal{ color:var(--ink) }
   .artmeta{ display:block; color:var(--muted); font-size:12px; margin-top:2px }
+  /* Alerte de stock sur la carte d'un vêtement : seuil bas (ambre) ou rupture
+     d'une taille courante (rouge). Promis par l'appli, désormais affiché. */
+  .artwarn{ display:inline-block; margin-top:4px; font-size:11.5px; font-weight:700;
+    color:var(--warn-text); background:var(--warn-bg); border-radius:6px; padding:1px 8px }
+  .artwarn.danger{ color:var(--bad); background:var(--bad-soft) }
   .pwwrap{ position:relative }
   .pwwrap input{ padding-right:52px }
   /* Edge et Safari greffent leur propre bouton sur un champ mot de passe :
@@ -1907,7 +1912,9 @@ function hostStats(h){
   let best=0, run=0;
   for(const sc of scores){ run = sc===100 ? run+1 : 0; if(run>best) best=run; }
   const d30 = addDays(todayISO(),-29);
-  const pct30 = avgOf(list.map((c,i)=>({c,sc:scores[i]})).filter(x=>x.c.date>=d30).map(x=>x.sc));
+  const scores30 = list.map((c,i)=>({c,sc:scores[i]})).filter(x=>x.c.date>=d30).map(x=>x.sc);
+  const pct30 = avgOf(scores30);
+  const n30 = scores30.length;   // nombre de passages DANS la fenêtre 30 jours
   const now = new Date();
   const mCur = iso(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0,7);
   const mPrev = iso(new Date(now.getFullYear(), now.getMonth()-1, 1)).slice(0,7);
@@ -1915,7 +1922,7 @@ function hostStats(h){
     .filter(x=>x.c.date.slice(0,7)===m).map(x=>x.sc), monthlyAgg(h.id, m));
   const reasons = {};
   list.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(r=>reasons[r]=(reasons[r]||0)+1));
-  return { total, notOk:scores.filter(x=>x<100).length, pct, pct30, streak, best,
+  return { total, notOk:scores.filter(x=>x<100).length, pct, pct30, n30, streak, best,
     pctCurMonth:pm(mCur), pctPrevMonth:pm(mPrev), reasons, list, scores };
 }
 function monthly(h, n){
@@ -2373,12 +2380,19 @@ function hostCardHTML(h){
     '<span class="pctbadge" style="color:'+(s.pct==null?'var(--muted)':(s.pct>=80?'var(--ok-text)':(s.pct>=60?'var(--ink2)':'var(--bad)')))+'">'+pctTxt(s.pct)+'</span>'+
   '</button>';
 }
+/* Recherche insensible à la casse ET aux accents : « leger » trouve « Léger ». */
+function sansAccent(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function normCherche(s){ return sansAccent(String(s==null?'':s).toLowerCase()); }
 function renderEquipe(){
   const box = document.getElementById('hostList');
   const all = activeHosts();
-  document.getElementById('searchWrap').style.display = all.length>=8 ? 'block' : 'none';
-  const q = (document.getElementById('hostSearch').value||'').trim().toLowerCase();
-  const hosts = q ? all.filter(h=>(hostName(h)+' '+(h.site||'')).toLowerCase().includes(q)) : all;
+  const sw = document.getElementById('searchWrap');
+  // Sous 8 profils la recherche est masquée. Si un filtre y était resté saisi,
+  // il continuait de filtrer une barre invisible : on le vide en même temps.
+  if(all.length>=8){ sw.style.display = 'block'; }
+  else { sw.style.display = 'none'; document.getElementById('hostSearch').value = ''; }
+  const q = normCherche(document.getElementById('hostSearch').value.trim());
+  const hosts = q ? all.filter(h=>normCherche(hostName(h)+' '+(h.site||'')).includes(q)) : all;
 
   if(!hosts.length){
     box.innerHTML = '<div class="card"><p class="sub">'+(q
@@ -2841,7 +2855,11 @@ function renderStats(){
 
   const rank = hosts.map(h=>({h, s:hostStats(h)})).filter(x=>x.s.total>0);
   const alpha = [...rank].sort((a,b)=>hostName(a.h).localeCompare(hostName(b.h),'fr'));
-  const watch = rank.filter(x=>x.s.total>=3 && x.s.pct30!=null && x.s.pct30<75);
+  /* « Points de vigilance » sur 30 jours : on exige au moins 3 passages DANS ces
+     30 jours (n30), pas 3 passages depuis toujours. Sinon un seul jour faible
+     récent suffisait à inscrire une personne sur une liste de vigilance sur la
+     foi d'une donnée unique — trompeur, et sensible pour un suivi salarié. */
+  const watch = rank.filter(x=>x.s.n30>=3 && x.s.pct30!=null && x.s.pct30<75);
 
   box.innerHTML = title+
     '<div class="tiles">'+
@@ -2983,6 +3001,22 @@ function setInvTab(t){
 }
 function setMovFilter(f){ movFilter = f; renderStock(); }
 
+/* Alerte de stock d'un vêtement, promise par l'appli et jusqu'ici jamais montrée :
+   - rupture (rouge) : une taille « courante » de la gamme (les tailles « mid »,
+     les plus demandées) est tombée à zéro ;
+   - stock bas (ambre) : le total du vêtement passe sous son seuil d'alerte.
+   Renvoie null quand tout va bien. */
+function stockAlerte(a, vars, stock){
+  vars = vars || articleVariants(a.id);
+  stock = stock || stockMap();
+  const mid = (SIZE_SETS[a.sizeType] || {}).mid || [];
+  const rupt = vars.filter(v=>mid.includes(v.size) && (stock[v.id]||0)<=0).map(v=>v.size);
+  if(rupt.length) return { danger:true, txt:'Rupture : '+rupt.join(', ') };
+  const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
+  if(a.minStock>0 && tot < a.minStock) return { danger:false, txt:'Stock bas (seuil '+a.minStock+')' };
+  return null;
+}
+
 /* Une taille se corrige d'un geste : on touche, on ajuste, c'est enregistré.
    Pas de mode « édition » à ouvrir puis à quitter. L'écart part au journal
    comme un ajustement, donc le stock reste la somme des mouvements. */
@@ -3011,6 +3045,15 @@ function rafraichitChiffres(articleId){
     });
     const t = carte.querySelector('.arttotal');
     if(t) t.textContent = articleVariants(articleId).reduce((n,v)=>n+(stock[v.id]||0),0);
+    // garder l'alerte de stock à jour après un ajustement au doigt
+    const a = articleById(articleId), grow = carte.querySelector('.arthead .grow');
+    if(a && grow){
+      const w = stockAlerte(a, articleVariants(articleId), stock);
+      let chip = grow.querySelector('.artwarn');
+      if(w){ if(!chip){ chip = document.createElement('span'); grow.appendChild(chip); }
+        chip.className = 'artwarn'+(w.danger?' danger':''); chip.textContent = w.txt; }
+      else if(chip){ chip.remove(); }
+    }
   }
   const tot = activeArticles().reduce((n,a)=>
     n + articleVariants(a.id).reduce((m,v)=>m+(stock[v.id]||0),0), 0);
@@ -3069,11 +3112,11 @@ function renderStock(){
   document.getElementById('invSearchWrap').style.display = arts.length > 7 ? '' : 'none';
 
   // liste
-  const q = (document.getElementById('invSearch').value||'').trim().toLowerCase();
+  const q = normCherche(document.getElementById('invSearch').value.trim());
   let list = arts;
   if(invFilter!=='Tout') list = list.filter(a=>a.category===invFilter);
-  if(q) list = list.filter(a=>(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
-    .toLowerCase().includes(q));
+  if(q) list = list.filter(a=>normCherche(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
+    .includes(q));
 
 
   if(!arts.length){
@@ -3091,11 +3134,13 @@ function renderStock(){
       const vars = articleVariants(a.id);
       const tot = vars.reduce((n,v)=>n+(stock[v.id]||0),0);
       const ouvert = openArt.has(a.id);
+      const warn = stockAlerte(a, vars, stock);
       return '<div class="artcard part-'+partieOf(a)+'" data-aid="'+esc(a.id)+'">'+
         '<button class="arthead'+(ouvert?' open':'')+'" onclick="toggleArt('+jsq(a.id)+')">'+
           '<span class="grow"><span class="artname">'+esc(a.name)+
             (a.brand?' <span class="brandtag">'+esc(a.brand)+'</span>':'')+'</span>'+
             (a.color ? '<span class="artmeta">'+esc(a.color)+'</span>' : '')+
+            (warn ? '<span class="artwarn'+(warn.danger?' danger':'')+'">'+esc(warn.txt)+'</span>' : '')+
           '</span>'+
           '<span class="artright"><span class="arttotal">'+tot+'</span>'+
           '<span class="artunit">en stock</span></span>'+
@@ -3208,7 +3253,21 @@ function renderPour(){
     esc(POUR_COURT[g]||g)+'</button>').join('')+'</div>';
 }
 let sizeTypeInutilise = null;
-function pickGamme(k){ sizeType = k; pickedSizes = SIZE_SETS[k].sizes.slice(); renderSizePick(); }
+function pickGamme(k){
+  /* Deux cas, pour ne rien effacer par surprise :
+     - la sélection est encore la gamme par défaut, intacte (on vient d'ouvrir le
+       vêtement ou on s'est trompé de gamme) → on remplace simplement, sans
+       accumuler ;
+     - la sélection a été personnalisée (tailles retirées, ou déjà mélangée avec
+       une autre gamme) → on la conserve et on AJOUTE la nouvelle gamme. C'est ce
+       qui permet de mélanger les gammes dans un même vêtement (documenté). */
+  const cur = SIZE_SETS[sizeType] || SIZE_SETS.alpha;
+  const intacte = pickedSizes.length === cur.sizes.length && cur.sizes.every(s=>pickedSizes.includes(s));
+  sizeType = k;
+  if(intacte){ pickedSizes = SIZE_SETS[k].sizes.slice(); }
+  else { SIZE_SETS[k].sizes.forEach(s=>{ if(!pickedSizes.includes(s)) pickedSizes.push(s); }); }
+  renderSizePick();
+}
 function renderSizePick(){
   const type = sizeType;
   const set = SIZE_SETS[type] || SIZE_SETS.alpha;
@@ -3338,10 +3397,10 @@ function renderPick(){
     document.getElementById('pickTitle').textContent = 'Quel vêtement ?';
     document.getElementById('pickHint').textContent = 'Étape 1 sur 2 — touchez le vêtement concerné.';
     searchWrap.style.display = '';
-    const q = (searchWrap.value||'').trim().toLowerCase();
+    const q = normCherche(searchWrap.value.trim());
     let list = activeArticles();
-    if(q) list = list.filter(a=>(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
-      .toLowerCase().includes(q));
+    if(q) list = list.filter(a=>normCherche(a.name+' '+a.color+' '+(a.brand||'')+' '+a.category+' '+a.gender)
+      .includes(q));
     if(!list.length){ box.innerHTML = '<p class="mutd">Aucun vêtement ne correspond.</p>'; return; }
     // regroupé par catégorie : on retrouve « les chemises » sans lire toute la liste
     const cats = [...new Set(list.map(a=>a.category||'Autre'))];
@@ -3400,6 +3459,18 @@ function updateMoveQty(){
 }
 function saveMove(){
   if(!moveVariantId || !moveQty) return;
+  /* Un stock physique ne descend pas sous zéro. Les boutons rapides l'interdisent
+     déjà (ajusteQty) ; la fenêtre de mouvement doit tenir la même règle, sinon
+     on peut enregistrer une sortie de 5 sur un stock de 2. On borne la sortie
+     au stock disponible plutôt que de refuser sèchement. */
+  if(moveQty < 0){
+    const dispo = stockMap()[moveVariantId] || 0;
+    if(dispo <= 0){ toast('Stock déjà à zéro : aucune sortie possible'); return; }
+    if(-moveQty > dispo){
+      moveQty = -dispo;
+      toast('Sortie ramenée à '+dispo+' (stock disponible)');
+    }
+  }
   const mv = {
     id: uid(), variantId: moveVariantId, delta: moveQty,
     reason: 'Ajustement d'+String.fromCharCode(39)+'inventaire',
@@ -3803,7 +3874,14 @@ function rapportConformite(preview){
     l.filter(c=>c.status==='not_ok').forEach(c=>(c.reasons||[]).forEach(x=>rs[x]=(rs[x]||0)+1));
     const top = Object.entries(rs).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]).join(', ');
     return { h, n:l.length, pct:avgOf(l.map(checkScore)), top, list:l };
-  }).filter(Boolean).sort((a,b)=>b.pct-a.pct);
+  }).filter(Boolean).sort((a,b)=>hostName(a.h).localeCompare(hostName(b.h),'fr'));
+  /* Ordre alphabétique, jamais par note : la notice RGPD et le registre générés
+     par cette même application affirment « aucun classement nominatif ». Trier
+     le rapport par score en ferait un classement de performance des personnes
+     et contredirait la notice — c'est l'incohérence entre l'information donnée
+     et le traitement réel qui pose problème (RGPD art. 5, loyauté), pas la
+     mesure elle-même. La liste par personne des Statistiques est déjà
+     alphabétique : le rapport s'aligne. */
 
   const incidents = [];
   rows.forEach(r2=>r2.list.filter(c=>c.status==='not_ok').forEach(c=>
@@ -4293,9 +4371,20 @@ function importJSON(input){
       const d = JSON.parse(rd.result);
       if(!Array.isArray(d.hosts)) throw 0;
       if(!confirm('Remplacer les données actuelles par celles du fichier ('+d.hosts.length+' profils) ?\nCe remplacement vaudra pour TOUTE l\'équipe (synchronisé).')) return;
+      /* Une sauvegarde contient TOUT (profils, passages, stock, bilans mensuels).
+         L'ancienne restauration ne reprenait que profils + passages : le stock
+         et les mensuels étaient perdus, et la synchro suivante ramenait l'ancien
+         stock du serveur. On restaure l'état complet, et on l'envoie complet. */
+      const invIn = (d.inv && typeof d.inv==='object') ? {
+        articles: Array.isArray(d.inv.articles) ? d.inv.articles : [],
+        variants: Array.isArray(d.inv.variants) ? d.inv.variants : [],
+        moves: Array.isArray(d.inv.moves) ? d.inv.moves : []
+      } : { articles:[], variants:[], moves:[] };
       state = { hosts:d.hosts, checks:d.checks||{}, config:d.config||state.config,
+        monthly: Array.isArray(d.monthly) ? d.monthly : [], inv: invIn,
         createdAt:d.createdAt||new Date().toISOString() };
-      save(); push('importAll', { hosts:state.hosts, checks:state.checks });
+      save();
+      push('importAll', { hosts:state.hosts, checks:state.checks, inv:state.inv, monthly:state.monthly });
       if(state.config) push('setConfig', state.config);
       show('pointage'); toast('Données importées');
     }catch(e){ toast('Fichier non reconnu'); }
