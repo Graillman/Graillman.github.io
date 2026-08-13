@@ -58,6 +58,10 @@
 
   *{ box-sizing:border-box; margin:0; padding:0 }
   html{ -webkit-text-size-adjust:100% }
+  /* Ligatures désactivées : la police « Jakarta » lie « fi » en un seul glyphe
+     dont le point du i disparaît sur iOS (« profil » s'affichait « profl »).
+     Sans ligatures, chaque lettre garde sa forme correcte partout. */
+  *{ font-variant-ligatures:none; -webkit-font-variant-ligatures:none }
   body{
     font-family:'Jakarta', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     background:
@@ -143,9 +147,6 @@
   nav.tabs button .ic{ color:var(--t); opacity:.45 }
   nav.tabs button.on{ color:var(--t) }
   nav.tabs button.on .ic{ opacity:1 }
-  nav.tabs button.on::before{ content:''; position:absolute; top:0; left:50%;
-    transform:translateX(-50%); width:26px; height:3px; border-radius:0 0 3px 3px;
-    background:var(--t) }
   nav.tabs button.on .ic{ transform:translateY(-1px) scale(1.06) }
   nav.tabs button .ic{ transition:transform .16s ease }
   .btn.primary{ background-image:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.05));
@@ -196,6 +197,12 @@
   .addcc{ background:none; border:none; color:var(--brand); font-size:12.5px; font-weight:650;
     padding:6px 0 10px; text-align:left; opacity:.75; min-height:32px }
   .addcc:active{ opacity:1 }
+  /* Boutons d'action du rapport : quatre tenaient mal sur une ligne (« Imprime /
+     PDF » coupé sur iPhone). En grille, ils gardent une largeur confortable :
+     deux par ligne sur téléphone, quatre côte à côte dès qu'il y a la place. */
+  .repbtns{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:2px }
+  .repbtns .btn{ width:100%; white-space:nowrap; padding-left:10px; padding-right:10px }
+  @media (min-width:620px){ .repbtns{ grid-template-columns:repeat(4,1fr) } }
   .repzone{ margin-top:10px }
   .repzone label{ display:block; font-size:12px; font-weight:600; color:var(--ink2);
     margin-bottom:5px }
@@ -315,6 +322,41 @@
     background:var(--page); border:1px solid var(--baseline); border-radius:9px; padding:8px 10px }
   #shareCard .sharebtns{ display:flex; gap:8px }
   #shareCard .sharebtns .btn{ flex:1; min-width:0 }
+
+  /* ---------- Signalements entre responsables ---------- */
+  .signew{ width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--surface); border:1px solid var(--baseline); color:var(--ink);
+    font-weight:650; margin-bottom:12px }
+  .signew .sigwarn{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:99px;
+    background:var(--bad); color:#fff; font-weight:800; font-size:13px; line-height:1 }
+  .sigcard{ padding:6px 8px 4px; margin-bottom:13px }
+  .sigcard.urgent{ border:1px solid var(--bad); box-shadow:0 0 0 3px var(--bad-soft) }
+  .sighead{ display:flex; align-items:center; justify-content:space-between; padding:8px 8px 6px }
+  .sighead b{ font-size:14px }
+  .sigbadge{ font-size:11.5px; font-weight:700; color:#fff; background:var(--bad);
+    border-radius:99px; padding:2px 9px }
+  .sigrow{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:transparent; border:none; border-top:1px solid var(--grid); padding:10px 8px; min-height:52px }
+  .sigrow:first-of-type{ border-top:none }
+  .sigdot{ flex:none; width:9px; height:9px; border-radius:99px; background:var(--baseline) }
+  .sigrow.unread .sigdot{ background:var(--bad) }
+  .siggrow{ flex:1; min-width:0 }
+  .sigauteur{ display:block; font-weight:650; font-size:14px }
+  .sigrow.unread .sigauteur{ font-weight:750 }
+  .sigprev{ display:block; color:var(--muted); font-size:12.5px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; margin-top:1px }
+  .sigwhen{ flex:none; font-size:11.5px; color:var(--muted); font-weight:600 }
+  .sigmeta{ font-size:15px }
+  .sigconcern{ margin-top:6px; font-size:13.5px; color:var(--ink2) }
+  .sigtexte{ margin-top:12px; font-size:14.5px; line-height:1.55;
+    background:var(--page); border-radius:12px; padding:12px 14px }
+  .siglu{ margin-top:12px; font-size:13px; color:var(--ink2); line-height:1.5 }
+  .siglu b{ color:var(--ink) }
+  /* Pastille de comptage sur l'onglet Passage (contenue dans le bouton, qui a
+     overflow:hidden : on la garde à l'intérieur de ses bords). */
+  nav.tabs button .tabbadge{ position:absolute; top:1px; left:calc(50% + 7px);
+    min-width:16px; height:16px; padding:0 4px; border-radius:99px; background:var(--bad);
+    color:#fff; font-size:10px; font-weight:800; line-height:16px; text-align:center }
 
   /* ---------- listes gérables (critères / accueils) ---------- */
   .mrow{ display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--hairline) }
@@ -631,8 +673,19 @@
     text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px }
   .repsum b{ font-size:22px; font-weight:750; letter-spacing:-.02em }
   .reppied{ border-left:3px solid var(--baseline) }
-  .bilcell{ display:flex; align-items:center; gap:10px; font-size:12.5px; font-weight:650 }
-  .bilsolde{ min-width:38px; text-align:right; font-size:15px; font-variant-numeric:tabular-nums }
+  /* Bilan mensuel : le solde (chiffre clé) ressort, le détail entrées/sorties
+     se lit en dessous. Aligné, aéré, lisible sur téléphone comme sur écran. */
+  .bilrow{ padding:11px 0; border-bottom:1px solid var(--grid) }
+  .bilrow:last-child{ border-bottom:none; padding-bottom:2px }
+  .bilmain{ display:flex; align-items:baseline; gap:12px }
+  .bilname{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14.5px }
+  .bilname .mutd{ font-size:12px }
+  .bilsolde{ flex:none; font-variant-numeric:tabular-nums; font-size:17px; font-weight:750; color:var(--ink2) }
+  .bilsolde.pos{ color:var(--ok-text) } .bilsolde.neg{ color:var(--bad) }
+  .bildetail{ display:flex; align-items:center; gap:8px; margin-top:3px; font-size:12.5px; color:var(--muted) }
+  .bildetail .in{ color:var(--ok-text); font-weight:600 }
+  .bildetail .out{ color:var(--bad); font-weight:600 }
+  .bildetail .bilsep{ color:var(--baseline) }
   .reptab{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px }
   .xlsprev{ overflow-x:auto; -webkit-overflow-scrolling:touch }
   .xlsprev table{ min-width:100%; font-size:11.5px !important }
@@ -863,6 +916,29 @@
   </div>
 </div>
 
+<div id="sigComposeModal" class="sheetwrap">
+  <div class="sheetbox">
+    <div class="sheet-head"><h2>Signaler un incident</h2>
+      <button class="link" onclick="fermeFenetre('sigComposeModal')">Fermer</button></div>
+    <p class="sub" style="margin-bottom:12px">Ce signalement apparaîtra à tous les responsables
+    comme un message à lire. Chacun voit qui l'a lu.</p>
+    <label class="f">Personne concernée <span class="mutd">(facultatif)</span></label>
+    <select id="sigHost" aria-label="Personne concernée"><option value="">— Général / aucune —</option></select>
+    <label class="f">Ce qu'il s'est passé</label>
+    <textarea id="sigBody" maxlength="4000" placeholder="Décrivez l'incident : date, lieu, personnes présentes, faits constatés…"></textarea>
+    <div class="spacer"></div>
+    <button class="btn primary" style="width:100%" onclick="envoyerSignalement()">Envoyer le signalement</button>
+  </div>
+</div>
+
+<div id="sigDetailModal" class="sheetwrap">
+  <div class="sheetbox">
+    <div class="sheet-head"><h2>Signalement</h2>
+      <button class="link" onclick="fermeFenetre('sigDetailModal')">Fermer</button></div>
+    <div id="sigDetailBody"></div>
+  </div>
+</div>
+
 <header class="app">
   <div class="head-t">
     <img class="brandimg applogo" alt="Pénélope">
@@ -900,6 +976,7 @@
   <!-- ================= PASSAGE ================= -->
   <section class="view" id="view-pointage">
     <h1 class="view-title">Passage</h1>
+    <div id="incidentZone" class="no-print"></div>
     <div class="card">
       <div class="datebar">
         <b style="flex:none;font-size:14px">Jour</b>
@@ -973,11 +1050,11 @@
         <input type="date" id="repFrom" aria-label="Date de début" style="flex:1;min-width:0">
         <input type="date" id="repTo" aria-label="Date de fin" style="flex:1;min-width:0">
       </div>
-      <div class="row">
-        <button class="btn primary grow" onclick="buildReport(true)">Aperçu</button>
-        <button class="btn grow" onclick="printReport()">Imprimer / PDF</button>
-        <button class="btn grow" onclick="apercuExcel()">Aperçu Excel</button>
-        <button class="btn grow" onclick="exportCSV()">Excel</button>
+      <div class="repbtns">
+        <button class="btn primary" onclick="buildReport(true)">Aperçu</button>
+        <button class="btn" onclick="printReport()">Imprimer / PDF</button>
+        <button class="btn" onclick="apercuExcel()">Aperçu Excel</button>
+        <button class="btn" onclick="exportCSV()">Excel</button>
       </div>
       <p class="mutd" style="margin-top:10px">« Imprimer / PDF » ouvre la fenêtre d'impression :
       choisissez « Enregistrer en PDF » pour obtenir un fichier à envoyer.</p>
@@ -1430,7 +1507,7 @@ const MONTHS_FR = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','
 /* ---------- état ---------- */
 let state = null;
 function blankState(){ return { hosts:[], checks:{}, config:null, monthly:[],
-  inv:{ articles:[], variants:[], moves:[] }, createdAt:new Date().toISOString() }; }
+  inv:{ articles:[], variants:[], moves:[] }, incidents:[], createdAt:new Date().toISOString() }; }
 function load(){
   try{ const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
   return null;
@@ -1663,6 +1740,9 @@ async function pullAll(){
     if(d.config) state.config = d.config;
     state.monthly = (d.monthly||[]).map(m=>({ hostId:m.host_id, month:m.month,
       sum:m.sum_score||0, n:m.n||0 }));
+    state.incidents = (d.incidents||[]).map(x=>({ id:x.id, author:x.author||'',
+      hostId:x.host_id||null, hostName:x.host_name||'', body:x.body||'',
+      createdAt:x.created_at, readBy:Array.isArray(x.read_by)?x.read_by:[] }));
     if(d.inv){
       state.inv = {
         articles: (d.inv.articles||[]).map(a=>({ id:a.id, name:a.name, category:a.category||'',
@@ -1693,6 +1773,9 @@ function rerenderSoft(){
      synchronisation tourne toutes les 45 secondes et refermerait les accordéons
      ou périmerait la fiche en cours d'édition. On les teste toutes, pas
      seulement celle des hôtes. */
+  // L'encoche des signalements se met à jour même hors de l'onglet Passage :
+  // un nouveau signalement synchronisé doit se voir tout de suite.
+  if(typeof majBadgeSignalements==='function') majBadgeSignalements();
   if(document.querySelector('.sheetwrap[id].on')) return;
   if(document.getElementById('tourOverlay').classList.contains('on')) return;
   if(currentView==='pointage') renderPointage();
@@ -2102,12 +2185,112 @@ function photoSure(p){
     /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p);
 }
 
+/* ---------- Signalements entre responsables ----------
+   Un responsable écrit un signalement (altercation, incident). Il arrive à tous
+   les autres profils comme un message non lu (encoche rouge sur Passage). En
+   l'ouvrant, il est marqué « lu par … », visible de tous. Synchronisé. */
+function sigOuverts(){
+  return (state.incidents||[]).slice()
+    .sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+}
+function sigLu(inc){ const n = profilCourant(); return (inc.readBy||[]).some(r=>r && r.name===n); }
+function sigNonLus(){ return sigOuverts().filter(i=>!sigLu(i)); }
+function sigApercu(t){ t = String(t||'').replace(/\s+/g,' ').trim(); return t.length>68 ? t.slice(0,66)+'…' : t; }
+
+function renderSignalements(){
+  const zone = document.getElementById('incidentZone');
+  if(!zone) return;
+  const list = sigOuverts(), nonLus = list.filter(i=>!sigLu(i));
+  let html = '<button class="btn signew no-print" onclick="ouvrirCompositionSignalement()">'+
+    '<span class="sigwarn">!</span> Signaler un incident</button>';
+  if(list.length){
+    html += '<div class="card sigcard'+(nonLus.length?' urgent':'')+'">'+
+      '<div class="sighead"><b>Signalements</b>'+
+      (nonLus.length ? '<span class="sigbadge">'+nonLus.length+' non lu'+(nonLus.length>1?'s':'')+'</span>'
+                     : '<span class="mutd" style="font-size:12px">Tous lus</span>')+'</div>'+
+      list.map(i=>{
+        const lu = sigLu(i);
+        return '<button class="sigrow'+(lu?'':' unread')+'" onclick="ouvrirDetailSignalement('+jsq(i.id)+')">'+
+          '<span class="sigdot"></span>'+
+          '<span class="siggrow"><span class="sigauteur">'+esc(i.author||'—')+
+            (i.hostName?' <span class="mutd">· '+esc(i.hostName)+'</span>':'')+'</span>'+
+          '<span class="sigprev">'+esc(sigApercu(i.body))+'</span></span>'+
+          '<span class="sigwhen">'+frDate(String(i.createdAt||'').slice(0,10))+'</span>'+
+        '</button>';
+      }).join('')+
+    '</div>';
+  }
+  zone.innerHTML = html;
+  majBadgeSignalements();
+}
+function majBadgeSignalements(){
+  const n = sigNonLus().length;
+  const btn = document.querySelector('nav.tabs button[data-v="pointage"]');
+  if(!btn) return;
+  let b = btn.querySelector('.tabbadge');
+  if(n>0){
+    if(!b){ b = document.createElement('span'); b.className = 'tabbadge'; btn.appendChild(b); }
+    b.textContent = n>9 ? '9+' : String(n);
+  } else if(b){ b.remove(); }
+}
+function ouvrirCompositionSignalement(){
+  const sel = document.getElementById('sigHost');
+  sel.innerHTML = '<option value="">— Général / aucune —</option>' +
+    activeHosts().map(h=>'<option value="'+esc(h.id)+'">'+esc(hostName(h))+'</option>').join('');
+  document.getElementById('sigBody').value = '';
+  document.getElementById('sigComposeModal').classList.add('on');
+}
+function envoyerSignalement(){
+  const body = document.getElementById('sigBody').value.trim();
+  if(!body){ toast('Décrivez l\'incident'); return; }
+  const hostId = document.getElementById('sigHost').value || null;
+  const h = hostId ? hostById(hostId) : null;
+  const moi = profilCourant() || '';
+  const inc = { id: uid(), author: moi, hostId, hostName: h?hostName(h):'',
+    body, createdAt: new Date().toISOString(), readBy: [{ name: moi, at: new Date().toISOString() }] };
+  state.incidents = state.incidents || []; state.incidents.unshift(inc);
+  save();
+  push('addIncident', { id:inc.id, body, hostId, hostName:inc.hostName, at:inc.createdAt });
+  fermeFenetre('sigComposeModal');
+  renderSignalements();
+  toast('Signalement envoyé');
+}
+function ouvrirDetailSignalement(id){
+  const inc = (state.incidents||[]).find(x=>x.id===id);
+  if(!inc) return;
+  if(!sigLu(inc)){
+    inc.readBy = (inc.readBy||[]).concat([{ name: profilCourant()||'', at:new Date().toISOString() }]);
+    save(); push('readIncident', { id });
+  }
+  const lecteurs = (inc.readBy||[]).map(r=>esc(r && r.name)).filter(Boolean);
+  document.getElementById('sigDetailBody').innerHTML =
+    '<div class="sigmeta"><b>'+esc(inc.author||'—')+'</b>'+
+      '<span class="mutd"> · '+frDate(String(inc.createdAt||'').slice(0,10))+' à '+heureDe(inc.createdAt)+'</span></div>'+
+    (inc.hostName ? '<div class="sigconcern">Concerne : <b>'+esc(inc.hostName)+'</b></div>' : '')+
+    '<div class="sigtexte">'+esc(inc.body).replace(/\n/g,'<br>')+'</div>'+
+    '<div class="siglu"><b>Lu par</b> '+(lecteurs.length?lecteurs.join(', '):'personne pour l\'instant')+'</div>'+
+    '<div class="spacer"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="cloturerSignalement('+jsq(id)+')">Clôturer ce signalement</button>'+
+    '<p class="mutd" style="margin-top:8px">Une fois clôturé, il disparaît pour toute l\'équipe.</p>';
+  document.getElementById('sigDetailModal').classList.add('on');
+  renderSignalements();
+}
+function cloturerSignalement(id){
+  if(!confirm('Clôturer ce signalement ? Il disparaîtra pour toute l\'équipe.')) return;
+  state.incidents = (state.incidents||[]).filter(x=>x.id!==id);
+  save(); push('closeIncident', { id });
+  fermeFenetre('sigDetailModal');
+  renderSignalements();
+  toast('Signalement clôturé');
+}
+
 /* ---------- POINTAGE ---------- */
 const dateInput = document.getElementById('checkDate');
 dateInput.max = todayISO(); dateInput.value = todayISO();
 dateInput.onchange = renderPointage;
 
 function renderPointage(){
+  renderSignalements();
   const date = dateInput.value || todayISO();
   const hosts = activeHosts();
   const box = document.getElementById('pointageList');
@@ -3217,12 +3400,19 @@ function renderStock(){
   const bilan = bilanArticles(moisDebut, todayISO());
   const bx = document.getElementById('movBilan');
   if(bx) bx.innerHTML = bilan.length
-    ? '<div class="card"><h3 style="margin-top:0">Ce mois-ci</h3>'+
-      bilan.map(x=>'<div class="movline"><span class="grow"><b>'+esc(x.a.name)+'</b> '+
-        '<span class="mutd">'+esc(POUR_COURT[pourOf(x.a)]||'')+'</span></span>'+
-        '<span class="bilcell"><span class="stat-ok">'+signe(x.entrees)+'</span>'+
-        '<span class="stat-ko">'+signe(-x.sorties)+'</span>'+
-        '<b class="bilsolde">'+signe(x.solde)+'</b></span></div>').join('')+
+    ? '<div class="card"><h3 style="margin:0 0 4px">Ce mois-ci</h3>'+
+      '<p class="mutd" style="margin:0 0 10px">Entrées et sorties cumulées depuis le 1<sup>er</sup> du mois.</p>'+
+      bilan.map(x=>{
+        const cls = x.solde>0?' pos':(x.solde<0?' neg':'');
+        return '<div class="bilrow">'+
+          '<div class="bilmain">'+
+            '<span class="bilname"><b>'+esc(x.a.name)+'</b> <span class="mutd">'+esc(POUR_COURT[pourOf(x.a)]||'')+'</span></span>'+
+            '<b class="bilsolde'+cls+'">'+signe(x.solde)+'</b>'+
+          '</div>'+
+          '<div class="bildetail"><span class="in">'+x.entrees+' entrée'+(x.entrees>1?'s':'')+'</span>'+
+            '<span class="bilsep">·</span><span class="out">'+x.sorties+' sortie'+(x.sorties>1?'s':'')+'</span></div>'+
+        '</div>';
+      }).join('')+
       '</div>'
     : '';
   document.getElementById('movFilters').innerHTML = ['Tout','Entrées','Sorties'].map(f=>
@@ -4777,7 +4967,8 @@ function majInstallUI(){
 }
 (function init(){
   const local = load();
-  if(local){ state = local; if(!('config' in state)) state.config = null; }
+  if(local){ state = local; if(!('config' in state)) state.config = null;
+    if(!Array.isArray(state.incidents)) state.incidents = []; }
   else if(seed && Array.isArray(seed.hosts) && !accessCode){
     state = { hosts:seed.hosts||[], checks:seed.checks||{}, config:seed.config||null,
       createdAt:seed.createdAt||new Date().toISOString() };
